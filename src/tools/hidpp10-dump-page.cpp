@@ -20,87 +20,52 @@
 
 extern "C" {
 #include <unistd.h>
-#include <getopt.h>
 }
 
 #include <hidpp10/Device.h>
 #include <hidpp10/IMemory.h>
 
-const char *usage = 
-	"Usage: %s [options] /dev/hidrawX page\n"
-	"Options are:\n"
-	"	-d,--device index	Use wireless device index.\n"
-	"	-h,--help	Print this message.\n"
-	;
+#include "common/common.h"
+#include "common/Option.h"
+#include "common/CommonOptions.h"
 
 int main (int argc, char *argv[])
 {
-	enum Options {
-		DeviceIndexOpt = 256,
-		HelpOpt,
-	};
-	struct option longopts[] = {
-		{ "device", required_argument, nullptr, DeviceIndexOpt },
-		{ "help", no_argument, nullptr, HelpOpt },
-		{ }
-	};
-
+	static const char *args = "/dev/hidrawX page";
 	HIDPP::DeviceIndex device_index = HIDPP::WiredDevice;
 
-	int opt;
-	while (-1 != (opt = getopt_long (argc, argv, "d:h", longopts, nullptr))) {
-		switch (opt) {
-		case 'd':
-		case DeviceIndexOpt: {
-                        int index = atoi (optarg);
-                        switch (index) {
-                        case 1:
-                                device_index = HIDPP::WirelessDevice1;
-                                break;
-                        case 2:
-                                device_index = HIDPP::WirelessDevice2;
-                                break;
-                        case 3:
-                                device_index = HIDPP::WirelessDevice3;
-                                break;
-                        case 4:
-                                device_index = HIDPP::WirelessDevice4;
-                                break;
-                        case 5:
-                                device_index = HIDPP::WirelessDevice5;
-                                break;
-                        case 6:
-                                device_index = HIDPP::WirelessDevice6;
-                                break;
-                        default:
-                                fprintf (stderr, "Invalid device index: %s\n", optarg);
-                                return EXIT_SUCCESS;
-                        }
-                        break;
-                }
-		
-		case 'h':
-		case HelpOpt:
-			fprintf (stderr, usage, argv[0]);
-			return EXIT_SUCCESS;
+	std::vector<Option> options = {
+		DeviceIndexOption (device_index),
+		VerboseOption (),
+	};
+	Option help = HelpOption (argv[0], args, &options);
+	options.push_back (help);
 
-		default:
-			return EXIT_FAILURE;
-		}
-	}
+	int first_arg;
+	if (!Option::processOptions (argc, argv, options, first_arg))
+		return EXIT_FAILURE;
 
-	if (argc-optind != 2) {
-		fprintf (stderr, usage, argv[0]);
+	if (argc-first_arg != 2) {
+		fprintf (stderr, "%s", getUsage (argv[0], args, &options).c_str ());
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[optind];
-	unsigned int page = atoi (argv[optind+1]);
+	const char *path = argv[first_arg];
+	char *endptr;
+	unsigned int page = strtol (argv[first_arg+1], &endptr, 0);
+	if (*endptr != '\0') {
+		fprintf (stderr, "Invalid page number.\n");
+		return EXIT_FAILURE;
+	}
 
 	HIDPP10::Device dev (path, device_index);
+
 	static constexpr std::size_t PageSize = 512;
 	std::vector<uint8_t> data (PageSize);
+
 	HIDPP10::IMemory (&dev).readMem (page, 0, data);
+
 	write (1, data.data (), PageSize);
+
 	return EXIT_SUCCESS;
 }

@@ -20,6 +20,7 @@ public:
 	Log () = delete;
 
 	static void setLevel (Level level);
+	static Level level ();
 
 	static std::ostream &stream (Level level);
 

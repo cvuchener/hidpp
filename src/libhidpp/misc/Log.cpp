@@ -11,6 +11,11 @@ void Log::setLevel (Log::Level level)
 	_level = level;
 }
 
+Log::Level Log::level ()
+{
+	return _level;
+}
+
 std::ostream &Log::stream (Log::Level level)
 {
 	if (level <= _level)

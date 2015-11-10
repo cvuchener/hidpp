@@ -24,10 +24,11 @@
 #include <hidpp20/Device.h>
 #include <hidpp20/IFeatureSet.h>
 #include <misc/SysCallError.h>
+#include <misc/Log.h>
 
-extern "C" {
-#include <getopt.h>
-}
+#include "common/common.h"
+#include "common/Option.h"
+#include "common/CommonOptions.h"
 
 void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t address, bool test_write = false)
 {
@@ -73,85 +74,36 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 	}
 }
 
-const char *usage =
-	"Usage: %s [options] /dev/hidrawX\n"
-	"Options are:\n"
-	"	-w,--write	Also do write tests with HID++ 1.0 devices.\n"
-	"	-d,--device index	Use wireless device index.\n"
-	"	-h,--help	Print this help.\n"
-	;
-
 int main (int argc, char *argv[])
 {
-	enum Options {
-		WriteTestOpt = 256,
-		DeviceIndexOpt,
-		HelpOpt,
-	};
-	struct option longopts[] = {
-		{ "write", no_argument, nullptr, WriteTestOpt },
-		{ "device", required_argument, nullptr, DeviceIndexOpt },
-		{ "help", no_argument, nullptr, HelpOpt },
-		{ },
-	};
-
+	static const char *args = "/dev/hidrawX";
 	HIDPP::DeviceIndex device_index = HIDPP::WiredDevice;
 	bool do_write_tests = false;
 
-	int opt;
-	while (-1 != (opt = getopt_long (argc, argv, "wd:h", longopts, nullptr))) {
-		switch (opt) {
-		case 'w':
-		case WriteTestOpt:
-			do_write_tests = true;
-			break;
+	std::vector<Option> options = {
+		DeviceIndexOption (device_index),
+		VerboseOption (),
+		Option ('w', "write",
+			Option::NoArgument, "",
+			"Also do write tests with HID++ 1.0 devices.",
+			[&do_write_tests] (const char *optarg) -> bool {
+				do_write_tests = true;
+				return true;
+			})
+	};
+	Option help = HelpOption (argv[0], args, &options);
+	options.push_back (help);
 
-		case 'd':
-		case DeviceIndexOpt: {
-			int index = atoi (optarg);
-			switch (index) {
-			case 1:
-				device_index = HIDPP::WirelessDevice1;
-				break;
-			case 2:
-				device_index = HIDPP::WirelessDevice2;
-				break;
-			case 3:
-				device_index = HIDPP::WirelessDevice3;
-				break;
-			case 4:
-				device_index = HIDPP::WirelessDevice4;
-				break;
-			case 5:
-				device_index = HIDPP::WirelessDevice5;
-				break;
-			case 6:
-				device_index = HIDPP::WirelessDevice6;
-				break;
-			default:
-				fprintf (stderr, "Invalid device index: %s\n", optarg);
-				return EXIT_SUCCESS;
-			}
-			break;
-		}
+	int first_arg;
+	if (!Option::processOptions (argc, argv, options, first_arg))
+		return EXIT_FAILURE;
 
-		case 'h':
-		case HelpOpt:
-			fprintf (stderr, usage, argv[0]);
-			return EXIT_SUCCESS;
-
-		default:
-			fprintf (stderr, usage, argv[0]);
-			return EXIT_FAILURE;
-		}
-	}
-
-	if (argc-optind != 1) {
-		fprintf (stderr, usage, argv[0]);
+	if (argc-first_arg != 1) {
+		fprintf (stderr, "%s", getUsage (argv[0], args, &options).c_str ());
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[optind];
+	const char *path = argv[first_arg];
 
 	/*
 	 * Check protocol version

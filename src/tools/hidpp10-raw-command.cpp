@@ -20,89 +20,42 @@
 #include <hidpp10/Error.h>
 #include <cstdio>
 
-extern "C" {
-#include <getopt.h>
-}
-
-const char *usage =
-	"Usage: %s [options] /dev/hidrawX command read|write short|long parameters...\n"
-	"Options are:\n"
-	"	-d,--device index	Use wireless device index.\n"
-	"	-h,--help	Print this message.\n"
-	;
+#include "common/common.h"
+#include "common/Option.h"
+#include "common/CommonOptions.h"
 
 int main (int argc, char *argv[])
 {
-	enum Options {
-		DeviceIndexOpt = 256,
-		HelpOpt,
-	};
-	struct option longopts[] = {
-		{ "device", required_argument, nullptr, DeviceIndexOpt },
-		{ "help", no_argument, nullptr, HelpOpt },
-		{ }
-	};
-
+	static const char *args = "/dev/hidrawX command read|write short|long [parameters...]";
 	HIDPP::DeviceIndex device_index = HIDPP::WiredDevice;
 
-	int opt;
-	while (-1 != (opt = getopt_long (argc, argv, "d:h", longopts, nullptr))) {
-		switch (opt) {
-		case 'd':
-		case DeviceIndexOpt: {
-                        int index = atoi (optarg);
-                        switch (index) {
-                        case 1:
-                                device_index = HIDPP::WirelessDevice1;
-                                break;
-                        case 2:
-                                device_index = HIDPP::WirelessDevice2;
-                                break;
-                        case 3:
-                                device_index = HIDPP::WirelessDevice3;
-                                break;
-                        case 4:
-                                device_index = HIDPP::WirelessDevice4;
-                                break;
-                        case 5:
-                                device_index = HIDPP::WirelessDevice5;
-                                break;
-                        case 6:
-                                device_index = HIDPP::WirelessDevice6;
-                                break;
-                        default:
-                                fprintf (stderr, "Invalid device index: %s\n", optarg);
-                                return EXIT_SUCCESS;
-                        }
-                        break;
-                }
-		
-		case 'h':
-		case HelpOpt:
-			fprintf (stderr, usage, argv[0]);
-			return EXIT_SUCCESS;
+	std::vector<Option> options = {
+		DeviceIndexOption (device_index),
+		VerboseOption (),
+	};
+	Option help = HelpOption (argv[0], args, &options);
+	options.push_back (help);
 
-		default:
-			return EXIT_FAILURE;
-		}
-	}
+	int first_arg;
+	if (!Option::processOptions (argc, argv, options, first_arg))
+		return EXIT_FAILURE;
 
-	if (argc-optind < 4) {
+	if (argc-first_arg < 4) {
 		fprintf (stderr, "Too few arguments.\n");
-		fprintf (stderr, usage, argv[0]);
+		fprintf (stderr, "%s", getUsage (argv[0], args, &options).c_str ());
 		return EXIT_FAILURE;
 	}
 
 	char *endptr;
 	
-	const char *path = argv[optind];
-	int address = strtol (argv[optind+1], &endptr, 0);
+	const char *path = argv[first_arg];
+	int address = strtol (argv[first_arg+1], &endptr, 0);
 	if (*endptr != '\0' || address < 0 || address > 255) {
 		fprintf (stderr, "Invalid register address.\n");
 		return EXIT_FAILURE;
 	}
-	std::string type = argv[optind+2];
-	std::string size_string = argv[optind+3];
+	std::string type = argv[first_arg+2];
+	std::string size_string = argv[first_arg+3];
 	std::size_t register_size;
 	if (size_string == "short")
 		register_size = HIDPP::ShortParamLength;
@@ -115,8 +68,8 @@ int main (int argc, char *argv[])
 
 	HIDPP10::Device dev (path, device_index);
 	HIDPP::Parameters params, results;
-	for (int i = 0; optind+4+i < argc; ++i) {
-		int value = strtol (argv[optind+4+i], &endptr, 16);
+	for (int i = 0; first_arg+4+i < argc; ++i) {
+		int value = strtol (argv[first_arg+4+i], &endptr, 16);
 		if (*endptr != '\0' || value < 0 || value > 255) {
 			fprintf (stderr, "Invalid parameter %d value.\n", i);
 			return EXIT_FAILURE;
