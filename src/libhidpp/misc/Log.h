@@ -51,6 +51,8 @@ public:
 	}
 
 private:
+	static const char *levelTag (Level level);
+
 	static Level _level;
 	static std::ofstream _null_stream;
 };
