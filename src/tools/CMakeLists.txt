@@ -14,3 +14,6 @@ target_link_libraries(hidpp10-dump-page hidpp)
 
 add_executable(hidpp10-write-page hidpp10-write-page.cpp)
 target_link_libraries(hidpp10-write-page hidpp)
+
+add_executable(hidpp10-raw-command hidpp10-raw-command.cpp)
+target_link_libraries(hidpp10-raw-command hidpp)
