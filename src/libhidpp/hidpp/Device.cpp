@@ -19,6 +19,7 @@
 #include <hidpp/Device.h>
 
 #include <hidpp20/IRoot.h>
+#include <misc/Log.h>
 
 #include <algorithm>
 
@@ -136,14 +137,22 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 	while (true) {
 		Report response = getReport ();
 
-		if (response.deviceIndex () != _device_index)
+		if (response.deviceIndex () != _device_index) {
+			Log::debug () << __FUNCTION__ << ": "
+				      << "Ignored report with wrong device index"
+				      << std::endl;
 			continue;
+		}
 
 		uint8_t sub_id, address, error_code;
 		if (response.checkErrorMessage10 (&sub_id, &address, &error_code)) {
 			if (sub_id != HIDPP20::IRoot::index ||
-			    address != (HIDPP20::IRoot::Ping << 4 | software_id))
+			    address != (HIDPP20::IRoot::Ping << 4 | software_id)) {
+				Log::debug () << __FUNCTION__ << ": "
+					      << "Ignored error message with wrong subID or address"
+					      << std::endl;
 				continue;
+			}
 			major = 1;
 			minor = 0;
 			return;
@@ -155,6 +164,9 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 			minor = response.params ()[1];
 			return;
 		}
+		Log::debug () << __FUNCTION__ << ": "
+			      << "Ignored report with wrong feature/function/softwareID"
+			      << std::endl;
 	}
 }
 
@@ -174,10 +186,18 @@ Report Device::getReport ()
 		}
 		catch (Report::InvalidReportID e) {
 			// Ignore non-HID++ reports
+			Log::debug () << __FUNCTION__ << ": "
+				      << "Ignored non HID++ report" << std::endl;
+			Log::printBytes (Log::Debug, "Ignored report:",
+					 raw_report.begin (), raw_report.end ());
 			continue;
 		}
 		catch (Report::InvalidReportLength e) {
 			// Ignore non-HID++ reports
+			Log::warning () << __FUNCTION__ << ": "
+					<< "Invalid HID++ report length" << std::endl;
+			Log::printBytes (Log::Warning, "Ignored report:",
+					 raw_report.begin (), raw_report.end ());
 			continue;
 		}
 	}

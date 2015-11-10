@@ -18,6 +18,7 @@
 
 #include <misc/HIDRaw.h>
 #include <misc/SysCallError.h>
+#include <misc/Log.h>
 
 #include <sstream>
 #include <stdexcept>
@@ -100,6 +101,8 @@ int HIDRaw::writeReport (const std::vector<uint8_t> &report)
 	if (ret == -1) {
 		throw SysCallError ("write", errno, __PRETTY_FUNCTION__);
 	}
+	Log::printBytes (Log::DebugReport, "Send HID report:",
+			 report.begin (), report.end ());
 	return ret;
 }
 
@@ -111,6 +114,8 @@ int HIDRaw::readReport (std::vector<uint8_t> &report)
 		throw SysCallError ("read", errno, __PRETTY_FUNCTION__);
 	}
 	report.resize (ret);
+	Log::printBytes (Log::DebugReport, "Recv HID report:",
+			 report.begin (), report.end ());
 	return ret;
 }
 	

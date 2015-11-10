@@ -20,6 +20,7 @@
 
 #include <hidpp20/Device.h>
 #include <hidpp20/IRoot.h>
+#include <misc/Log.h>
 
 using namespace HIDPP20;
 
@@ -27,6 +28,7 @@ IFeatureSet::IFeatureSet (Device *dev):
 	_dev (dev),
 	_index (IRoot (dev).getFeature (ID))
 {
+	Log::printf (Log::Debug, "Feature [0x%04hx] IFeatureSet has index 0x%02hhx\n", ID, _index);
 }
 
 uint8_t IFeatureSet::index () const
