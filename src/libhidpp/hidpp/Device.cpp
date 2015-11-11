@@ -18,6 +18,8 @@
 
 #include <hidpp/Device.h>
 
+#include <hidpp10/Device.h>
+#include <hidpp10/IReceiver.h>
 #include <hidpp20/IRoot.h>
 #include <misc/Log.h>
 
@@ -118,6 +120,20 @@ Device::Device (const std::string &path, DeviceIndex device_index):
 					 LongReportDesc2.end ())) 
 		throw NoHIDPPReportException ();
 	
+	if (device_index >= WirelessDevice1 && device_index < UnifyingReceiver) {
+		HIDPP10::Device ur (path, UnifyingReceiver);
+		HIDPP10::IReceiver ireceiver (&ur);
+		ireceiver.getDeviceInformation (device_index - 1,
+						nullptr,
+						nullptr,
+						&_product_id,
+						nullptr);
+		_name = ireceiver.getDeviceName (device_index - 1);
+	}
+	else {
+		_product_id = HIDRaw::productID ();
+		_name = HIDRaw::name ();
+	}
 }
 
 DeviceIndex Device::deviceIndex () const
@@ -168,6 +184,16 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 			      << "Ignored report with wrong feature/function/softwareID"
 			      << std::endl;
 	}
+}
+
+uint16_t Device::productID () const
+{
+	return _product_id;
+}
+
+std::string Device::name () const
+{
+	return _name;
 }
 
 int Device::sendReport (const Report &report)

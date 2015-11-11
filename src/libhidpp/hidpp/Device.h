@@ -42,11 +42,16 @@ public:
 
 	void getProtocolVersion (unsigned int &major, unsigned int &minor);
 
+	uint16_t productID () const;
+	std::string name () const;
+
 	int sendReport (const Report &report);
 	Report getReport ();
 
 private:
 	DeviceIndex _device_index;
+	uint16_t _product_id;
+	std::string _name;
 };
 
 }
