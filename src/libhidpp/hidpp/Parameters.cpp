@@ -44,6 +44,18 @@ Parameters::Parameters (std::initializer_list<uint8_t> init):
 {
 }
 
+uint8_t &Parameters::operator[] (std::size_t index)
+{
+	if (index + sizeof (uint8_t) > size ())
+		resize (index + sizeof (uint8_t), 0);
+	return std::vector<uint8_t>::operator[] (index);
+}
+
+uint8_t Parameters::operator[] (std::size_t index) const
+{
+	return std::vector<uint8_t>::operator[] (index);
+}
+
 uint16_t Parameters::getWordLE (unsigned int index) const
 {
 	return at (index) + (at (index+1) << 8);
@@ -51,8 +63,8 @@ uint16_t Parameters::getWordLE (unsigned int index) const
 
 void Parameters::setWordLE (unsigned int index, uint16_t value)
 {
-	if (index+1 >= size ())
-		resize (index+2, 0);
+	if (index + sizeof (uint16_t) > size ())
+		resize (index + sizeof (uint16_t), 0);
 	at (index) = value & 0xFF;
 	at (index+1) = value >> 8;
 }
@@ -64,20 +76,41 @@ uint16_t Parameters::getWordBE (unsigned int index) const
 
 void Parameters::setWordBE (unsigned int index, uint16_t value)
 {
-	if (index+1 >= size ())
-		resize (index+2, 0);
+	if (index + sizeof (uint16_t) > size ())
+		resize (index + sizeof (uint16_t), 0);
 	at (index) = value >> 8;
 	at (index+1) = value & 0xFF;
 }
 
-uint8_t &Parameters::operator[] (std::size_t index)
+uint32_t Parameters::getDWordLE (unsigned int index) const
 {
-	if (index >= size ())
-		resize (index+1, 0);
-	return std::vector<uint8_t>::operator[] (index);
+	uint32_t value = 0;
+	for (unsigned int i = 0; i < sizeof (uint32_t); ++i)
+		value += at (index+i) << (i*8);
+	return value;
 }
 
-uint8_t Parameters::operator[] (std::size_t index) const
+void Parameters::setDWordLE (unsigned int index, uint32_t value)
 {
-	return std::vector<uint8_t>::operator[] (index);
+	if (index + sizeof (uint32_t) > size ())
+		resize (index + sizeof (uint32_t), 0);
+	for (unsigned int i = 0; i < sizeof (uint32_t); ++i)
+		at (index) = (value >> (i*8)) & 0xFF;
 }
+
+uint32_t Parameters::getDWordBE (unsigned int index) const
+{
+	uint32_t value = 0;
+	for (unsigned int i = 0; i < sizeof (uint32_t); ++i)
+		value += at (index+i) << ((3-i)*8);
+	return value;
+}
+
+void Parameters::setDWordBE (unsigned int index, uint32_t value)
+{
+	if (index + sizeof (uint32_t) > size ())
+		resize (index + sizeof (uint32_t), 0);
+	for (unsigned int i = 0; i < sizeof (uint32_t); ++i)
+		at (index) = (value >> ((3-i)*8)) & 0xFF;
+}
+

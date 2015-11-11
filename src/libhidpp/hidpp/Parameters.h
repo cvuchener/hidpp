@@ -37,12 +37,18 @@ public:
 	Parameters (const std::vector<uint8_t> &&vector);
 	Parameters (std::initializer_list<uint8_t> init);
 
+	uint8_t &operator[] (std::size_t index);
+	uint8_t operator[] (std::size_t index) const;
+
 	uint16_t getWordLE (unsigned int index) const;
 	void setWordLE (unsigned int index, uint16_t value);
 	uint16_t getWordBE (unsigned int index) const;
 	void setWordBE (unsigned int index, uint16_t value);
-	uint8_t &operator[] (std::size_t index);
-	uint8_t operator[] (std::size_t index) const;
+
+	uint32_t getDWordLE (unsigned int index) const;
+	void setDWordLE (unsigned int index, uint32_t value);
+	uint32_t getDWordBE (unsigned int index) const;
+	void setDWordBE (unsigned int index, uint32_t value);
 };
 
 }
