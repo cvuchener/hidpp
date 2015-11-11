@@ -51,4 +51,5 @@ const char *Log::levelTag (Level level)
 	case DebugReport:
 		return "Debug Report";
 	}
+	return "Invalid";
 }
