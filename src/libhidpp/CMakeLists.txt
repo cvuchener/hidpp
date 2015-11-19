@@ -8,11 +8,14 @@ set(LIBHIDPP_SOURCES
 	misc/ByteArray.cpp
 	hidpp/Device.cpp
 	hidpp/Report.cpp
+	hidpp/DeviceInfo.cpp
 	hidpp10/Device.cpp
 	hidpp10/Error.cpp
 	hidpp10/WriteError.cpp
 	hidpp10/IMemory.cpp
 	hidpp10/IReceiver.cpp
+	hidpp10/Sensor.cpp
+	hidpp10/IResolution.cpp
 	hidpp20/Device.cpp
 	hidpp20/Error.cpp
 	hidpp20/IRoot.cpp

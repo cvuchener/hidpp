@@ -25,3 +25,6 @@ target_link_libraries(hidpp10-write-page hidpp)
 
 add_executable(hidpp10-raw-command hidpp10-raw-command.cpp $<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp10-raw-command hidpp)
+
+add_executable(hidpp10-mouse-resolution hidpp10-mouse-resolution.cpp $<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp10-mouse-resolution hidpp)
