@@ -20,7 +20,7 @@
 #define HIDPP_REPORT_H
 
 #include <hidpp/defs.h>
-#include <hidpp/Parameters.h>
+#include <misc/ByteArray.h>
 
 #include <array>
 #include <vector>
@@ -66,7 +66,7 @@ public:
 	Report (DeviceIndex device_index,
 		uint8_t sub_id,
 		uint8_t address,
-		const Parameters &params);
+		const ByteArray &params);
 
 	/*
 	 * HID++ 2.0 constructors
@@ -80,7 +80,7 @@ public:
 		uint8_t feature_index,
 		unsigned int function,
 		unsigned int sw_id,
-		const Parameters &params);
+		const ByteArray &params);
 
 	Type type () const;
 	DeviceIndex deviceIndex () const;
@@ -113,8 +113,8 @@ public:
 	std::size_t paramLength () const;
 	static std::size_t paramLength (Type type);
 	
-	Parameters &params ();
-	const Parameters &params () const;
+	ByteArray &params ();
+	const ByteArray &params () const;
 
 	/*
 	 * Raw HID report (without the ID)
@@ -130,7 +130,7 @@ public:
 private:
 	static constexpr std::size_t HeaderLength = 4;
 	std::array<uint8_t, HeaderLength> _header;
-	Parameters _params;
+	ByteArray _params;
 };
 
 }

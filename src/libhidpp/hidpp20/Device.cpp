@@ -30,15 +30,15 @@ Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 	// TODO: check version
 }
 
-HIDPP::Parameters Device::callFunction (uint8_t feature_index,
-					unsigned int function,
-					const HIDPP::Parameters &params)
+ByteArray Device::callFunction (uint8_t feature_index,
+				unsigned int function,
+				const ByteArray &params)
 {
 	Log::printf (Log::Debug, "Calling feature 0x%02hhx/function %u\n",
 				 feature_index, function);
 	Log::printBytes (Log::Debug, "Parameters:",
 			 params.begin (), params.end ());
-	HIDPP::Parameters in (params);
+	ByteArray in (params);
 	if (in.size () <= HIDPP::ShortParamLength)
 		in.resize (HIDPP::ShortParamLength, 0);
 	else if (in.size () <= HIDPP::LongParamLength)

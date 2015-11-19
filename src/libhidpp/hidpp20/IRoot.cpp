@@ -31,8 +31,8 @@ uint8_t IRoot::getFeature (uint16_t feature_id,
 			   bool *obsolete,
 			   bool *hidden)
 {
-	HIDPP::Parameters params, results;
-	params.setWordBE (0, feature_id);
+	ByteArray params, results;
+	params.setBE<uint16_t> (0, feature_id);
 	results = _dev->callFunction (index, GetFeature, params);
 	if (obsolete)
 		*obsolete = results[1] & (1<<7);

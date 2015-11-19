@@ -39,7 +39,7 @@ void IReceiver::getDeviceInformation (unsigned int device,
 	if (device >= 16)
 		throw std::out_of_range ("Device index too big");
 
-	HIDPP::Parameters params (HIDPP::ShortParamLength),
+	ByteArray params (HIDPP::ShortParamLength),
 			  results (HIDPP::LongParamLength);
 
 	params[0] = DeviceInformation | (device & 0x0F);
@@ -54,7 +54,7 @@ void IReceiver::getDeviceInformation (unsigned int device,
 	if (report_interval)
 		*report_interval = results[2];
 	if (wpid)
-		*wpid = results.getWordBE (3);
+		*wpid = results.getBE<uint16_t> (3);
 	if (type)
 		*type = static_cast<DeviceType> (results[7]);
 }
@@ -67,7 +67,7 @@ void IReceiver::getDeviceExtendedInformation (unsigned int device,
 	if (device >= 16)
 		throw std::out_of_range ("Device index too big");
 
-	HIDPP::Parameters params (HIDPP::ShortParamLength),
+	ByteArray params (HIDPP::ShortParamLength),
 			  results (HIDPP::LongParamLength);
 
 	params[0] = ExtendedDeviceInformation | (device & 0x0F);
@@ -78,9 +78,9 @@ void IReceiver::getDeviceExtendedInformation (unsigned int device,
 		throw std::runtime_error ("Invalid DevicePairingInfo type");
 
 	if (serial)
-		*serial = results.getDWordBE (1);
+		*serial = results.getBE<uint32_t> (1);
 	if (report_types)
-		*report_types = results.getDWordBE (5);
+		*report_types = results.getBE<uint32_t> (5);
 	if (ps_loc)
 		*ps_loc = static_cast<PowerSwitchLocation> (results[9] & 0x0F);
 }
@@ -91,7 +91,7 @@ std::string IReceiver::getDeviceName (unsigned int device)
 	if (device >= 16)
 		throw std::out_of_range ("Device index too big");
 
-	HIDPP::Parameters params (HIDPP::ShortParamLength),
+	ByteArray params (HIDPP::ShortParamLength),
 			  results (HIDPP::LongParamLength);
 
 	params[0] = DeviceName | (device & 0x0F);

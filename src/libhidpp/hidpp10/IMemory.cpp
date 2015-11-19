@@ -31,10 +31,10 @@ IMemory::IMemory (Device *dev):
 int IMemory::readSome (uint8_t page, uint8_t offset,
 		       uint8_t *buffer, std::size_t maxlen)
 {
-	HIDPP::Parameters params (HIDPP::ShortParamLength);
+	ByteArray params (HIDPP::ShortParamLength);
 	params[0] = page;
 	params[1] = offset;
-	HIDPP::Parameters results (HIDPP::LongParamLength);
+	ByteArray results (HIDPP::LongParamLength);
 	_dev->getRegister (MemoryRead, &params, results);
 	std::size_t len = std::min (HIDPP::LongParamLength, maxlen);
 	std::copy (results.begin (), results.begin () + len, buffer);
@@ -73,14 +73,14 @@ void IMemory::writeMem (uint8_t page, uint8_t offset,
 	uint8_t seq_num = 0;
 	while (sent < data.size ()) {
 		uint8_t sub_id;
-		HIDPP::Parameters params (HIDPP::LongParamLength);
+		ByteArray params (HIDPP::LongParamLength);
 		if (first) {
 			sub_id = SendDataBeginAck;
 			/* First packet header */
 			params[0] = 0x01; // Unknown meaning
 			params[1] = page;
 			params[2] = offset;
-			params.setWordBE(5, data.size ());
+			params.setBE<uint16_t> (5, data.size ());
 			/* Start of data */
 			if (data.size () < FirstPacketDataLength) {
 				std::copy (data.begin (), data.end (),
@@ -127,14 +127,14 @@ void IMemory::writePage (uint8_t page,
 
 void IMemory::resetSequenceNumber ()
 {
-	HIDPP::Parameters params (HIDPP::ShortParamLength);
+	ByteArray params (HIDPP::ShortParamLength);
 	params[0] = 1;
 	_dev->setRegister (ResetSeqNum, params, nullptr);
 }
 
 void IMemory::fillPage (uint8_t page)
 {
-	HIDPP::Parameters params (HIDPP::LongParamLength);
+	ByteArray params (HIDPP::LongParamLength);
 	params[0] = Fill;
 	params[6] = page;
 	_dev->setRegister (MemoryOperation, params, nullptr);

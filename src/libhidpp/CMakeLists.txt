@@ -5,8 +5,8 @@ set(LIBHIDPP_SOURCES
 	misc/HIDRaw.cpp
 	misc/SysCallError.cpp
 	misc/Log.cpp
+	misc/ByteArray.cpp
 	hidpp/Device.cpp
-	hidpp/Parameters.cpp
 	hidpp/Report.cpp
 	hidpp10/Device.cpp
 	hidpp10/Error.cpp

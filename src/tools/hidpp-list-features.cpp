@@ -32,7 +32,7 @@
 
 void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t address, bool test_write = false)
 {
-	HIDPP::Parameters values (register_size);
+	ByteArray values (register_size);
 	bool readable = false;
 	try {
 		dev->getRegister (address, nullptr, values);
@@ -51,12 +51,12 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 	}
 	if (test_write) {
 		try {
-			HIDPP::Parameters results;
+			ByteArray results;
 			if (readable) {
 				dev->setRegister (address, values, &results);
 			}
 			else {
-				HIDPP::Parameters params (register_size);
+				ByteArray params (register_size);
 				dev->setRegister (address, params, &results);
 			}
 			printf ("Register 0x%02hhx write %2lu:", address, register_size);

@@ -29,9 +29,9 @@ public:
 	static unsigned int softwareID;
 	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::WiredDevice);
 
-	HIDPP::Parameters callFunction (uint8_t feature_index,
-					unsigned int function,
-					const HIDPP::Parameters &params);
+	ByteArray callFunction (uint8_t feature_index,
+				unsigned int function,
+				const ByteArray &params);
 };
 
 }

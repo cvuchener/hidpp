@@ -31,10 +31,10 @@ Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 
 template<uint8_t sub_id, std::size_t params_length, std::size_t results_length>
 void Device::accessRegister (uint8_t address,
-			     const HIDPP::Parameters *params,
-			     HIDPP::Parameters *results)
+			     const ByteArray *params,
+			     ByteArray *results)
 {
-	HIDPP::Parameters in;
+	ByteArray in;
 	if (params) {
 		in = *params;
 		in.resize (params_length, 0);
@@ -80,8 +80,8 @@ void Device::accessRegister (uint8_t address,
 }
 
 void Device::setRegister (uint8_t address,
-			  const HIDPP::Parameters &params,
-			  HIDPP::Parameters *results)
+			  const ByteArray &params,
+			  ByteArray *results)
 {
 	if (params.size () <= HIDPP::ShortParamLength) {
 		Log::printf (Log::Debug, "Setting short register 0x%02hhx\n", address);
@@ -118,8 +118,8 @@ void Device::setRegister (uint8_t address,
 		       
 
 void Device::getRegister (uint8_t address,
-			  const HIDPP::Parameters *params,
-			  HIDPP::Parameters &results)
+			  const ByteArray *params,
+			  ByteArray &results)
 {
 	if (results.size () <= HIDPP::ShortParamLength) {
 		Log::printf (Log::Debug, "Getting short register 0x%02hhx\n", address);
@@ -154,7 +154,7 @@ void Device::getRegister (uint8_t address,
 }
 
 void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
-			     HIDPP::Parameters &params,
+			     ByteArray &params,
 			     bool wait_for_ack)
 {
 	Log::printf (Log::Debug, "Sending data packet %hhu\n", seq_num);

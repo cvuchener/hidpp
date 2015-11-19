@@ -24,6 +24,9 @@
 
 namespace HIDPP
 {
+	constexpr std::size_t ShortParamLength = 3;
+	constexpr std::size_t LongParamLength = 16;
+
 	enum DeviceIndex: uint8_t {
 		WiredDevice = 0,
 		WirelessDevice1 = 1,

@@ -67,7 +67,7 @@ int main (int argc, char *argv[])
 	}
 
 	HIDPP10::Device dev (path, device_index);
-	HIDPP::Parameters params, results;
+	ByteArray params, results;
 	for (int i = 0; first_arg+4+i < argc; ++i) {
 		int value = strtol (argv[first_arg+4+i], &endptr, 16);
 		if (*endptr != '\0' || value < 0 || value > 255) {
