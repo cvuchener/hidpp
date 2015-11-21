@@ -21,7 +21,8 @@
 #include <sstream>
 #include <cstring>
 
-SysCallError::SysCallError (const char *what, int err, const char *where)
+SysCallError::SysCallError (const char *what, int err, const char *where):
+	_error (err)
 {
 	std::stringstream ss;
 	ss << what << ": " << strerror (err);
@@ -34,3 +35,9 @@ const char *SysCallError::what () const noexcept
 {
 	return _error_string.c_str ();
 }
+
+int SysCallError::error () const noexcept
+{
+	return _error;
+}
+

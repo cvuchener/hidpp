@@ -28,8 +28,10 @@ public:
 	SysCallError (const char *what, int err, const char *where = nullptr);
 
 	virtual const char *what () const noexcept;
+	int error () const noexcept;
 
 private:
+	int _error;
 	std::string _error_string;
 };
 

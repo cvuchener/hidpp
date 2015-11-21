@@ -71,6 +71,12 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 					address, register_size, e.what (), e.errorCode ());
 			}
 		}
+		catch (SysCallError e) {
+			/* G5 does not support long writes and throw EPIPE */
+			if (e.error () != EPIPE) {
+				throw e;
+			}
+		}
 	}
 }
 
