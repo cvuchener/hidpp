@@ -13,6 +13,7 @@ set(LIBHIDPP_SOURCES
 	hidpp10/WriteError.cpp
 	hidpp10/IMemory.cpp
 	hidpp10/IReceiver.cpp
+	hidpp10/IIndividualFeatures.cpp
 	hidpp20/Device.cpp
 	hidpp20/Error.cpp
 	hidpp20/IRoot.cpp

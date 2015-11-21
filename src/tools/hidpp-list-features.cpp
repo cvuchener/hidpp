@@ -21,6 +21,7 @@
 #include <hidpp/Device.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/Error.h>
+#include <hidpp10/IIndividualFeatures.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/IFeatureSet.h>
 #include <misc/SysCallError.h>
@@ -141,6 +142,43 @@ int main (int argc, char *argv[])
 		for (unsigned int address = 0; address < 256; ++address) {
 			testRegister (&dev, HIDPP::ShortParamLength, static_cast<uint8_t> (address), do_write_tests);
 			testRegister (&dev, HIDPP::LongParamLength, static_cast<uint8_t> (address), do_write_tests);
+		}
+		if (do_write_tests) {
+			try {
+				HIDPP10::IIndividualFeatures iif (&dev);
+				unsigned int old_flags = iif.flags ();
+				iif.setFlags (0x00FFFFFF);
+				unsigned int flags = iif.flags ();
+				iif.setFlags (old_flags);
+				printf ("Individual features: %06x\n", flags);
+				if (flags & HIDPP10::IIndividualFeatures::SpecialButtonFunction) {
+					printf (" - Special Button Function\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::EnhancedKeyUsage) {
+					printf (" - Enhanced Key Usage\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::FastForwardRewind) {
+					printf (" - Fast Forward/Rewind\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::ScrollingAcceleration) {
+					printf (" - Scrolling Acceleration\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::ButtonsControlResolution) {
+					printf (" - Buttons Control Resolution\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::InhibitLockKeySound) {
+					printf (" - Inhibit Lock KeyS ound\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::MXAir3DEngine) {
+					printf (" - 3D Engine\n");
+				}
+				if (flags & HIDPP10::IIndividualFeatures::LEDControl) {
+					printf (" - LED Control\n");
+				}
+			}
+			catch (HIDPP10::Error e) {
+				printf ("Individual features: %s\n", e.what ());
+			}
 		}
 	}
 	/*
