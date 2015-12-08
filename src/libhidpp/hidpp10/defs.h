@@ -59,6 +59,7 @@ namespace HIDPP10
 	};
 
 	constexpr std::size_t PageSize = 512;
+	constexpr std::size_t RAMSize = 400;
 }
 
 #endif

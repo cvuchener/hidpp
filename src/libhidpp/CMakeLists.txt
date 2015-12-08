@@ -18,6 +18,7 @@ set(LIBHIDPP_SOURCES
 	hidpp10/IIndividualFeatures.cpp
 	hidpp10/Sensor.cpp
 	hidpp10/IResolution.cpp
+	hidpp10/IProfile.cpp
 	hidpp10/MemoryMapping.cpp
 	hidpp10/ProfileDirectory.cpp
 	hidpp10/Profile.cpp
