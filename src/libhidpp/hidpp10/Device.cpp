@@ -158,6 +158,7 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 			     bool wait_for_ack)
 {
 	Log::printf (Log::Debug, "Sending data packet %hhu\n", seq_num);
+	Log::printBytes (Log::Debug, "Data page packet", params.begin (), params.end ());
 
 	HIDPP::Report packet (deviceIndex (),
 			      sub_id,

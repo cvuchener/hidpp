@@ -16,38 +16,26 @@
  *
  */
 
-#ifndef HIDPP10_DEVICE_INFO_H
-#define HIDPP10_DEVICE_INFO_H
+#ifndef PROFILE_XML_H
+#define PROFILE_XML_H
 
-#include <hidpp/DeviceInfo.h>
-
-#include <hidpp10/Sensor.h>
-#include <hidpp10/IResolution.h>
 #include <hidpp10/Profile.h>
+#include <hidpp10/Macro.h>
+#include <tinyxml2.h>
+#include <functional>
 
-namespace HIDPP10
-{
-	struct MouseInfo: HIDPP::DeviceInfo
-	{
-		const Sensor *sensor;
-		IResolutionType iresolution_type;
-		ProfileType profile_type;
+typedef std::function<void (const HIDPP10::Profile *,
+			    const std::vector<HIDPP10::Macro> &macros,
+			    tinyxml2::XMLNode *)> ProfileToXML;
+typedef std::function<void (const tinyxml2::XMLNode *,
+			    HIDPP10::Profile *,
+			    std::vector<HIDPP10::Macro> &macros)> XMLToProfile;
 
-		MouseInfo (const Sensor *sensor,
-			   IResolutionType iresolution_type,
-			   ProfileType profile_type):
-			HIDPP::DeviceInfo (HIDPP::DeviceInfo::Device),
-			sensor (sensor),
-			iresolution_type (iresolution_type),
-			profile_type (profile_type)
-		{
-		}
-	};
-
-	inline const MouseInfo *getMouseInfo (uint16_t product_id)
-	{	
-		return dynamic_cast<const MouseInfo *> (HIDPP::getDeviceInfo (product_id));
-	}
-}
+void G500ProfileToXML (const HIDPP10::Profile *profile,
+		       const std::vector<HIDPP10::Macro> &macros,
+		       tinyxml2::XMLNode *node);
+void XMLToG500Profile (const tinyxml2::XMLNode *node,
+		       HIDPP10::Profile *profile,
+		       std::vector<HIDPP10::Macro> &macros);
 
 #endif

@@ -32,31 +32,33 @@ public:
 	ByteArray (std::initializer_list<uint8_t> init);
 
 	uint8_t &operator[] (std::size_t index);
-	uint8_t operator[] (std::size_t index) const;
+	const uint8_t &operator[] (std::size_t index) const;
+
+	template <typename T> static T getLE (const_iterator iterator);
+	template <typename T> static void setLE (iterator iterator, T value);
+	template <typename T> static T getBE (const_iterator iterator);
+	template <typename T> static void setBE (iterator iterator, T value);
 
 	template <typename T> T getLE (unsigned int index) const;
 	template <typename T> void setLE (unsigned int index, T value);
 	template <typename T> T getBE (unsigned int index) const;
 	template <typename T> void setBE (unsigned int index, T value);
-
 };
 
-extern template uint16_t ByteArray::getLE (unsigned int index) const;
-extern template void ByteArray::setLE (unsigned int index, uint16_t value);
-extern template uint16_t ByteArray::getBE (unsigned int index) const;
-extern template void ByteArray::setBE (unsigned int index, uint16_t value);
-extern template uint32_t ByteArray::getLE (unsigned int index) const;
-extern template void ByteArray::setLE (unsigned int index, uint32_t value);
-extern template uint32_t ByteArray::getBE (unsigned int index) const;
-extern template void ByteArray::setBE (unsigned int index, uint32_t value);
-extern template int16_t ByteArray::getLE (unsigned int index) const;
-extern template void ByteArray::setLE (unsigned int index, int16_t value);
-extern template int16_t ByteArray::getBE (unsigned int index) const;
-extern template void ByteArray::setBE (unsigned int index, int16_t value);
-extern template int32_t ByteArray::getLE (unsigned int index) const;
-extern template void ByteArray::setLE (unsigned int index, int32_t value);
-extern template int32_t ByteArray::getBE (unsigned int index) const;
-extern template void ByteArray::setBE (unsigned int index, int32_t value);
+#define EXTERN_ENDIAN_TEMPLATES(T) \
+extern template T ByteArray::getLE (ByteArray::const_iterator); \
+extern template void ByteArray::setLE (ByteArray::iterator, T value); \
+extern template T ByteArray::getBE (ByteArray::const_iterator); \
+extern template void ByteArray::setBE (ByteArray::iterator, T value); \
+extern template T ByteArray::getLE (unsigned int index) const; \
+extern template void ByteArray::setLE (unsigned int index, T value); \
+extern template T ByteArray::getBE (unsigned int index) const; \
+extern template void ByteArray::setBE (unsigned int index, T value);
+
+EXTERN_ENDIAN_TEMPLATES(uint16_t)
+EXTERN_ENDIAN_TEMPLATES(uint32_t)
+EXTERN_ENDIAN_TEMPLATES(int16_t)
+EXTERN_ENDIAN_TEMPLATES(int32_t)
 
 #endif
 

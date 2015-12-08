@@ -16,52 +16,34 @@
  *
  */
 
-#ifndef HIDPP10_IMEMORY_H
-#define HIDPP10_IMEMORY_H
+#ifndef HIDPP10_PROFILE_DIRECTORY_H
+#define HIDPP10_PROFILE_DIRECTORY_H
 
-#include <vector>
 #include <cstdint>
-
-#include <hidpp10/defs.h>
+#include <vector>
 
 namespace HIDPP10
 {
 
-class Device;
-
-struct Address {
+struct ProfileEntry
+{
 	uint8_t page;
 	uint8_t offset;
-
-	bool operator< (const Address &other) const;
+	uint8_t leds;
 };
 
-class IMemory
+class MemoryMapping;
+
+class ProfileDirectory: public std::vector<ProfileEntry>
 {
 public:
-	enum MemoryOp: uint8_t {
-		Fill = 2,
-		Copy = 3,
-	};
+	ProfileDirectory ();
+	ProfileDirectory (MemoryMapping *mem);
 
-	IMemory (Device *dev);
-
-	int readSome (uint8_t page, uint8_t offset, uint8_t *buffer, std::size_t maxlen);
-	void readMem (uint8_t page, uint8_t offset, std::vector<uint8_t> &data);
-
-
-	void writeMem (uint8_t page, uint8_t offset,
-		       const std::vector<uint8_t> &data);
-	void writePage (uint8_t page,
-			const std::vector<uint8_t> &data);
-
-	void resetSequenceNumber ();
-	void fillPage (uint8_t page);
-	
-private:
-	Device *_dev;
+	void write (MemoryMapping *mem) const;
 };
 
 }
 
 #endif
+

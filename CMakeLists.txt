@@ -16,5 +16,8 @@ else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(TINYXML2 tinyxml2)
+
 add_subdirectory(src/libhidpp)
 add_subdirectory(src/tools)

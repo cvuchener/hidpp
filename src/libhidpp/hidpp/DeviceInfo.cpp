@@ -29,32 +29,38 @@ DeviceInfo ReceiverInfo (
 
 HIDPP10::MouseInfo G5Info (
 	&HIDPP10::ListSensor::S6006,
-	HIDPP10::IResolutionType0
+	HIDPP10::IResolutionType0,
+	HIDPP10::NoProfile
 );
 
 HIDPP10::MouseInfo G9Info = {
 	&HIDPP10::ListSensor::S6090,
-	HIDPP10::IResolutionType0
+	HIDPP10::IResolutionType0,
+	HIDPP10::G9ProfileType
 };
 
 HIDPP10::MouseInfo G9xInfo = {
 	&HIDPP10::RangeSensor::S9500,
-	HIDPP10::IResolutionType3
+	HIDPP10::IResolutionType3,
+	HIDPP10::G500ProfileType
 };
 
 HIDPP10::MouseInfo G500Info = {
 	&HIDPP10::RangeSensor::S9500,
-	HIDPP10::IResolutionType3
+	HIDPP10::IResolutionType3,
+	HIDPP10::G500ProfileType
 };
 
 HIDPP10::MouseInfo G500sInfo = {
 	&HIDPP10::RangeSensor::S9808,
-	HIDPP10::IResolutionType3
+	HIDPP10::IResolutionType3,
+	HIDPP10::G500ProfileType
 };
 
 HIDPP10::MouseInfo G700sInfo = {
 	&HIDPP10::RangeSensor::S9808,
-	HIDPP10::IResolutionType3
+	HIDPP10::IResolutionType3,
+	HIDPP10::G700sProfileType
 };
 
 const DeviceInfo *HIDPP::getDeviceInfo (uint16_t product_id)
