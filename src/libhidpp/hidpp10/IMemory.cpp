@@ -23,6 +23,12 @@
 
 using namespace HIDPP10;
 
+bool Address::operator< (const Address &other) const
+{
+	return page < other.page ||
+		(page == other.page && offset < other.offset);
+}
+
 IMemory::IMemory (Device *dev):
 	_dev (dev)
 {

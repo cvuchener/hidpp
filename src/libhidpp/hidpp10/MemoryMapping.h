@@ -16,52 +16,48 @@
  *
  */
 
-#ifndef HIDPP10_IMEMORY_H
-#define HIDPP10_IMEMORY_H
+#ifndef HIDPP10_MEMORY_MAPPING_H
+#define HIDPP10_MEMORY_MAPPING_H
 
-#include <vector>
-#include <cstdint>
-
-#include <hidpp10/defs.h>
+#include <hidpp10/IMemory.h>
+#include <misc/ByteArray.h>
 
 namespace HIDPP10
 {
 
 class Device;
 
-struct Address {
-	uint8_t page;
-	uint8_t offset;
-
-	bool operator< (const Address &other) const;
-};
-
-class IMemory
+class MemoryMapping
 {
 public:
-	enum MemoryOp: uint8_t {
-		Fill = 2,
-		Copy = 3,
-	};
+	MemoryMapping (Device *dev);
 
-	IMemory (Device *dev);
+	const ByteArray &getReadOnlyPage (unsigned int page);
+	/**
+	 * Get the page \p page and mark it as "modified".
+	 */
+	ByteArray &getWritablePage (unsigned int page);
 
-	int readSome (uint8_t page, uint8_t offset, uint8_t *buffer, std::size_t maxlen);
-	void readMem (uint8_t page, uint8_t offset, std::vector<uint8_t> &data);
+	/**
+	 * Write all modified pages to the device memory except for page 0
+	 * (page 0 cannot be written as a whole page).
+	 */
+	void sync ();
 
-
-	void writeMem (uint8_t page, uint8_t offset,
-		       const std::vector<uint8_t> &data);
-	void writePage (uint8_t page,
-			const std::vector<uint8_t> &data);
-
-	void resetSequenceNumber ();
-	void fillPage (uint8_t page);
-	
 private:
-	Device *_dev;
+	void getPage (unsigned int page);
+
+	IMemory _imem;
+	enum PageState
+	{
+		Absent,
+		Synced,
+		Modified,
+	};
+	std::vector<std::pair<PageState, ByteArray>> _pages;
 };
 
 }
 
 #endif
+

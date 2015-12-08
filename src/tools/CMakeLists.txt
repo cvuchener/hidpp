@@ -25,3 +25,22 @@ target_link_libraries(hidpp10-write-page hidpp)
 
 add_executable(hidpp10-raw-command hidpp10-raw-command.cpp $<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp10-raw-command hidpp)
+
+add_executable(hidpp10-mouse-resolution hidpp10-mouse-resolution.cpp $<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp10-mouse-resolution hidpp)
+
+if(TINYXML2_FOUND)
+	add_library(profile OBJECT
+		profile/ProfileXML.cpp
+		profile/MacroText.cpp)
+	
+	add_executable(hidpp10-read-profiles hidpp10-read-profiles.cpp $<TARGET_OBJECTS:profile> $<TARGET_OBJECTS:common>)
+	target_include_directories(hidpp10-read-profiles PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
+	target_link_libraries(hidpp10-read-profiles hidpp ${TINYXML2_LIBRARIES})
+	
+	add_executable(hidpp10-write-profiles hidpp10-write-profiles.cpp $<TARGET_OBJECTS:profile> $<TARGET_OBJECTS:common>)
+	target_include_directories(hidpp10-write-profiles PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
+	target_link_libraries(hidpp10-write-profiles hidpp ${TINYXML2_LIBRARIES})
+else()
+	message("hidpp10-read-profiles require tinyxml2.")
+endif()

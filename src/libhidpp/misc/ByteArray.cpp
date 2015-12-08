@@ -49,18 +49,47 @@ uint8_t &ByteArray::operator[] (std::size_t index)
 	return std::vector<uint8_t>::operator[] (index);
 }
 
-uint8_t ByteArray::operator[] (std::size_t index) const
+const uint8_t &ByteArray::operator[] (std::size_t index) const
 {
 	return std::vector<uint8_t>::operator[] (index);
+}
+
+template <typename T>
+T ByteArray::getLE (const_iterator iterator)
+{
+	T value = 0;
+	for (unsigned int i = 0; i < sizeof (T); ++i)
+		value |= *(iterator+i) << (i*8);
+	return value;
+}
+
+template <typename T>
+void ByteArray::setLE (iterator iterator, T value)
+{
+	for (unsigned int i = 0; i < sizeof (T); ++i)
+		*(iterator+i) = (value >> (i*8)) & 0xFF;
+}
+
+template <typename T>
+T ByteArray::getBE (const_iterator iterator)
+{
+	T value = 0;
+	for (unsigned int i = 0; i < sizeof (T); ++i)
+		value |= *(iterator+i) << ((sizeof(T)-1-i)*8);
+	return value;
+}
+
+template <typename T>
+void ByteArray::setBE (iterator iterator, T value)
+{
+	for (unsigned int i = 0; i < sizeof (T); ++i)
+		*(iterator+i) = (value >> ((sizeof(T)-1-i)*8)) & 0xFF;
 }
 
 template<typename T>
 T ByteArray::getLE (unsigned int index) const
 {
-	T value = 0;
-	for (unsigned int i = 0; i < sizeof (T); ++i)
-		value |= at (index+i) << (i*8);
-	return value;
+	return getLE<T> (begin () + index);
 }
 
 template<typename T>
@@ -68,17 +97,13 @@ void ByteArray::setLE (unsigned int index, T value)
 {
 	if (index + sizeof (T) > size ())
 		resize (index + sizeof (T), 0);
-	for (unsigned int i = 0; i < sizeof (T); ++i)
-		at (index+i) = (value >> (i*8)) & 0xFF;
+	setLE<T> (begin () + index, value);
 }
 
 template<typename T>
 T ByteArray::getBE (unsigned int index) const
 {
-	T value = 0;
-	for (unsigned int i = 0; i < sizeof (T); ++i)
-		value |= at (index+i) << ((sizeof(T)-1-i)*8);
-	return value;
+	return getBE<T> (begin () + index);
 }
 
 template<typename T>
@@ -86,24 +111,22 @@ void ByteArray::setBE (unsigned int index, T value)
 {
 	if (index + sizeof (T) > size ())
 		resize (index + sizeof (T), 0);
-	for (unsigned int i = 0; i < sizeof (T); ++i)
-		at (index+i) = (value >> ((sizeof(T)-1-i)*8)) & 0xFF;
+	setBE<T> (begin () + index, value);
 }
 
-template uint16_t ByteArray::getLE (unsigned int index) const;
-template void ByteArray::setLE (unsigned int index, uint16_t value);
-template uint16_t ByteArray::getBE (unsigned int index) const;
-template void ByteArray::setBE (unsigned int index, uint16_t value);
-template uint32_t ByteArray::getLE (unsigned int index) const;
-template void ByteArray::setLE (unsigned int index, uint32_t value);
-template uint32_t ByteArray::getBE (unsigned int index) const;
-template void ByteArray::setBE (unsigned int index, uint32_t value);
-template int16_t ByteArray::getLE (unsigned int index) const;
-template void ByteArray::setLE (unsigned int index, int16_t value);
-template int16_t ByteArray::getBE (unsigned int index) const;
-template void ByteArray::setBE (unsigned int index, int16_t value);
-template int32_t ByteArray::getLE (unsigned int index) const;
-template void ByteArray::setLE (unsigned int index, int32_t value);
-template int32_t ByteArray::getBE (unsigned int index) const;
-template void ByteArray::setBE (unsigned int index, int32_t value);
+#define INSTANTIATE_ENDIAN_FUNC(T) \
+template T ByteArray::getLE (ByteArray::const_iterator); \
+template void ByteArray::setLE (ByteArray::iterator, T value);\
+template T ByteArray::getBE (ByteArray::const_iterator); \
+template void ByteArray::setBE (ByteArray::iterator, T value);\
+template T ByteArray::getLE (unsigned int index) const; \
+template void ByteArray::setLE (unsigned int index, T value); \
+template T ByteArray::getBE (unsigned int index) const; \
+template void ByteArray::setBE (unsigned int index, T value);
+
+INSTANTIATE_ENDIAN_FUNC(uint16_t)
+INSTANTIATE_ENDIAN_FUNC(uint32_t)
+INSTANTIATE_ENDIAN_FUNC(int16_t)
+INSTANTIATE_ENDIAN_FUNC(int32_t)
+
 

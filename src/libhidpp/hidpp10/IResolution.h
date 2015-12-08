@@ -16,50 +16,47 @@
  *
  */
 
-#ifndef HIDPP10_IMEMORY_H
-#define HIDPP10_IMEMORY_H
-
-#include <vector>
-#include <cstdint>
-
-#include <hidpp10/defs.h>
+#ifndef HIDPP10_IRESOLUTION_H
+#define HIDPP10_IRESOLUTION_H
 
 namespace HIDPP10
 {
 
-class Device;
-
-struct Address {
-	uint8_t page;
-	uint8_t offset;
-
-	bool operator< (const Address &other) const;
+enum IResolutionType {
+	IResolutionType0,
+	IResolutionType3,
 };
 
-class IMemory
+class Device;
+class Sensor;
+
+class IResolution0
 {
 public:
-	enum MemoryOp: uint8_t {
-		Fill = 2,
-		Copy = 3,
-	};
+	IResolution0 (Device *dev, const Sensor *sensor);
 
-	IMemory (Device *dev);
+	unsigned int getCurrentResolution ();
+	void setCurrentResolution (unsigned int dpi);
 
-	int readSome (uint8_t page, uint8_t offset, uint8_t *buffer, std::size_t maxlen);
-	void readMem (uint8_t page, uint8_t offset, std::vector<uint8_t> &data);
-
-
-	void writeMem (uint8_t page, uint8_t offset,
-		       const std::vector<uint8_t> &data);
-	void writePage (uint8_t page,
-			const std::vector<uint8_t> &data);
-
-	void resetSequenceNumber ();
-	void fillPage (uint8_t page);
-	
 private:
 	Device *_dev;
+	const Sensor *_sensor;
+};
+
+class IResolution3
+{
+public:
+	IResolution3 (Device *dev, const Sensor *sensor);
+
+	void getCurrentResolution (unsigned int &x_dpi, unsigned int &y_dpi);
+	void setCurrentResolution (unsigned int x_dpi, unsigned int y_dpi);
+
+	bool getAngleSnap ();
+	void setAngleSnap (bool angle_snap);
+
+private:
+	Device *_dev;
+	const Sensor *_sensor;
 };
 
 }

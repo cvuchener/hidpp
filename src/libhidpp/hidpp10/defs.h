@@ -36,13 +36,13 @@ namespace HIDPP10
 		SendDataContinueAck = 0x93,
 	};
 
-	enum Address: uint8_t {
+	enum RegisterAddress: uint8_t {
 		EnableNotifications = 0x00,
 		EnableIndividualFeatures = 0x01,
 		ConnectionState = 0x02,
 		BatteryStatus = 0x07,
 		BatteryMileage = 0x0D,
-		Profile = 0x0F,
+		CurrentProfile = 0x0F,
 		LEDStatus = 0x51,
 		LEDIntensity = 0x54,
 		LEDColor = 0x57,
@@ -57,6 +57,8 @@ namespace HIDPP10
 		DevicePairingInfo = 0xB5,
 		FirmwareInfo = 0xF1,
 	};
+
+	constexpr std::size_t PageSize = 512;
 }
 
 #endif
