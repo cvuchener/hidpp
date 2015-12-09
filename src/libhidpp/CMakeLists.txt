@@ -11,6 +11,7 @@ set(LIBHIDPP_SOURCES
 	hidpp/Report.cpp
 	hidpp/DeviceInfo.cpp
 	hidpp10/Device.cpp
+	hidpp10/Address.cpp
 	hidpp10/Error.cpp
 	hidpp10/WriteError.cpp
 	hidpp10/IMemory.cpp

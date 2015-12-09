@@ -152,21 +152,15 @@ void Profile::Button::setConsumerControl (uint16_t code)
 	_params.consumer_control = code;
 }
 
-uint8_t Profile::Button::macroPage () const
+Address Profile::Button::macro () const
 {
-	return _params.macro.page;
+	return _params.macro;
 }
 
-uint8_t Profile::Button::macroOffset () const
-{
-	return _params.macro.offset;
-}
-
-void Profile::Button::setMacro (uint8_t page, uint8_t offset)
+void Profile::Button::setMacro (Address address)
 {
 	_type = Macro;
-	_params.macro.page = page;
-	_params.macro.offset = offset;
+	_params.macro = address;
 }
 
 void Profile::Button::disable ()

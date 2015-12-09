@@ -23,23 +23,16 @@
 
 using namespace HIDPP10;
 
-bool Address::operator< (const Address &other) const
-{
-	return page < other.page ||
-		(page == other.page && offset < other.offset);
-}
-
 IMemory::IMemory (Device *dev):
 	_dev (dev)
 {
 }
 
-int IMemory::readSome (uint8_t page, uint8_t offset,
-		       uint8_t *buffer, std::size_t maxlen)
+int IMemory::readSome (Address address, uint8_t *buffer, std::size_t maxlen)
 {
 	ByteArray params (HIDPP::ShortParamLength);
-	params[0] = page;
-	params[1] = offset;
+	params[0] = address.page;
+	params[1] = address.offset;
 	ByteArray results (HIDPP::LongParamLength);
 	_dev->getRegister (MemoryRead, &params, results);
 	std::size_t len = std::min (HIDPP::LongParamLength, maxlen);
@@ -47,20 +40,17 @@ int IMemory::readSome (uint8_t page, uint8_t offset,
 	return len;
 }
 
-void IMemory::readMem (uint8_t page, uint8_t offset,
-		       std::vector<uint8_t> &data)
+void IMemory::readMem (Address address, std::vector<uint8_t> &data)
 {
 	std::size_t read = 0;
 	while (read < data.size ()) {
-		std::size_t len = readSome (page, offset,
-					    &data[read], data.size () - read);
-		offset += len/2;
+		std::size_t len = readSome (address, &data[read], data.size () - read);
+		address.offset += len/2;
 		read += len;
 	}
 }
 
-void IMemory::writeMem (uint8_t page, uint8_t offset,
-			const std::vector<uint8_t> &data)
+void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 {
 	static constexpr std::size_t HeaderLength = 9;
 	static constexpr std::size_t FirstPacketDataLength =
@@ -84,8 +74,8 @@ void IMemory::writeMem (uint8_t page, uint8_t offset,
 			sub_id = SendDataBeginAck;
 			/* First packet header */
 			params[0] = 0x01; // Unknown meaning
-			params[1] = page;
-			params[2] = offset;
+			params[1] = address.page;
+			params[2] = address.offset;
 			params.setBE<uint16_t> (5, data.size ());
 			/* Start of data */
 			if (data.size () < FirstPacketDataLength) {
@@ -121,14 +111,13 @@ void IMemory::writeMem (uint8_t page, uint8_t offset,
 	}
 }
 
-void IMemory::writePage (uint8_t page,
-			 const std::vector<uint8_t> &data)
+void IMemory::writePage (uint8_t page, const std::vector<uint8_t> &data)
 {
 	if (data.size () > 512)
 		throw std::logic_error ("page too big");
 	
 	fillPage (page);
-	writeMem (page, 0, data);	
+	writeMem ({page, 0}, data);
 }
 
 void IMemory::resetSequenceNumber ()

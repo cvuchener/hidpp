@@ -121,7 +121,7 @@ void XMLToButtons (const XMLNode *node, Profile *profile, std::vector<Macro> &ma
 
 		std::string name = element->Name ();
 		if (name == "macro") {
-			button.setMacro (0, 0);
+			button.setMacro (Address ());
 			macros[i] = textToMacro (element->GetText ());
 		}
 		else if (name == "mouse-button") {

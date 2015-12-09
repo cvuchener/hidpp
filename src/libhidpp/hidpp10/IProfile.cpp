@@ -19,6 +19,7 @@
 #include <hidpp10/IProfile.h>
 
 #include <hidpp10/Device.h>
+#include <hidpp10/defs.h>
 
 using namespace HIDPP10;
 

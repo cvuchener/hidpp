@@ -32,8 +32,7 @@ ProfileDirectory::ProfileDirectory (MemoryMapping *mem)
 	unsigned int i = 0;
 	while (page[i] != 0xff) {
 		emplace_back (ProfileEntry ({
-			page[i+0],
-			page[i+1],
+			{ page[i+0], page[i+1] },
 			page[i+2]
 		}));
 		i += 3;
@@ -45,8 +44,8 @@ void ProfileDirectory::write (MemoryMapping *mem) const
 	ByteArray &page = mem->getWritablePage (1);
 	unsigned int i = 0;
 	for (const ProfileEntry &entry: *this) {
-		page[i+0] = entry.page;
-		page[i+1] = entry.offset;
+		page[i+0] = entry.address.page;
+		page[i+1] = entry.address.offset;
 		page[i+2] = entry.leds;
 		i += 3;
 	}

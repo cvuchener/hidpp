@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <list>
 #include <misc/ByteArray.h>
+#include <hidpp10/Address.h>
 #include <hidpp10/MemoryMapping.h>
 
 namespace HIDPP10

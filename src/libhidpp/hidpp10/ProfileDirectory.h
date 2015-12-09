@@ -21,14 +21,14 @@
 
 #include <cstdint>
 #include <vector>
+#include <hidpp10/Address.h>
 
 namespace HIDPP10
 {
 
 struct ProfileEntry
 {
-	uint8_t page;
-	uint8_t offset;
+	Address address;
 	uint8_t leds;
 };
 

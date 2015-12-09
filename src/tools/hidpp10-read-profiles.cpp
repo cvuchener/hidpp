@@ -89,17 +89,14 @@ int main (int argc, char *argv[])
 	for (unsigned int i = 0; i < profile_dir.size (); ++i) {
 		const ProfileEntry &entry = profile_dir[i];
 		Profile *profile = new_profile ();
-		const ByteArray &page = mem.getReadOnlyPage (entry.page);
-		profile->read (page.begin () + entry.offset*2);
+		const ByteArray &page = mem.getReadOnlyPage (entry.address.page);
+		profile->read (page.begin () + entry.address.offset*2);
 
 		std::vector<Macro> macros (profile->buttonCount ());
 		for (unsigned int j = 0; j < profile->buttonCount (); ++j) {
 			const Profile::Button &button = profile->button (j);
 			if (button.type () == Profile::Button::Macro) {
-				Address address = {
-					button.macroPage (),
-					button.macroOffset ()
-				};
+				Address address = button.macro ();
 				macros.emplace (macros.begin () + j,
 						mem, address)->simplify ();
 			}

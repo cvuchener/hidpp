@@ -16,43 +16,22 @@
  *
  */
 
-#ifndef HIDPP10_IMEMORY_H
-#define HIDPP10_IMEMORY_H
+#ifndef HIDPP10_ADDRESS_H
+#define HIDPP10_ADDRESS_H
 
-#include <vector>
 #include <cstdint>
-
-#include <hidpp10/Address.h>
 
 namespace HIDPP10
 {
 
-class Device;
+struct Address {
+	uint8_t page;
+	uint8_t offset;
 
-class IMemory
-{
-public:
-	enum MemoryOp: uint8_t {
-		Fill = 2,
-		Copy = 3,
-	};
-
-	IMemory (Device *dev);
-
-	int readSome (Address address, uint8_t *buffer, std::size_t maxlen);
-	void readMem (Address address, std::vector<uint8_t> &data);
-
-
-	void writeMem (Address address, const std::vector<uint8_t> &data);
-	void writePage (uint8_t page, const std::vector<uint8_t> &data);
-
-	void resetSequenceNumber ();
-	void fillPage (uint8_t page);
-	
-private:
-	Device *_dev;
+	bool operator< (const Address &other) const;
 };
 
 }
 
 #endif
+

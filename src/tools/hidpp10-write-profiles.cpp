@@ -109,7 +109,7 @@ int main (int argc, char *argv[])
 		std::vector<Macro> &macros = profiles.back ().second;
 
 		macros.resize (profile->buttonCount ());
-		profile_dir.push_back (ProfileEntry ({next_page++, 0, 0}));
+		profile_dir.push_back (ProfileEntry ({{next_page++, 0}, 0}));
 
 		xml_to_profile (element, profile, macros);
 
@@ -125,12 +125,12 @@ int main (int argc, char *argv[])
 		for (unsigned int i = 0; i < profile->buttonCount (); ++i) {
 			Profile::Button &button = profile->button (i);
 			if (button.type () == Profile::Button::Macro) {
-				button.setMacro (next_address.page, next_address.offset);
+				button.setMacro (next_address);
 				next_address = macros[i].write (mem, next_address);
 			}
 		}
-
-		profile->write (mem.getWritablePage (profile_entry->page).begin ());
+		ByteArray &page = mem.getWritablePage (profile_entry->address.page);
+		profile->write (page.begin () + profile_entry->address.offset);
 
 		delete profile;
 

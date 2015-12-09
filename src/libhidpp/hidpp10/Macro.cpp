@@ -19,6 +19,7 @@
 #include <hidpp10/Macro.h>
 
 #include <misc/Log.h>
+#include <hidpp10/defs.h>
 
 #include <map>
 #include <vector>

@@ -25,6 +25,7 @@ extern "C" {
 
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>
+#include <hidpp10/defs.h>
 #include <hidpp10/IMemory.h>
 #include <hidpp10/IProfile.h>
 #include <hidpp10/Profile.h>
@@ -112,15 +113,16 @@ int main (int argc, char *argv[])
 				0,
 				static_cast<uint8_t> ((next_pos - data.begin ()) / 2)
 			};
-			button.setMacro (addr.page, addr.offset);
+			button.setMacro (addr);
 			next_pos = macros[i].write (next_pos, addr);
 		}
 	}
 	profile->write (data.begin ());
 	delete profile;
 
-	imemory.writeMem (0, 0, data);
-	iprofile.loadProfileFromAddress ({0, 0});
+	Address profile_addr = {0, 0};
+	imemory.writeMem (profile_addr, data);
+	iprofile.loadProfileFromAddress (profile_addr);
 
 	return EXIT_SUCCESS;
 }

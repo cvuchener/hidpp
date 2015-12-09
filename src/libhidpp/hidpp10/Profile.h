@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <misc/ByteArray.h>
+#include <hidpp10/Address.h>
 
 namespace HIDPP10
 {
@@ -80,9 +81,8 @@ public:
 		uint16_t consumerControl () const;
 		void setConsumerControl (uint16_t code);
 
-		uint8_t macroPage () const;
-		uint8_t macroOffset () const;
-		void setMacro (uint8_t page, uint8_t offset);
+		Address macro () const;
+		void setMacro (Address address);
 
 		void disable ();
 	
@@ -96,10 +96,7 @@ public:
 			} key;
 			SpecialFunction special;
 			uint16_t consumer_control;
-			struct {
-				uint8_t page;
-				uint8_t offset;
-			} macro;
+			Address macro;
 		} _params;
 	};
 

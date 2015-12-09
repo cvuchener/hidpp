@@ -63,7 +63,7 @@ int main (int argc, char *argv[])
 	static constexpr std::size_t PageSize = 512;
 	std::vector<uint8_t> data (PageSize);
 
-	HIDPP10::IMemory (&dev).readMem (page, 0, data);
+	HIDPP10::IMemory (&dev).readMem ({static_cast<uint8_t> (page), 0}, data);
 
 	write (1, data.data (), PageSize);
 
