@@ -29,6 +29,9 @@ target_link_libraries(hidpp10-raw-command hidpp)
 add_executable(hidpp10-mouse-resolution hidpp10-mouse-resolution.cpp $<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp10-mouse-resolution hidpp)
 
+add_executable(hidpp10-active-profile hidpp10-active-profile.cpp $<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp10-active-profile hidpp)
+
 if(TINYXML2_FOUND)
 	add_library(profile OBJECT
 		profile/ProfileXML.cpp

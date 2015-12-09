@@ -49,6 +49,8 @@ public:
 	void loadProfileFromIndex (unsigned int index);
 	void loadProfileFromAddress (Address address);
 
+	void reloadActiveProfile ();
+
 private:
 	Device *_dev;
 };

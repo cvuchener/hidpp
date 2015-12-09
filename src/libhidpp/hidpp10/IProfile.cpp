@@ -63,3 +63,10 @@ void IProfile::loadProfileFromAddress (Address address)
 	_dev->setRegister (CurrentProfile, params, nullptr);
 }
 
+void IProfile::reloadActiveProfile ()
+{
+	ByteArray current_value (HIDPP::ShortParamLength);
+	_dev->getRegister (CurrentProfile, nullptr, current_value);
+	_dev->setRegister (CurrentProfile, current_value, nullptr);
+}
+
