@@ -18,6 +18,7 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(TINYXML2 tinyxml2)
+pkg_check_modules(LIBUDEV libudev)
 
 add_subdirectory(src/libhidpp)
 add_subdirectory(src/tools)
