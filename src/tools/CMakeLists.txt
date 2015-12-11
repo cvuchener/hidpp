@@ -14,6 +14,9 @@ add_library(common OBJECT ${COMMON_SOURCES})
 add_executable(hidpp-test hidpp-test.cpp $<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp-test hidpp)
 
+add_executable(hidpp-check-device hidpp-check-device.cpp $<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp-check-device hidpp)
+
 if(LIBUDEV_FOUND)
 	add_executable(hidpp-list-devices hidpp-list-devices.cpp $<TARGET_OBJECTS:common>)
 	target_include_directories(hidpp-list-devices PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
