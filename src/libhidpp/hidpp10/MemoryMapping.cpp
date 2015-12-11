@@ -64,7 +64,7 @@ void MemoryMapping::getPage (unsigned int page)
 		_pages.resize (page+1, { Absent, ByteArray () });
 	if (_pages[page].first == Absent) {
 		_pages[page].second.resize (PageSize);
-		_imem.readMem ({page, 0}, _pages[page].second);
+		_imem.readMem ({static_cast<uint8_t> (page), 0}, _pages[page].second);
 		uint16_t crc = CRC::CCITT (_pages[page].second.begin (),
 					   _pages[page].second.end () - sizeof (crc));
 		if (crc != _pages[page].second.getBE<uint16_t> (PageSize - sizeof (crc)))
