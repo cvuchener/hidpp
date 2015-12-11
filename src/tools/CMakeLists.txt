@@ -11,9 +11,6 @@ set(COMMON_SOURCES
 
 add_library(common OBJECT ${COMMON_SOURCES})
 
-add_executable(hidpp-test hidpp-test.cpp $<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp-test hidpp)
-
 add_executable(hidpp-check-device hidpp-check-device.cpp $<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp-check-device hidpp)
 
