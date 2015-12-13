@@ -26,11 +26,12 @@ namespace HIDPP
 	namespace ID {
 		constexpr uint16_t G5 =		0xc041;
 		constexpr uint16_t G5_2007 =	0xc049;
+		constexpr uint16_t G7 =		0xc51a; // or is it the receiver ID?
 		constexpr uint16_t G9 =		0xc048;
 		constexpr uint16_t G9x =	0xc066;
 		constexpr uint16_t G9x_MW3 =	0xc249;
 		constexpr uint16_t G500 =	0xc068;
-		constexpr uint16_t G700 = 	0xc06b;
+		constexpr uint16_t G700 =	0xc06b;
 		constexpr uint16_t G500s =	0xc24e;
 		constexpr uint16_t G700s =	0xc07c;
 	}

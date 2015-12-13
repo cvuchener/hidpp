@@ -33,7 +33,7 @@ enum ProfileType {
 	NoProfile,
 	G9ProfileType,
 	G500ProfileType,
-	G700sProfileType,
+	G700ProfileType,
 };
 
 class Profile

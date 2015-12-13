@@ -57,10 +57,16 @@ HIDPP10::MouseInfo G500sInfo = {
 	HIDPP10::G500ProfileType
 };
 
+HIDPP10::MouseInfo G700Info = {
+	&HIDPP10::RangeSensor::S9500,
+	HIDPP10::IResolutionType3,
+	HIDPP10::G700ProfileType
+};
+
 HIDPP10::MouseInfo G700sInfo = {
 	&HIDPP10::RangeSensor::S9808,
 	HIDPP10::IResolutionType3,
-	HIDPP10::G700sProfileType
+	HIDPP10::G700ProfileType
 };
 
 const DeviceInfo *HIDPP::getDeviceInfo (uint16_t product_id)
@@ -68,30 +74,35 @@ const DeviceInfo *HIDPP::getDeviceInfo (uint16_t product_id)
 	switch (product_id) {
 	case 0xc52b: // Unifying receiver
 	case 0xc52f: // Nano receiver advanced
+	case 0xc531: // G700 receiver
 	case 0xc532: // Unifying receiver
 	case 0xc537: // G602 receiver
 		return &ReceiverInfo;
-	
+
 	case ID::G5:
 	case ID::G5_2007:
+	case ID::G7:
 		return &G5Info;
-	
+
 	case ID::G9:
 		return &G9Info;
-	
+
 	case ID::G9x:
 	case ID::G9x_MW3:
 		return &G9xInfo;
-	
+
 	case ID::G500:
 		return &G500Info;
 
 	case ID::G500s:
 		return &G500sInfo;
-	
+
+	case ID::G700:
+		return &G700Info;
+
 	case ID::G700s:
 		return &G700sInfo;
-	
+
 	default:
 		return nullptr;
 	}
