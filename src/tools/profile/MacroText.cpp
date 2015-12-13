@@ -23,6 +23,7 @@
 #include <regex>
 
 #include <misc/Log.h>
+#include <misc/UsageStrings.h>
 
 using HIDPP10::Macro;
 
@@ -75,19 +76,19 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 			break;
 
 		case Macro::Item::KeyPress:
-			ss << "KeyPress " << (unsigned int) current->keyCode () << ";" << std::endl;
+			ss << "KeyPress " << keyString (current->keyCode ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::KeyRelease:
-			ss << "KeyRelease " << (unsigned int) current->keyCode () << ";" << std::endl;
+			ss << "KeyRelease " << keyString (current->keyCode ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::ModifierPress:
-			ss << "ModifierPress " << (unsigned int) current->modifiers () << ";" << std::endl;
+			ss << "ModifierPress " << modifierString (current->modifiers ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::ModifierRelease:
-			ss << "ModifierRelease " << (unsigned int) current->modifiers () << ";" << std::endl;
+			ss << "ModifierRelease " << modifierString (current->modifiers ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::MouseWheel:
@@ -95,15 +96,15 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 			break;
 
 		case Macro::Item::MouseButtonPress:
-			ss << "MouseButtonPress " << current->buttons () << ";" << std::endl;
+			ss << "MouseButtonPress " << buttonString (current->buttons ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::MouseButtonRelease:
-			ss << "MouseButtonRelease " << current->buttons () << ";" << std::endl;
+			ss << "MouseButtonRelease " << buttonString (current->buttons ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::ConsumerControl:
-			ss << "ConsumerControl " << current->consumerControl () << ";" << std::endl;
+			ss << "ConsumerControl " << consumerControlString (current->consumerControl ()) << ";" << std::endl;
 			break;
 
 		case Macro::Item::Delay:
@@ -129,7 +130,7 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 		case Macro::Item::End:
 			ss << "End;" << std::endl;
 			break;
-		}	
+		}
 	}
 
 	return ss.str ();
@@ -179,7 +180,7 @@ Macro textToMacro (const std::string &text)
 				macro.emplace_back (Macro::Item::KeyPress);
 			else
 				macro.emplace_back (Macro::Item::KeyRelease);
-			unsigned int code = std::stoul (params[0], nullptr, 0);
+			unsigned int code = keyUsageCode (params[0]);
 			if (code > 255)
 				Log::warning () << "Key code " << code << " is too big." << std::endl;
 			macro.back ().setKeyCode (static_cast<uint8_t> (code));
@@ -189,10 +190,8 @@ Macro textToMacro (const std::string &text)
 				macro.emplace_back (Macro::Item::ModifierPress);
 			else
 				macro.emplace_back (Macro::Item::ModifierRelease);
-			unsigned int bits = std::stoul (params[0], nullptr, 0);
-			if  (bits > 255)
-				Log::warning () << "Invalid flags for modifiers." << std::endl;
-			macro.back ().setModifiers (static_cast<uint8_t> (bits));
+			uint8_t mask = modifierMask (params[0]);
+			macro.back ().setModifiers (mask);
 		}
 		else if (instruction == "MouseWheel") {
 			macro.emplace_back (Macro::Item::MouseWheel);
@@ -204,14 +203,14 @@ Macro textToMacro (const std::string &text)
 				macro.emplace_back (Macro::Item::MouseButtonPress);
 			else
 				macro.emplace_back (Macro::Item::MouseButtonRelease);
-			unsigned int bits = std::stoul (params[0], nullptr, 0);
-			if (bits > 65535)
-				Log::warning () << "Invalid mouse bits." << std::endl;
-			macro.back ().setButtons (bits);
+			unsigned int mask = buttonMask (params[0]);
+			if (mask > 65535)
+				Log::warning () << "Button number too big." << std::endl;
+			macro.back ().setButtons (mask);
 		}
 		else if (instruction == "ConsumerControl") {
 			macro.emplace_back (Macro::Item::ConsumerControl);
-			unsigned int code = std::stoul (params[0], nullptr, 0);
+			unsigned int code = consumerControlCode (params[0]);
 			macro.back ().setConsumerControl (code);
 		}
 		else if (instruction == "Delay") {
@@ -269,6 +268,6 @@ Macro textToMacro (const std::string &text)
 		}
 		item->setJumpDestination (it->second);
 	}
-	
+
 	return macro;
 }

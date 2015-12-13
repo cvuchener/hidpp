@@ -17,10 +17,78 @@
  */
 
 #include <stdexcept>
+#include <sstream>
+#include <misc/Log.h>
 #include <hidpp10/Profile.h>
 #include <hidpp10/Sensor.h>
 
 using namespace HIDPP10;
+
+		enum SpecialFunction: uint16_t {
+			PanLeft = 0x0001,
+			PanRight = 0x0002,
+			BatteryLevel = 0x0003,
+			NextMode = 0x0004,
+			PreviousMode = 0x0008,
+			CycleMode = 0x0009,
+			NextProfile = 0x0010,
+			CycleProfile = 0x0011,
+			PreviousProfile = 0x0020,
+		};
+
+std::string Profile::Button::specialFunctionToString (SpecialFunction special)
+{
+	switch (special) {
+	case PanLeft:
+		return "PanLeft";
+	case PanRight:
+		return "PanRight";
+	case BatteryLevel:
+		return "BatteryLevel";
+	case NextMode:
+		return "NextMode";
+	case PreviousMode:
+		return "PreviousMode";
+	case CycleMode:
+		return "CycleMode";
+	case NextProfile:
+		return "NextProfile";
+	case CycleProfile:
+		return "CycleProfile";
+	case PreviousProfile:
+		return "PreviousProfile";
+	}
+	std::stringstream ss;
+	ss << special;
+	return ss.str ();
+}
+
+Profile::Button::SpecialFunction Profile::Button::specialFunctionFromString (const std::string &string)
+{
+	if (string == "PanLeft")
+		return PanLeft;
+	if (string == "PanRight")
+		return PanRight;
+	if (string == "BatteryLevel")
+		return BatteryLevel;
+	if (string == "NextMode")
+		return NextMode;
+	if (string == "PreviousMode")
+		return PreviousMode;
+	if (string == "CycleMode")
+		return CycleMode;
+	if (string == "NextProfile")
+		return NextProfile;
+	if (string == "CycleProfile")
+		return CycleProfile;
+	if (string == "PreviousProfile")
+		return PreviousProfile;
+	std::size_t pos;
+	unsigned int code = std::stoul (string, &pos, 0);
+	if (string.c_str ()[pos] != '\0')
+		throw std::invalid_argument ("Invalid special function");
+	return static_cast<SpecialFunction> (code);
+}
 
 Profile::Button::Button ():
 	_type (Disabled)
@@ -34,13 +102,13 @@ void Profile::Button::read (ByteArray::const_iterator begin)
 		_type = MouseButton;
 		_params.button = ByteArray::getLE<uint16_t> (begin+1);
 		break;
-	
+
 	case Key:
 		_type = Key;
 		_params.key.modifiers = *(begin+1);
 		_params.key.code = *(begin+2);
 		break;
-	
+
 	case Special:
 		_type = Special;
 		_params.special = static_cast<SpecialFunction> (ByteArray::getLE<uint16_t> (begin+1));
@@ -50,7 +118,7 @@ void Profile::Button::read (ByteArray::const_iterator begin)
 		_type = ConsumerControl;
 		_params.consumer_control = ByteArray::getBE<uint16_t> (begin+1);
 		break;
-			
+
 	case Disabled:
 		_type = Disabled;
 		break;
@@ -69,13 +137,13 @@ void Profile::Button::write (ByteArray::iterator begin) const
 		*begin = MouseButton;
 		ByteArray::setLE<uint16_t> (begin+1, _params.button);
 		break;
-	
+
 	case Key:
 		*begin = Key;
 		*(begin+1) = _params.key.modifiers;
 		*(begin+2) = _params.key.code;
 		break;
-	
+
 	case Special:
 		*begin = Special;
 		ByteArray::setLE<uint16_t> (begin+1, _params.special);
@@ -85,11 +153,11 @@ void Profile::Button::write (ByteArray::iterator begin) const
 		*begin = ConsumerControl;
 		ByteArray::setBE<uint16_t> (begin+1, _params.consumer_control);
 		break;
-	
+
 	case Disabled:
 		*begin = Disabled;
 		break;
-	
+
 	case Macro:
 		*begin = _params.macro.page;
 		*(begin+1) = _params.macro.offset;
@@ -200,7 +268,6 @@ void Profile::readButtons (ByteArray::const_iterator begin)
 		begin += 3;
 	}
 }
-	
 
 void Profile::writeButtons (ByteArray::iterator begin) const
 {

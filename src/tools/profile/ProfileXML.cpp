@@ -19,7 +19,9 @@
 #include "ProfileXML.h"
 
 #include "MacroText.h"
+#include <misc/UsageStrings.h>
 #include <misc/Log.h>
+#include <sstream>
 
 using namespace HIDPP10;
 using namespace tinyxml2;
@@ -42,27 +44,37 @@ void ButtonsToXML (const Profile *profile, const std::vector<Macro> &macros, XML
 			break;
 		}
 
-		case Profile::Button::MouseButton:
+		case Profile::Button::MouseButton: {
 			el = doc->NewElement ("mouse-button");
-			el->SetText (button.mouseButton ());
+			unsigned int button_mask = button.mouseButton ();
+			el->SetText (buttonString (button_mask).c_str ());
 			break;
+		}
 
-		case Profile::Button::Key:
+		case Profile::Button::Key: {
 			el = doc->NewElement ("key");
-			if (button.modifierKeys () != 0)
-				el->SetAttribute ("modifiers", button.modifierKeys ());
-			el->SetText (button.key ());
+			uint8_t modifier_mask = button.modifierKeys ();
+			if (modifier_mask != 0) {
+				el->SetAttribute ("modifiers", modifierString (modifier_mask).c_str ());
+			}
+			uint8_t key = button.key ();
+			el->SetText (keyString (key).c_str ());
 			break;
+		}
 
-		case Profile::Button::Special:
+		case Profile::Button::Special: {
 			el = doc->NewElement ("special");
-			el->SetText (button.special ());
+			Profile::Button::SpecialFunction special = button.special ();
+			el->SetText (Profile::Button::specialFunctionToString (special).c_str ());
 			break;
+		}
 
-		case Profile::Button::ConsumerControl:
+		case Profile::Button::ConsumerControl: {
 			el = doc->NewElement ("consumer-control");
-			el->SetText (button.consumerControl ());
+			uint8_t cc = button.consumerControl ();
+			el->SetText (consumerControlString (cc).c_str ());
 			break;
+		}
 
 		case Profile::Button::Disabled:
 			el = doc->NewElement ("disabled");
@@ -125,38 +137,24 @@ void XMLToButtons (const XMLNode *node, Profile *profile, std::vector<Macro> &ma
 			macros[i] = textToMacro (element->GetText ());
 		}
 		else if (name == "mouse-button") {
-			unsigned int mouse_button;
-			if (XML_NO_ERROR != element->QueryUnsignedText (&mouse_button))
-				Log::error () << "Invalid mouse button." << std::endl;
-			button.setMouseButton (mouse_button);
+			std::string str = element->GetText ();
+			button.setMouseButton (buttonMask (str));
 		}
 		else if (name == "key") {
-			unsigned int modifiers, key_code;
-			switch (element->QueryUnsignedAttribute ("modifiers", &modifiers)) {
-			case XML_NO_ERROR:
-				break;
-			case XML_WRONG_ATTRIBUTE_TYPE:
-				Log::error () << "Invalid key modifiers attribute." << std::endl;
-				break;
-			case XML_NO_ATTRIBUTE:
-			default:
-				modifiers = 0;
-				break;
+			unsigned int modifiers = 0;
+			if (const char *attr = element->Attribute ("modifiers")) {
+				modifiers = modifierMask (attr);
 			}
-			if (XML_NO_ERROR != element->QueryUnsignedText (&key_code))
-				Log::error () << "Invalid key code." << std::endl;
+			unsigned int key_code = keyUsageCode (element->GetText ());
 			button.setKey (modifiers, key_code);
 		}
 		else if (name == "special") {
-			unsigned int special;
-			if (XML_NO_ERROR != element->QueryUnsignedText (&special))
-				Log::error () << "Invalid special function." << std::endl;
-			button.setSpecial (static_cast<Profile::Button::SpecialFunction> (special));
+			Profile::Button::SpecialFunction special =
+				Profile::Button::specialFunctionFromString (element->GetText ());
+			button.setSpecial (special);
 		}
 		else if (name == "consumer-control") {
-			unsigned int cc;
-			if (XML_NO_ERROR != element->QueryUnsignedText (&cc))
-				Log::error () << "Invalid consumer control code." << std::endl;
+			unsigned int cc = consumerControlCode (element->GetText ());
 			button.setConsumerControl (cc);
 		}
 		else if (name == "disabled") {
@@ -175,7 +173,7 @@ void XMLToG500Profile (const XMLNode *node, Profile *p, std::vector<Macro> &macr
 	G500Profile *profile = dynamic_cast<G500Profile *> (p);
 	if (!profile)
 		return;
-	
+
 	const XMLElement *element = node->FirstChildElement ();
 	while (element) {
 		std::string name = element->Name ();

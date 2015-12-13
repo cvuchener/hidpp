@@ -20,6 +20,7 @@
 #define HIDPP10_PROFILE_H
 
 #include <cstdint>
+#include <string>
 #include <misc/ByteArray.h>
 #include <hidpp10/Address.h>
 
@@ -60,7 +61,10 @@ public:
 			CycleProfile = 0x0011,
 			PreviousProfile = 0x0020,
 		};
-		
+
+		static std::string specialFunctionToString (SpecialFunction);
+		static SpecialFunction specialFunctionFromString (const std::string &);
+
 		Button ();
 
 		void read (ByteArray::const_iterator begin);
@@ -85,7 +89,7 @@ public:
 		void setMacro (Address address);
 
 		void disable ();
-	
+
 	private:
 		Type _type;
 		union {
@@ -102,7 +106,7 @@ public:
 
 	Profile (unsigned int button_count);
 	virtual ~Profile ();
-	
+
 	virtual std::size_t profileLength () const = 0;
 	virtual void read (ByteArray::const_iterator begin) = 0;
 	virtual void write (ByteArray::iterator begin) const = 0;
