@@ -26,6 +26,14 @@
 using namespace HIDPP10;
 using namespace tinyxml2;
 
+static void InsertCData (XMLElement *el, const std::string &str)
+{
+	XMLDocument *doc = el->GetDocument ();
+	XMLText *txt = doc->NewText (str.c_str ());
+	txt->SetCData (true);
+	el->InsertEndChild (txt);
+}
+
 void ButtonsToXML (const Profile *profile, const std::vector<Macro> &macros, XMLNode *node)
 {
 	XMLDocument *doc = node->GetDocument ();
@@ -35,12 +43,44 @@ void ButtonsToXML (const Profile *profile, const std::vector<Macro> &macros, XML
 		switch (button.type ()) {
 		case Profile::Button::Macro: {
 			el = doc->NewElement ("macro");
-			std::string text = std::string ("\n") +
-					   macroToText (macros[i].begin (),
-							macros[i].end ());
-			XMLText *txt = doc->NewText (text.c_str ());
-			txt->SetCData (true);
-			el->InsertEndChild (txt);
+			Macro::const_iterator pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end;
+			unsigned int loop_delay;
+			if (macros[i].isSimple ()) {
+				std::string str = std::string ("\n") +
+						  macroToText (macros[i].begin (),
+							       std::prev (macros[i].end ()));
+				InsertCData (el, str);
+				el->SetAttribute ("type", "simple");
+			}
+			else if (macros[i].isLoop (pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end, loop_delay)) {
+				std::string pre_str = std::string ("\n") + macroToText (pre_begin, pre_end);
+				std::string loop_str = std::string ("\n") + macroToText (loop_begin, loop_end);
+				std::string post_str = std::string ("\n") + macroToText (post_begin, post_end);
+
+				XMLElement *pre = doc->NewElement ("pre");
+				InsertCData (pre, pre_str);
+				el->InsertEndChild (pre);
+
+				XMLElement *loop = doc->NewElement ("loop");
+				InsertCData (loop, loop_str);
+				el->InsertEndChild (loop);
+
+				XMLElement *post = doc->NewElement ("post");
+				InsertCData (post, post_str);
+				el->InsertEndChild (post);
+
+				el->SetAttribute ("type", "loop");
+				el->SetAttribute ("loop-delay", loop_delay);
+			}
+			else {
+				std::string str = std::string ("\n") +
+						  macroToText (macros[i].begin (),
+							       macros[i].end ());
+				XMLText *txt = doc->NewText (str.c_str ());
+				txt->SetCData (true);
+				el->InsertEndChild (txt);
+				el->SetAttribute ("type", "advanced");
+			}
 			break;
 		}
 
@@ -134,7 +174,50 @@ void XMLToButtons (const XMLNode *node, Profile *profile, std::vector<Macro> &ma
 		std::string name = element->Name ();
 		if (name == "macro") {
 			button.setMacro (Address ());
-			macros[i] = textToMacro (element->GetText ());
+			std::string type;
+			if (element->Attribute ("type"))
+				type = element->Attribute ("type");
+			if (type.empty () || type == "simple") {
+				Macro simple = textToMacro (element->GetText ());
+				macros[i] = Macro::buildSimple (simple.begin (), simple.end ());
+			}
+			else if (type == "loop") {
+				unsigned int loop_delay;
+				switch (element->QueryUnsignedAttribute ("loop-delay", &loop_delay)) {
+				case XML_NO_ERROR:
+					break;
+				case XML_WRONG_ATTRIBUTE_TYPE:
+					Log::error () << "Invalid loop delay value." << std::endl;
+					// Fall-through default value
+				case XML_NO_ATTRIBUTE:
+					loop_delay = 0;
+					break;
+				default:
+					throw std::logic_error ("Unexpected tinyxml2 error");
+				}
+
+				Macro pre, loop, post;
+				const XMLElement *pre_el = element->FirstChildElement ("pre");
+				if (pre_el) {
+					pre = textToMacro (pre_el->GetText ());
+				}
+				const XMLElement *loop_el = element->FirstChildElement ("loop");
+				if (loop_el) {
+					loop = textToMacro (loop_el->GetText ());
+				}
+				const XMLElement *post_el = element->FirstChildElement ("post");
+				if (post_el) {
+					post = textToMacro (post_el->GetText ());
+				}
+				macros[i] = Macro::buildLoop (pre.begin (), pre.end (),
+							      loop.begin (), loop.end (),
+							      post.begin (), post.end (),
+							      loop_delay);
+
+			}
+			else if (type == "advanced") {
+				macros[i] = textToMacro (element->GetText ());
+			}
 		}
 		else if (name == "mouse-button") {
 			std::string str = element->GetText ();

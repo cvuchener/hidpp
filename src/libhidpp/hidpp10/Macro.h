@@ -61,7 +61,7 @@ public:
 
 		static uint8_t getShortDelayCode (unsigned int delay);
 		static unsigned int getShortDelayDuration (uint8_t op_code);
-	
+
 		uint8_t opCode () const;
 		bool isShortDelay () const;
 
@@ -92,6 +92,8 @@ public:
 		int mouseY () const;
 		void setMouseX (int delta);
 		void setMouseY (int delta);
+
+		bool isSimple () const;
 
 	private:
 		uint8_t _op_code;
@@ -139,6 +141,18 @@ public:
 	Item &back ();
 
 	void emplace_back (uint8_t op_code);
+
+	bool isSimple () const;
+	bool isLoop (const_iterator &pre_begin, const_iterator &pre_end,
+		     const_iterator &loop_begin, const_iterator &loop_end,
+		     const_iterator &post_begin, const_iterator &post_end,
+		     unsigned int &loop_delay) const;
+
+	static Macro buildSimple (const_iterator begin, const_iterator end);
+	static Macro buildLoop (const_iterator pre_begin, const_iterator pre_end,
+				const_iterator loop_begin, const_iterator loop_end,
+				const_iterator post_begin, const_iterator post_end,
+				unsigned int loop_delay);
 
 private:
 	std::list<Item> _items;

@@ -65,7 +65,7 @@ uint8_t Macro::Item::getShortDelayCode (unsigned int delay)
 	else
 		return 0xFE; // Maximum short delay of 1.892s
 }
-	
+
 unsigned int Macro::Item::getShortDelayDuration (uint8_t op_code)
 {
 	if (op_code < 0x80)
@@ -209,6 +209,27 @@ void Macro::Item::setMouseY (int delta)
 		_params.mouse.y = delta;
 }
 
+bool Macro::Item::isSimple () const
+{
+	if (_op_code >= 0x80 && _op_code <= 0xfe) // Short delay
+		return true;
+	switch (_op_code) {
+	case NoOp:
+	case KeyPress:
+	case KeyRelease:
+	case ModifierPress:
+	case ModifierRelease:
+	case MouseWheel:
+	case MouseButtonPress:
+	case MouseButtonRelease:
+	case ConsumerControl:
+	case Delay:
+	case MousePointer:
+		return true;
+	default:
+		return false;
+	}
+}
 
 Macro::Macro ()
 {
@@ -308,7 +329,7 @@ Macro::Macro (MemoryMapping &mem, Address address)
 				std::prev(_items.end ())
 			});
 		}
-		
+
 		if (item->isJump ()) {
 			jump_dests.push (dest); // Keep destination for later parsing
 			incomplete_ref.emplace_back (item, dest);
@@ -316,7 +337,7 @@ Macro::Macro (MemoryMapping &mem, Address address)
 
 		if (item->opCode () == Item::End || item->opCode () == Item::Jump) {
 			// Current item has no successor
-			
+
 			// Find the first non parsed address
 			do {
 				if (jump_dests.empty ())
@@ -324,7 +345,7 @@ Macro::Macro (MemoryMapping &mem, Address address)
 				dest = jump_dests.top ();
 				jump_dests.pop ();
 			} while (parsed_items.find (dest) != parsed_items.end ());
-				
+
 			current_page = dest.page;
 			current_index = 2*dest.offset;
 		}
@@ -372,7 +393,7 @@ Macro::Macro (ByteArray::const_iterator begin, Address start_address)
 				}),
 				std::prev (_items.end ())
 			});
-		
+
 		if (item->isJump ()) {
 			if (dest.page != start_address.page)
 				throw std::runtime_error ("Cannot parse macro referencing other pages");
@@ -390,7 +411,7 @@ Macro::Macro (ByteArray::const_iterator begin, Address start_address)
 				dest = jump_dests.top ();
 				jump_dests.pop ();
 			} while (parsed_items.find (dest) != parsed_items.end ());
-				
+
 			current = begin + 2*(dest.offset - start_address.offset);
 		}
 		else {
@@ -438,7 +459,7 @@ Macro::Macro (const Macro &other):
 			Log::printf (Log::Debug,
 				     "Replace %p with %p\n",
 				     old_item, &(*new_item));
-				     
+
 			item.setJumpDestination (new_item);
 		}
 	}
@@ -512,13 +533,13 @@ ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_addre
 	}
 
 	ByteArray::iterator current = begin;
-	
+
 	for (auto it = _items.begin (); it != _items.end (); ++it) {
 		const Item &item = *it;
 
 		auto jump_dest = jump_dests.find (&item);
 		bool is_jump_dest = jump_dest != jump_dests.end ();
-		
+
 		// Add padding if required
 		if (is_jump_dest && (current-begin)%2 == 1) {
 			Log::printf (Log::Debug,
@@ -532,7 +553,7 @@ ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_addre
 				     "Macro item %p is aligned at %02hhx:%02hhx\n",
 				     &item,
 				     start_address.page, start_address.offset + static_cast<uint8_t> ((current-begin)/2));
-		
+
 		// Write the item itself
 		Log::printf (Log::Debug,
 			     "Write macro item %p index %03x, op_code is %02hhx\n",
@@ -587,7 +608,7 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 
 	unsigned int current_page = start.page;
 	unsigned int current_index = start.offset*2;
-	
+
 	constexpr std::size_t CRCSize = 2;
 	static const std::size_t JumpSize = Item::getOpLength (Item::Jump);
 	bool check_end_of_page_jump = true;
@@ -597,12 +618,12 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 
 		auto jump_dest = jump_dests.find (&item);
 		bool is_jump_dest = jump_dest != jump_dests.end ();
-		
+
 		unsigned int item_size = Item::getOpLength (item.opCode ());
 
 		if (check_end_of_page_jump) {
 			if (is_jump_dest && current_index%2 == 1) {
-				// The current index is not aligned and the item is 
+				// The current index is not aligned and the item is
 				// the destination of a jump. We need one byte of padding.
 				item_size++;
 			}
@@ -658,7 +679,7 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 				     "Macro item %p is aligned at %02hhx:%02hhx\n",
 				     &item,
 				     current_page, current_index/2);
-		
+
 		// Write the item itself
 		Log::printf (Log::Debug,
 			     "Write macro item %p at page %02x, index %03x, op_code is %02hhx\n",
@@ -697,7 +718,7 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 		*(addr_pos+1) = addr.offset;
 	}
 
-	return Address { 
+	return Address {
 		static_cast<uint8_t> (current_page),
 		static_cast<uint8_t> ((current_index+1)/2)
 	};
@@ -713,7 +734,7 @@ void Macro::simplify ()
 		}
 	}
 
-	
+
 	auto it = _items.begin ();
 	while (it != _items.end ()) {
 		if (it->opCode () == Item::NoOp ||
@@ -726,7 +747,7 @@ void Macro::simplify ()
 				     &*it, it->opCode ());
 			it = _items.erase (it);
 		}
-		else 
+		else
 			++it;
 	}
 }
@@ -766,3 +787,185 @@ void Macro::emplace_back (uint8_t op_code)
 	_items.emplace_back (op_code);
 }
 
+bool Macro::isSimple () const
+{
+	for (auto it = _items.begin (); it != _items.end (); ++it) {
+		if (!it->isSimple ()) {
+			if (it->opCode () == Item::End)
+				return std::next(it) == _items.end ();
+			return false;
+		}
+	}
+	return false;
+}
+
+bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
+		    const_iterator &loop_begin, const_iterator &loop_end,
+		    const_iterator &post_begin, const_iterator &post_end,
+		    unsigned int &loop_delay) const
+{
+	enum State {
+		Init,
+		OptionalLoop,
+		AfterLoop,
+	} state = Init;
+
+	pre_begin = _items.begin ();
+
+	for (auto it = _items.begin (); it != _items.end (); ++it) {
+		Log::printf (Log::Debug, "State: %d, opcode: %02hhx\n",
+				state, it->opCode ());
+		if (it->isSimple ())
+			continue;
+
+		switch (it->opCode ()) {
+		case Item::RepeatUntilRelease:
+			if (state != Init)
+				return false;
+			Log::debug () << "RepeatUntilRelease Init" << std::endl;
+			pre_end = pre_begin;
+			loop_begin = pre_begin;
+			loop_end = it;
+			post_begin = std::next (it);
+			loop_delay = 0;
+			state = AfterLoop;
+			break;
+
+		case Item::JumpIfPressed: {
+			const_iterator dest = it->jumpDestination ();
+			if (state == Init) {
+				Log::debug () << "JumpIfPressed Init" << std::endl;
+				// Check that the destination is before
+				// the current instruction.
+				const_iterator it2;
+				for (it2 = _items.begin (); it2 != it; ++it2)
+					if (it2 == dest)
+						break;
+				if (it2 == it) // dest not found
+					return false;
+
+				pre_end = dest;
+				loop_begin = dest;
+				loop_end = it;
+				post_begin = std::next (it);
+				loop_delay = 0;
+				state = AfterLoop;
+			}
+			else if (state == OptionalLoop) {
+				Log::debug () << "JumpIfPressed OptionalLoop" << std::endl;
+				loop_end = it;
+				post_begin = std::next (it);
+				// Check jump destinations (pre_end is JumpIfReleased)
+				if (pre_end->jumpDestination () != post_begin ||
+				    dest != loop_begin)
+					return false;
+				state = AfterLoop;
+			}
+			else
+				return false;
+			break;
+		}
+
+		case Item::JumpIfReleased:
+			if (state != Init)
+				return false;
+			Log::debug () << "JumpIfReleased Init" << std::endl;
+			pre_end = it;
+			loop_begin = std::next (it);
+			loop_delay = it->delay ();
+			state = OptionalLoop;
+			break;
+
+		case Item::WaitRelease:
+			if (state != Init)
+				return false;
+			Log::debug () << "WaitRelease Init" << std::endl;
+			pre_end = it;
+			loop_begin = loop_end = it;
+			post_begin = std::next (it);
+			loop_delay = 0;
+			state = AfterLoop;
+			break;
+
+
+		case Item::End:
+			post_end = it;
+			return state == AfterLoop;
+
+		default:
+			return false;
+		}
+	}
+	return false;
+}
+
+Macro Macro::buildSimple (const_iterator begin, const_iterator end)
+{
+	Macro macro;
+	for (auto it = begin; it != end; ++it) {
+		if (!it->isSimple ())
+			throw std::invalid_argument ("Macro item must be simple");
+		macro._items.push_back (*it);
+	}
+	macro._items.emplace_back (Item::End);
+	return macro;
+}
+
+Macro Macro::buildLoop (const_iterator pre_begin, const_iterator pre_end,
+			const_iterator loop_begin, const_iterator loop_end,
+			const_iterator post_begin, const_iterator post_end,
+			unsigned int loop_delay)
+{
+	// Check inputs
+	for (auto it = pre_begin; it != pre_end; ++it) {
+		if (!it->isSimple ())
+			throw std::invalid_argument ("Macro item must be simple");
+	}
+	for (auto it = loop_begin; it != loop_end; ++it) {
+		if (!it->isSimple ())
+			throw std::invalid_argument ("Macro item must be simple");
+	}
+	for (auto it = post_begin; it != post_end; ++it) {
+		if (!it->isSimple ())
+			throw std::invalid_argument ("Macro item must be simple");
+	}
+
+	Macro macro;
+	if (loop_begin == loop_end) {
+		// Inner loop is empty, use wait instruction
+		macro._items.insert (macro._items.end (), pre_begin, pre_end);
+		macro._items.emplace_back (Item::WaitRelease);
+		macro._items.insert (macro._items.end (), post_begin, post_end);
+		macro._items.emplace_back (Item::End);
+	}
+	else if (loop_delay > 0) {
+		// Use JumpIfReleased to delay the loop
+		macro._items.insert (macro._items.end (), pre_begin, pre_end);
+		iterator released_jump = macro._items.emplace (macro._items.end (), Item::JumpIfReleased);
+		iterator loop = macro._items.insert (macro._items.end (), loop_begin, loop_end);
+		iterator pressed_jump = macro._items.emplace (macro._items.end (), Item::JumpIfPressed);
+		iterator post = macro._items.insert (macro._items.end (), post_begin, post_end);
+		macro._items.emplace_back (Item::End);
+
+		released_jump->setDelay (loop_delay);
+		released_jump->setJumpDestination (post);
+		pressed_jump->setJumpDestination (loop);
+	}
+	else if (pre_begin == pre_end) {
+		// No pre-loop instruction, use repeat instruction
+		macro._items.insert (macro._items.end (), loop_begin, loop_end);
+		macro._items.emplace_back (Item::RepeatUntilRelease);
+		macro._items.insert (macro._items.end (), post_begin, post_end);
+		macro._items.emplace_back (Item::End);
+	}
+	else {
+		// Pre-loop is non-empty, and loop is played at least once
+		// Use a single JumpIfpressed at the end of loop
+		macro._items.insert (macro._items.end (), pre_begin, pre_end);
+		iterator loop = macro._items.insert (macro._items.end (), loop_begin, loop_end);
+		macro._items.emplace (macro._items.end (), Item::JumpIfPressed)->setJumpDestination (loop);
+		macro._items.insert (macro._items.end (), post_begin, post_end);
+		macro._items.emplace_back (Item::End);
+	}
+	return macro;
+}
