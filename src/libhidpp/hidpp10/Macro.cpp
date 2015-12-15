@@ -813,8 +813,6 @@ bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
 	pre_begin = _items.begin ();
 
 	for (auto it = _items.begin (); it != _items.end (); ++it) {
-		Log::printf (Log::Debug, "State: %d, opcode: %02hhx\n",
-				state, it->opCode ());
 		if (it->isSimple ())
 			continue;
 
@@ -822,7 +820,6 @@ bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
 		case Item::RepeatUntilRelease:
 			if (state != Init)
 				return false;
-			Log::debug () << "RepeatUntilRelease Init" << std::endl;
 			pre_end = pre_begin;
 			loop_begin = pre_begin;
 			loop_end = it;
@@ -834,7 +831,6 @@ bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
 		case Item::JumpIfPressed: {
 			const_iterator dest = it->jumpDestination ();
 			if (state == Init) {
-				Log::debug () << "JumpIfPressed Init" << std::endl;
 				// Check that the destination is before
 				// the current instruction.
 				const_iterator it2;
@@ -852,7 +848,6 @@ bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
 				state = AfterLoop;
 			}
 			else if (state == OptionalLoop) {
-				Log::debug () << "JumpIfPressed OptionalLoop" << std::endl;
 				loop_end = it;
 				post_begin = std::next (it);
 				// Check jump destinations (pre_end is JumpIfReleased)
@@ -869,7 +864,6 @@ bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
 		case Item::JumpIfReleased:
 			if (state != Init)
 				return false;
-			Log::debug () << "JumpIfReleased Init" << std::endl;
 			pre_end = it;
 			loop_begin = std::next (it);
 			loop_delay = it->delay ();
@@ -879,7 +873,6 @@ bool Macro::isLoop (const_iterator &pre_begin, const_iterator &pre_end,
 		case Item::WaitRelease:
 			if (state != Init)
 				return false;
-			Log::debug () << "WaitRelease Init" << std::endl;
 			pre_end = it;
 			loop_begin = loop_end = it;
 			post_begin = std::next (it);
