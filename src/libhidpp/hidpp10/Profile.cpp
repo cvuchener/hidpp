@@ -24,18 +24,6 @@
 
 using namespace HIDPP10;
 
-		enum SpecialFunction: uint16_t {
-			PanLeft = 0x0001,
-			PanRight = 0x0002,
-			BatteryLevel = 0x0003,
-			NextMode = 0x0004,
-			PreviousMode = 0x0008,
-			CycleMode = 0x0009,
-			NextProfile = 0x0010,
-			CycleProfile = 0x0011,
-			PreviousProfile = 0x0020,
-		};
-
 std::string Profile::Button::specialFunctionToString (SpecialFunction special)
 {
 	switch (special) {
