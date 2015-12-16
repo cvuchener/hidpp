@@ -39,6 +39,10 @@ enum ProfileType {
 class Profile
 {
 public:
+	struct Color {
+		uint8_t r, g, b;
+	};
+
 	class Button {
 	public:
 		enum Type: uint8_t {
@@ -148,22 +152,27 @@ public:
 	unsigned int defaultMode () const;
 	void setDefaultMode (unsigned int index);
 
+	Color color () const;
+	void setColor (Color color);
+
 	bool angleSnap () const;
 	void setAngleSnap (bool enabled);
+
+	int liftThreshold () const;
+	void setLiftThreshold (int lift);
 
 	unsigned int pollInterval () const;
 	void setPollInterval (unsigned int interval);
 
 private:
 	const Sensor *_sensor;
-	struct {
-		uint8_t r, g, b;
-	} _color;
+	Color _color;
 	uint8_t _angle;
 	std::vector<ResolutionMode> _modes;
 	bool _angle_snap;
 	unsigned int _default_mode;
-	uint8_t _lift, _unk;
+	int _lift;
+	uint8_t _unk;
 	unsigned int _poll_interval;
 };
 

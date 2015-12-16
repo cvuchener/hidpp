@@ -155,6 +155,17 @@ void G500ProfileToXML (const Profile *p, const std::vector<Macro> &macros, XMLNo
 	angle_snap->SetText (profile->angleSnap ());
 	node->InsertEndChild (angle_snap);
 
+	XMLElement *lift = doc->NewElement ("lift");
+	lift->SetText (profile->liftThreshold ());
+	node->InsertEndChild (lift);
+
+	XMLElement *color = doc->NewElement ("color");
+	Profile::Color c = profile->color ();
+	char color_str[7];
+	sprintf (color_str, "%02hhx%02hhx%02hhx", c.r, c.g, c.b);
+	color->SetText (color_str);
+	node->InsertEndChild (color);
+
 	XMLElement *buttons = doc->NewElement ("buttons");
 	ButtonsToXML (profile, macros, buttons);
 	node->InsertEndChild (buttons);
@@ -303,6 +314,18 @@ void XMLToG500Profile (const XMLNode *node, Profile *p, std::vector<Macro> &macr
 			if (XML_NO_ERROR != element->QueryBoolText (&angle_snap))
 				Log::error () << "Invalid angle snap." << std::endl;
 			profile->setAngleSnap (angle_snap);
+		}
+		else if (name == "lift") {
+			int lift;
+			if (XML_NO_ERROR != element->QueryIntText (&lift))
+				Log::error () << "Invalid lift threshold." << std::endl;
+			profile->setLiftThreshold (lift);
+		}
+		else if (name == "color") {
+			Profile::Color color;
+			if (3 != sscanf (element->GetText (), "%02hhx%02hhx%02hhx", &color.r, &color.g, &color.b))
+				Log::error () << "Invalid color value." << std::endl;
+			profile->setColor (color);
 		}
 		else if (name == "buttons") {
 			XMLToButtons (element, profile, macros);

@@ -24,6 +24,12 @@
 
 using namespace HIDPP10;
 
+template<typename T>
+static T clamp (T value, T min, T max)
+{
+	return std::min (std::max (value, min), max);
+}
+
 std::string Profile::Button::specialFunctionToString (SpecialFunction special)
 {
 	switch (special) {
@@ -269,7 +275,8 @@ G500Profile::G500Profile (const Sensor *sensor):
 	Profile (13), _sensor (sensor),
 	_color ({ 255, 0, 0 }),
 	_angle (0x80),
-	_lift (0x10), _unk (0x10),
+	_lift (0),
+	_unk (0x10),
 	_poll_interval (8)
 {
 }
@@ -315,7 +322,7 @@ void G500Profile::read (ByteArray::const_iterator begin)
 	}
 	_angle_snap = *(begin+34) == 0x02;
 	_default_mode = *(begin+35);
-	_lift = *(begin+36);
+	_lift = static_cast<int> (*(begin+36) & 0x1f) - 0x10;
 	_unk = *(begin+37);
 	_poll_interval = *(begin+38);
 	readButtons (begin+39);
@@ -343,7 +350,7 @@ void G500Profile::write (ByteArray::iterator begin) const
 	}
 	*(begin+34) = (_angle_snap ? 0x02 : 0x01);
 	*(begin+35) = _default_mode;
-	*(begin+36) = _lift;
+	*(begin+36) = 0x10 + clamp (_lift, -15, 15);
 	*(begin+37) = _unk;
 	*(begin+38) = _poll_interval;
 	writeButtons (begin+39);
@@ -382,6 +389,16 @@ void G500Profile::setDefaultMode (unsigned int index)
 	_default_mode = index;
 }
 
+Profile::Color G500Profile::color () const
+{
+	return _color;
+}
+
+void G500Profile::setColor (Color color)
+{
+	_color = color;
+}
+
 bool G500Profile::angleSnap () const
 {
 	return _angle_snap;
@@ -390,6 +407,16 @@ bool G500Profile::angleSnap () const
 void G500Profile::setAngleSnap (bool enabled)
 {
 	_angle_snap = enabled;
+}
+
+int G500Profile::liftThreshold () const
+{
+	return _lift;
+}
+
+void G500Profile::setLiftThreshold (int lift)
+{
+	_lift = lift;
 }
 
 unsigned int G500Profile::pollInterval () const
