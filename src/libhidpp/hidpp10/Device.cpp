@@ -26,7 +26,7 @@ using namespace HIDPP10;
 Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 	HIDPP::Device (path, device_index)
 {
-	// TODO: check version	
+	// TODO: check version
 }
 
 template<uint8_t sub_id, std::size_t params_length, std::size_t results_length>
@@ -113,9 +113,8 @@ void Device::setRegister (uint8_t address,
 	}
 	else
 		throw std::logic_error ("Register too long");
-		
+
 }
-		       
 
 void Device::getRegister (uint8_t address,
 			  const ByteArray *params,
@@ -158,7 +157,7 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 			     bool wait_for_ack)
 {
 	Log::printf (Log::Debug, "Sending data packet %hhu\n", seq_num);
-	Log::printBytes (Log::Debug, "Data page packet", params.begin (), params.end ());
+	Log::printBytes (Log::Debug, "Data packet", params.begin (), params.end ());
 
 	HIDPP::Report packet (deviceIndex (),
 			      sub_id,
@@ -168,7 +167,7 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 
 	if (!wait_for_ack)
 		return;
-	
+
 	while (true) {
 		HIDPP::Report response = getReport ();
 
@@ -179,7 +178,7 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 				      << std::endl;
 			continue;
 		}
-		
+
 		if (response.address () == 1 && response.params ()[0] == seq_num) {
 			/* Expected notification */
 			Log::printf (Log::Debug, "Data packet %hhu acknowledged\n", seq_num);
