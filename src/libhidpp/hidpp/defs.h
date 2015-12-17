@@ -24,9 +24,27 @@
 
 namespace HIDPP
 {
+	/**
+	 * \defgroup hidpp HID++
+	 * @{
+	 */
+
+	/**
+	 * Short HID++ report parameter length.
+	 */
 	constexpr std::size_t ShortParamLength = 3;
+	/**
+	 * Long HID++ report parameter length.
+	 */
 	constexpr std::size_t LongParamLength = 16;
 
+	/**
+	 * HID++ device index.
+	 *
+	 * Receiver and wireless devices share the same
+	 * hidraw device. The device index is used to direct
+	 * the HID++ report to a particular device.
+	 */
 	enum DeviceIndex: uint8_t {
 		WiredDevice = 0,
 		WirelessDevice1 = 1,
@@ -37,6 +55,8 @@ namespace HIDPP
 		WirelessDevice6 = 6,
 		UnifyingReceiver = 0xff,
 	};
+
+	/**@}*/
 }
 
 #endif

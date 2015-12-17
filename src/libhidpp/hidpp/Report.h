@@ -28,20 +28,56 @@
 namespace HIDPP
 {
 
+/**
+ * Contains a HID++ report.
+ *
+ * \ingroup hidpp
+ *
+ * It can be used for both HID++ 1.0 or 2.0 reports.
+ *
+ * Common fields are:
+ *  - Report type (see \ref Type)
+ *  - Device index (see \ref DeviceIndex)
+ *  - Parameters
+ *
+ * HID++ 1.0 fields are:
+ *  - SubID
+ *  - Address
+ *
+ * HID++ 2.0 fields are:
+ *  - Feature index
+ *  - Function index
+ *  - Software ID
+ */
 class Report
 {
 public:
+	/**
+	 * The type of the report (or report ID).
+	 *
+	 * The only difference between report types is the length of its
+	 * parameters.
+	 *
+	 * \sa ShortParamLength LongParamLength
+	 */
 	enum Type: uint8_t {
-		Short = 0x10,
-		Long = 0x11,
+		Short = 0x10,	///< Short reports use 3 byte parameters.
+		Long = 0x11,	///< Long report use 16 byte parameters.
 	};
 
+	/**
+	 * Exception for reports with invalid report ID.
+	 */
 	class InvalidReportID: std::exception
 	{
 	public:
 		InvalidReportID ();
 		virtual const char *what () const noexcept;
 	};
+	/**
+	 * Exception for reports where the length is not the expected one
+	 * from the report type.
+	 */
 	class InvalidReportLength: std::exception
 	{
 	public:
@@ -49,83 +85,190 @@ public:
 		virtual const char *what () const noexcept;
 	};
 
+	/**
+	 * Maximum length of a HID++ report.
+	 */
 	static constexpr std::size_t MaxDataLength = 19;
-	
-	/*
+
+	/**
 	 * Raw data constructor
+	 *
+	 * \param report_id	Report ID
+	 * \param data		Raw report data
+	 * \param length	Length of the \p data array.
+	 *
+	 * \throws InvalidReportID
+	 * \throws InvalidReportLength
 	 */
 	Report (uint8_t report_id, const uint8_t *data, std::size_t length);
 
-	/*
-	 * HID++ 1.0 constructors
+	/**
+	 * Access report type.
+	 */
+	Type type () const;
+	/**
+	 * Access report device index.
+	 */
+	DeviceIndex deviceIndex () const;
+
+	/**
+	 * \name HID++ 1.0
+	 *
+	 * @{
+	 */
+
+	/**
+	 * HID++ 1.0 constructor from type.
+	 *
+	 * Parameters size is set from \p type and is filled with zeroes.
 	 */
 	Report (Type type,
 		DeviceIndex device_index,
 		uint8_t sub_id,
 		uint8_t address);
+	/**
+	 * HID++ 1.0 constructor from parameters.
+	 *
+	 * The type of the report is guessed from \p params size.
+	 *
+	 * \throws InvalidReportLength
+	 */
 	Report (DeviceIndex device_index,
 		uint8_t sub_id,
 		uint8_t address,
 		const ByteArray &params);
 
-	/*
-	 * HID++ 2.0 constructors
+	/**
+	 * Access HID++ 1.0 report subID.
+	 */
+	uint8_t subID () const;
+	/**
+	 * Set HID++ 1.0 report subID.
+	 */
+	void setSubID (uint8_t sub_id);
+
+	/**
+	 * Access HID++ 1.0 report address.
+	 */
+	uint8_t address () const;
+	/**
+	 * Set HID++ 1.0 report address.
+	 */
+	void setAddress (uint8_t address);
+
+	/**
+	 * Check if the report is a HID++ 1.0 error report.
+	 *
+	 * Each pointer can be null and is then ignored.
+	 *
+	 * \param sub_id	The subID of the report responsible for the error.
+	 * \param address	The address of the report responsible for the error.
+	 * \param error_code	The error code of the error.
+	 *
+	 * \return \c true if the report is a HID++ 1.0 error, \c false otherwise.
+	 *
+	 * \sa HIDPP10::Error
+	 */
+	bool checkErrorMessage10 (uint8_t *sub_id, uint8_t *address, uint8_t *error_code) const;
+
+	/**@}*/
+
+	/**
+	 * \name HID++ 2.0
+	 *
+	 * @{
+	 */
+
+	/**
+	 * HID++ 2.0 constructor from type.
+	 *
+	 * Parameters size is set from \p type and is filled with zeroes.
 	 */
 	Report (Type type,
 		DeviceIndex device_index,
 		uint8_t feature_index,
 		unsigned int function,
 		unsigned int sw_id);
+	/**
+	 * HID++ 2.0 constructor from parameters.
+	 *
+	 * The type of the report is guessed from \p params size.
+	 *
+	 * \throws InvalidReportLength
+	 */
 	Report (DeviceIndex device_index,
 		uint8_t feature_index,
 		unsigned int function,
 		unsigned int sw_id,
 		const ByteArray &params);
 
-	Type type () const;
-	DeviceIndex deviceIndex () const;
-
-	/*
-	 * HID++ 1.0
+	/**
+	 * Access HID++ 2.0 report feature index.
 	 */
-	uint8_t subID () const;
-	void setSubID (uint8_t sub_id);
-
-	uint8_t address () const;
-	void setAddress (uint8_t address);
-
-	/*
-	 * HID++ 2.0
-	 */
-
 	uint8_t featureIndex () const;
+	/**
+	 * Set HID++ 2.0 report feature index.
+	 */
 	void setfeatureIndex (uint8_t feature_index);
 
+	/**
+	 * Access HID++ 2.0 report function.
+	 */
 	unsigned int function () const;
+	/**
+	 * Set HID++ 2.0 report function.
+	 */
 	void setFunction (unsigned int function);
 
+	/**
+	 * Access HID++ 2.0 software ID.
+	 */
 	unsigned int softwareID () const;
+	/**
+	 * Set HID++ 2.0 software ID.
+	 */
 	void setSoftwareID (unsigned int sw_id);
 
-	/*
-	 * Parameters
+	/**
+	 * Check if the report is a HID++ 2.0 error report.
+	 *
+	 * Each pointer can be null and is then ignored.
+	 *
+	 * \param feature_index	The feature index of the report responsible for the error.
+	 * \param function	The function of the report responsible for the error.
+	 * \param sw_id		The software ID of the report responsible for the error.
+	 * \param error_code	The error code of the error.
+	 *
+	 * \return \c true if the report is a HID++ 2.0 error, \c false otherwise.
+	 *
+	 * \sa HIDPP20::Error
+	 */
+	bool checkErrorMessage20 (uint8_t *feature_index, unsigned int *function, unsigned int *sw_id, uint8_t *error_code) const;
+
+	/**@}*/
+
+	/**
+	 * Get the parameter length of the report.
 	 */
 	std::size_t paramLength () const;
+	/**
+	 * Get the parameter length for \p type.
+	 */
 	static std::size_t paramLength (Type type);
-	
+
+	/**
+	 * Access the report parameters.
+	 */
 	ByteArray &params ();
+	/**
+	 * Read-only access to the report parameters.
+	 */
 	const ByteArray &params () const;
 
-	/*
-	 * Raw HID report (without the ID)
+	/**
+	 * Get the raw HID report (without the ID).
 	 */
 	const std::vector<uint8_t> rawReport () const;
-
-	/*
-	 * Error testing
-	 */
-	bool checkErrorMessage10 (uint8_t *sub_id, uint8_t *address, uint8_t *error_code) const;
-	bool checkErrorMessage20 (uint8_t *feature_index, unsigned int *function, unsigned int *sw_id, uint8_t *error_code) const;
 
 private:
 	static constexpr std::size_t HeaderLength = 4;

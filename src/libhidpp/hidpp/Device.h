@@ -26,9 +26,17 @@
 namespace HIDPP
 {
 
+/**
+ * A generic HID++ Device
+ *
+ * \ingroup hidpp
+ */
 class Device: public HIDRaw
 {
 public:
+	/**
+	 * Exception when no HID++ report is found in the report descriptor.
+	 */
 	class NoHIDPPReportException: public std::exception
 	{
 	public:
@@ -36,16 +44,58 @@ public:
 		virtual const char *what () const noexcept;
 	};
 
+	/**
+	 * HID++ device constructor.
+	 *
+	 * Open the hidraw device node at \p path.
+	 *
+	 * For receivers and wireless devices, multiple devices use the same hidraw
+	 * node, \p device_index is needed to select a particular device.
+	 *
+	 * \throws SysCallError
+	 * \throws NoHIDPPReportException
+	 * \throws HIDPP10::Error Only for wireless devices, if there is an error
+	 *                        while reading device information.
+	 */
 	Device (const std::string &path, DeviceIndex device_index = WiredDevice);
 
+	/**
+	 * Access the device index.
+	 */
 	DeviceIndex deviceIndex () const;
 
+	/**
+	 * Check the HID++ protocol version.
+	 *
+	 * \param major	Major number of the protocol version.
+	 * \param minor Minor number of the protocol version.
+	 */
 	void getProtocolVersion (unsigned int &major, unsigned int &minor);
 
+	/**
+	 * Get the product ID of the device.
+	 *
+	 *  - Use HID product ID for wired device or receivers.
+	 *  - Use wireless PID given by the receiver for wireless devices.
+	 */
 	uint16_t productID () const;
+	/**
+	 * Get the product name of the device.
+	 *
+	 *  - Use HID product name for wired device or receivers.
+	 *  - Use the name given by the receiver for wireless devices.
+	 */
 	std::string name () const;
 
+	/**
+	 * Send a HID++ report to this device.
+	 */
 	int sendReport (const Report &report);
+	/**
+	 * Read a HID++ report from this device.
+	 *
+	 * It discards any non-HID++ report.
+	 */
 	Report getReport ();
 
 private:

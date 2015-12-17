@@ -22,3 +22,5 @@ pkg_check_modules(LIBUDEV libudev)
 
 add_subdirectory(src/libhidpp)
 add_subdirectory(src/tools)
+add_subdirectory(doc/libhidpp)
+
