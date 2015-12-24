@@ -18,6 +18,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 
 extern "C" {
 #include <unistd.h>
@@ -42,7 +43,7 @@ using namespace tinyxml2;
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX";
+	static const char *args = "/dev/hidrawX [file]";
 	HIDPP::DeviceIndex device_index = HIDPP::WiredDevice;
 
 	std::vector<Option> options = {
@@ -56,7 +57,7 @@ int main (int argc, char *argv[])
 	if (!Option::processOptions (argc, argv, options, first_arg))
 		return EXIT_FAILURE;
 
-	if (argc-first_arg != 1) {
+	if (argc-first_arg < 1 || argc-first_arg > 2) {
 		fprintf (stderr, "%s", getUsage (argv[0], args, &options).c_str ());
 		return EXIT_FAILURE;
 	}
@@ -70,7 +71,7 @@ int main (int argc, char *argv[])
 
 	std::function<Profile * ()> new_profile;
 	XMLToProfile xml_to_profile;
-	
+
 	switch (info->profile_type) {
 	case G500ProfileType:
 		new_profile = [&info] () {
@@ -83,12 +84,22 @@ int main (int argc, char *argv[])
 		fprintf (stderr, "Profile format not supported\n");
 		return EXIT_FAILURE;
 	}
-	
+
+	// Read XML input
 	std::string xml;
-	while (std::cin) {
+	std::ifstream file;
+	std::istream *input;
+	if (argc-first_arg == 2) {
+		file.open (argv[first_arg+1]);
+		input = &file;
+	}
+	else {
+		input = &std::cin;
+	}
+	while (*input) {
 		char buffer[4096];
-		std::cin.read (buffer, sizeof (buffer));
-		xml.append (buffer, std::cin.gcount ());
+		input->read (buffer, sizeof (buffer));
+		xml.append (buffer, input->gcount ());
 	}
 
 	tinyxml2::XMLDocument doc;
