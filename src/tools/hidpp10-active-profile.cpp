@@ -32,7 +32,7 @@ extern "C" {
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX current|load|load-address|reload";
+	static const char *args = "/dev/hidrawX current|load|load-default|load-address|reload";
 	HIDPP::DeviceIndex device_index = HIDPP::WiredDevice;
 
 	std::vector<Option> options = {
@@ -76,6 +76,9 @@ int main (int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 		iprofile.loadProfileFromIndex (index);
+	}
+	else if (command == "load-default") {
+		iprofile.loadFactoryDefault ();
 	}
 	else if (command == "load-address") {
 		if (argc-first_arg < 3 || argc-first_arg > 4) {
