@@ -105,7 +105,7 @@ Get the current resolution from the mouse.
 
     hidpp10-mouse-resolution /dev/hidrawX set x_dpi [y_dpi]
 
-Set the current resolution for the mouse. If only one resolution is given, both axes use x_dpi. Some mice do not support per-axis resolution.
+Set the current resolution for the mouse. If only one resolution is given, both axes use *x_dpi*. Some mice do not support per-axis resolution.
 
 ### Advanced HID++ 1.0 commands
 
@@ -146,12 +146,45 @@ Buttons use different element names depending on the type of mapping:
    - *CycleProfile* (0x0011) for cycling through profiles,
    - *PreviousProfile* (0x0020) for switching to the previous profile.
  - `<consumer-control>` for a *consumer control* key. Use HID usage code from the keyboard page or names from *src/libhidpp/misc/UsageStrings.cpp*.
- - `<macro>`
+ - `<macro>` has a `type` attribute for several macro types:
+   - *simple* (default), the `<macro>` element contains a macro with only simple instruction. This type does not allow loop or conditional wait.
+   - *loop* defines complex loops. It can contains three elements `<pre>`, `<loop>`, and `<post>` each containing simple macro instructions respectively corresponding to the pre-loop instructions, looping instruction and post-loop instruction. Any of these child elements can be omitted. *loop* type `<macro>` elements can have a `loop-delay` attribute (default value is 0) for delaying the start of the loop: the loop is not executed if the button is released before that time, a 0 *loop-delay* will always execute the loop instructions at least once.
+   - *advanced* can be used for defining more complex macros, it accept advanced macro instructions. The macro must end with an *End* instruction.
  - `<disabled>` for disabling the button.
 
 
 Macro language
 --------------
+
+Macro instructions are separated by semi-colons (;). A instruction may be prepended by a label if it is the destination of a jump, the label is a identifier followed by a colon: `label-name:`.
+
+Macro instruction are split in two categories. Simple instructions are input events (mouse buttons, keyboard keys, ...) and delays; advanced instructions are all other instructions: jumps, waiting and looping instructions, ...
+
+
+### Simple instructions
+
+ - **NoOp** does nothing. It is used internally and should be hidden when printing macros but is accepted as a simple instruction.
+ - **KeyPress** *key* and **KeyRelease** *key* press or release *key* (see *src/libhidpp/misc/UsageStrings.cpp* for key names or use HID keyboard page usage codes).
+ - **ModifierPress** *modifier+...* and **ModifierRelease** *modifier+...* press or release the ‘+’-separated list of modifier keys.
+ - **MouseWheel** *value* move the mouse wheel by *value* (a positive or negative integer).
+ - **MouseButtonPress** *button+...* and **MouseButtonRelease** *button+...* press or release the ‘+’-separated list of buttons. First button is *0*.
+ - **ConsumerControl** *control* sets the current pressed consumer control to *control* (see *src/libhidpp/misc/UsageStrings.cpp* for names or use HID consumer control page usage codes). Set to *0* for releasing the current control.
+ - **Delay** *duration* waits for *duration* milliseconds.
+ - **ShortDelay** *duration* waits for *duration* milliseconds. **ShortDelay** take less memory space than **Delay** but is limited to some predefined values between 8 ms and 1892 ms with steps from 4 ms for shorter delays to 32 ms for longer ones.
+ - **MousePointer** *x* *y* moves the mouse pointer of *(x, y)* units.
+
+
+### Advanced instructions
+
+These instructions are limited to advanced macros.
+
+ - **WaitRelease** waits until the button is released.
+ - **RepeatUntilRelease** repeats the macro from the beginning if the button is still pressed.
+ - **Repeat** repeats the macro from the beginning. This seems to create infinite loops.
+ - **Jump** *label-name* jumps to the instruction following the *label-name* label.
+ - **JumpIfPressed** *label-name* jumps to *label-name* if the button is still pressed, go to the next instruction otherwise.
+ - **JumpIfReleased** *delay* *label-name* jumps to *label-name* if the button is released before *delay* milliseconds or go to the next instruction if it times out.
+ - **End** terminate the execution of the current macro. Any macro must end with this instruction or it will execute whatever is next in the memory as a macro.
 
 
 Support Matrix
