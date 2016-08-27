@@ -46,14 +46,14 @@ namespace HIDPP
 	 * the HID++ report to a particular device.
 	 */
 	enum DeviceIndex: uint8_t {
-		WiredDevice = 0,
+		WiredDevice = 0xff,
+		WiredDevice0 = 0, // used by older devices
 		WirelessDevice1 = 1,
 		WirelessDevice2 = 2,
 		WirelessDevice3 = 3,
 		WirelessDevice4 = 4,
 		WirelessDevice5 = 5,
 		WirelessDevice6 = 6,
-		UnifyingReceiver = 0xff,
 	};
 
 	/**@}*/

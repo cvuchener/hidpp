@@ -27,6 +27,7 @@ extern "C" {
 #include <misc/Log.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Error.h>
+#include <hidpp20/Error.h>
 
 #include "common/common.h"
 #include "common/Option.h"
@@ -76,14 +77,9 @@ int main (int argc, char *argv[])
 		struct udev_device *device = udev_device_new_from_syspath (ctx, udev_list_entry_get_name (current));
 		const char *hidraw_node = udev_device_get_devnode (device);
 		try {
-			HIDPP::Device dev (hidraw_node);
-			unsigned int major, minor;
-			dev.getProtocolVersion (major, minor);
-			printf ("%s: %s (%04hx:%04hx) HID++ %d.%d\n",
-				hidraw_node, dev.name ().c_str (),
-				dev.vendorID (), dev.productID (),
-				major, minor);
 			for (HIDPP::DeviceIndex index: {
+					HIDPP::WiredDevice,
+					HIDPP::WiredDevice0,
 					HIDPP::WirelessDevice1,
 					HIDPP::WirelessDevice2,
 					HIDPP::WirelessDevice3,
@@ -91,19 +87,27 @@ int main (int argc, char *argv[])
 					HIDPP::WirelessDevice5,
 					HIDPP::WirelessDevice6 }) {
 				try {
-					HIDPP::Device wldev (hidraw_node, index);
-					wldev.getProtocolVersion (major, minor);
-					printf ("%s (wireless device %d): %s (%04hx) HID++ %d.%d\n",
-						hidraw_node, index, wldev.name ().c_str (),
-						wldev.productID (),
-						major, minor);
+					HIDPP::Device dev (hidraw_node, index);
+					unsigned int major, minor;
+					dev.getProtocolVersion (major, minor);
+					printf ("%s", hidraw_node);
+					if (index != HIDPP::WiredDevice)
+						printf (" (device %d)", index);
+					printf (": %s (%04hx:%04hx) HID++ %d.%d\n",
+							dev.name ().c_str (),
+							dev.vendorID (), dev.productID (),
+							major, minor);
 				}
 				catch (HIDPP10::Error e) {
-					if (e.errorCode () != HIDPP10::Error::UnknownDevice) {
+					if (e.errorCode () != HIDPP10::Error::UnknownDevice && e.errorCode () != HIDPP10::Error::InvalidSubID) {
 						Log::printf (Log::Error,
 							     "Error while querying %s wireless device %d: %s\n",
 							     hidraw_node, index, e.what ());
 					}
+				}
+				catch (HIDPP20::Error e) {
+					Log::printf (Log::Error, "Error while querying %s device %d: %s\n",
+						     hidraw_node, index, e.what ());
 				}
 			}
 

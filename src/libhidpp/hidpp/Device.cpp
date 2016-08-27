@@ -21,6 +21,7 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/IReceiver.h>
 #include <hidpp20/IRoot.h>
+#include <hidpp20/Error.h>
 #include <misc/Log.h>
 
 #include <algorithm>
@@ -113,15 +114,15 @@ Device::Device (const std::string &path, DeviceIndex device_index):
 					 ShortReportDesc2.end ()))
 		throw NoHIDPPReportException ();
 	if (rdesc.end () == std::search (rdesc.begin (), rdesc.end (),
-	    				 LongReportDesc.begin (),
+					 LongReportDesc.begin (),
 					 LongReportDesc.end ()) &&
 	    rdesc.end () == std::search (rdesc.begin (), rdesc.end (),
-	    				 LongReportDesc2.begin (),
-					 LongReportDesc2.end ())) 
+					 LongReportDesc2.begin (),
+					 LongReportDesc2.end ()))
 		throw NoHIDPPReportException ();
-	
-	if (device_index >= WirelessDevice1 && device_index < UnifyingReceiver) {
-		HIDPP10::Device ur (path, UnifyingReceiver);
+
+	if (device_index >= WirelessDevice1 && device_index < WiredDevice) {
+		HIDPP10::Device ur (path, WiredDevice);
 		HIDPP10::IReceiver ireceiver (&ur);
 		ireceiver.getDeviceInformation (device_index - 1,
 						nullptr,
@@ -172,6 +173,17 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 			major = 1;
 			minor = 0;
 			return;
+		}
+		uint8_t feature_index;
+		unsigned int function, sw_id;
+		if (response.checkErrorMessage20 (&feature_index, &function, &sw_id, &error_code)) {
+			if (feature_index != HIDPP20::IRoot::index || function != HIDPP20::IRoot::Ping || sw_id != software_id) {
+				Log::debug () << __FUNCTION__ << ": "
+					      << "Ignored error message with wrong feature/function/softwareID"
+					      << std::endl;
+				continue;
+			}
+			throw HIDPP20::Error (static_cast<HIDPP20::Error::ErrorCode> (error_code));
 		}
 		if (response.featureIndex () == HIDPP20::IRoot::index &&
 		    response.function () == HIDPP20::IRoot::Ping &&
