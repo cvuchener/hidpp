@@ -3,7 +3,6 @@ project(libhidpp)
 
 set(LIBHIDPP_SOURCES
 	misc/HIDRaw.cpp
-	misc/SysCallError.cpp
 	misc/Log.cpp
 	misc/ByteArray.cpp
 	misc/CRC.cpp

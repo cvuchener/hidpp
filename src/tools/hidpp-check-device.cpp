@@ -19,7 +19,6 @@
 #include <cstdio>
 
 #include <hidpp/Device.h>
-#include <misc/SysCallError.h>
 #include <misc/Log.h>
 
 #include "common/common.h"
@@ -62,7 +61,7 @@ int main (int argc, char *argv[])
 		Log::info () << "Device is not a HID++ device" << std::endl;
 		return EXIT_FAILURE;
 	}
-	catch (SysCallError e) {
+	catch (std::system_error e) {
 		fprintf (stderr, "Failed to open %s: %s\n", path, e.what ());
 		return EXIT_FAILURE;
 	}

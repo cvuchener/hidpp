@@ -17,7 +17,6 @@
  */
 
 #include <misc/HIDRaw.h>
-#include <misc/SysCallError.h>
 #include <misc/Log.h>
 
 #include <sstream>
@@ -34,28 +33,28 @@ HIDRaw::HIDRaw (const std::string &path)
 {
 	_fd = ::open (path.c_str (), O_RDWR);
 	if (_fd == -1) {
-		throw SysCallError ("open", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "open");
 	}
-	
+
 	struct hidraw_devinfo di;
 	if (-1 == ::ioctl (_fd, HIDIOCGRAWINFO, &di)) {
-		throw SysCallError ("HIDIOCGRAWINFO", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "HIDIOCGRAWINFO");
 	}
 	_vendor_id = di.vendor;
 	_product_id = di.product;
 
 	char string[256];
 	if (-1 == ::ioctl (_fd, HIDIOCGRAWNAME(sizeof(string)), string)) {
-		throw SysCallError ("HIDIOCGRAWNAME", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "HIDIOCGRAWNAME");
 	}
 	_name = string;
 
 	struct hidraw_report_descriptor rdesc;
 	if (-1 == ::ioctl (_fd, HIDIOCGRDESCSIZE, &rdesc.size)) {
-		throw SysCallError ("HIDIOCGRDESCSIZE", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "HIDIOCGRDESCSIZE");
 	}
 	if (-1 == ::ioctl (_fd, HIDIOCGRDESC, &rdesc)) {
-		throw SysCallError ("HIDIOCGRDESC", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "HIDIOCGRDESC");
 	}
 	_report_desc = ReportDescriptor (rdesc.value, rdesc.size);
 }
@@ -66,7 +65,7 @@ HIDRaw::HIDRaw (const HIDRaw &other):
 	_report_desc (other._report_desc)
 {
 	if (-1 == _fd) {
-		throw SysCallError ("dup", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "dup");
 	}
 }
 
@@ -99,7 +98,7 @@ int HIDRaw::writeReport (const std::vector<uint8_t> &report)
 {
 	int ret = write (_fd, report.data (), report.size ());
 	if (ret == -1) {
-		throw SysCallError ("write", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "write");
 	}
 	Log::printBytes (Log::DebugReport, "Send HID report:",
 			 report.begin (), report.end ());
@@ -111,7 +110,7 @@ int HIDRaw::readReport (std::vector<uint8_t> &report)
 	int ret = read (_fd, report.data (), report.size ());
 	if (ret == -1) {
 		report.clear ();
-		throw SysCallError ("read", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "read");
 	}
 	report.resize (ret);
 	Log::printBytes (Log::DebugReport, "Recv HID report:",
@@ -129,7 +128,7 @@ int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
 	ret = select (_fd+1, &fds, nullptr, nullptr, &to);
 	if (ret == -1) {
 		report.clear ();
-		throw SysCallError ("select", errno, __PRETTY_FUNCTION__);
+		throw std::system_error (errno, std::system_category (), "select");
 	}
 	if (FD_ISSET (_fd, &fds))
 		return readReport (report);

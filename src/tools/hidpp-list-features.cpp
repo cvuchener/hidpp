@@ -24,7 +24,6 @@
 #include <hidpp10/IIndividualFeatures.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/IFeatureSet.h>
-#include <misc/SysCallError.h>
 #include <misc/Log.h>
 
 #include "common/common.h"
@@ -72,9 +71,9 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 					address, register_size, e.what (), e.errorCode ());
 			}
 		}
-		catch (SysCallError e) {
+		catch (std::system_error e) {
 			/* G5 does not support long writes and throw EPIPE */
-			if (e.error () != EPIPE) {
+			if (e.code ().value () != EPIPE) {
 				throw e;
 			}
 		}
@@ -123,13 +122,13 @@ int main (int argc, char *argv[])
 			dev.name ().c_str (),
 			dev.vendorID (), dev.productID (),
 			major, minor);
-	
+
 	}
 	catch (HIDPP::Device::NoHIDPPReportException e) {
 		printf ("%s is not a HID++ device\n", path);
 		return EXIT_FAILURE;
 	}
-	catch (SysCallError e) {
+	catch (std::system_error e) {
 		fprintf (stderr, "Failed to open %s: %s\n", path, e.what ());
 		return EXIT_FAILURE;
 	}

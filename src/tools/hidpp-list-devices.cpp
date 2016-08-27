@@ -23,7 +23,6 @@ extern "C" {
 #include <libudev.h>
 }
 
-#include <misc/SysCallError.h>
 #include <misc/Log.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Error.h>
@@ -118,7 +117,7 @@ int main (int argc, char *argv[])
 		}
 		catch (HIDPP::Device::NoHIDPPReportException e) {
 		}
-		catch (SysCallError e) {
+		catch (std::system_error e) {
 			Log::printf (Log::Warning, "Failed to open %s: %s\n", hidraw_node, e.what ());
 		}
 		udev_device_unref (device);
