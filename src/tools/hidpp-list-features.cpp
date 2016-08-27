@@ -181,9 +181,9 @@ int main (int argc, char *argv[])
 		}
 	}
 	/*
-	 * HID++ 2.0
+	 * HID++ 2.0 and later
 	 */
-	else if (major == 2 && minor == 0) {
+	else if (major >= 2) {
 		HIDPP20::Device dev (path, device_index);
 		HIDPP20::IFeatureSet ifeatureset (&dev);
 
