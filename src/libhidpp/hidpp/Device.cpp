@@ -152,7 +152,7 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 			software_id);
 	sendReport (request);
 	while (true) {
-		Report response = getReport ();
+		Report response = getReport (true); // Time out if there is no valid response received fast enough
 
 		if (response.deviceIndex () != _device_index) {
 			Log::debug () << __FUNCTION__ << ": "
@@ -213,13 +213,16 @@ int Device::sendReport (const Report &report)
 	return writeReport (report.rawReport ());
 }
 
-Report Device::getReport ()
+Report Device::getReport (bool timeout)
 {
 	std::vector<uint8_t> raw_report;
 	while (true) {
 		try {
 			raw_report.resize (Report::MaxDataLength+1);
-			readReport (raw_report);
+			if (timeout)
+				readReport (raw_report, 1);
+			else
+				readReport (raw_report);
 			return Report (raw_report[0], &raw_report[1], raw_report.size () - 1);
 		}
 		catch (Report::InvalidReportID e) {

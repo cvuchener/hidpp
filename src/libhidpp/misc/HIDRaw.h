@@ -25,6 +25,10 @@
 class HIDRaw
 {
 public:
+	class TimeoutError: public std::exception
+	{
+		const char *what () noexcept;
+	};
 	typedef std::basic_string<uint8_t> ReportDescriptor;
 
 	HIDRaw (const std::string &path);
@@ -38,6 +42,7 @@ public:
 
 	int writeReport (const std::vector<uint8_t> &report);
 	int readReport (std::vector<uint8_t> &report);
+	int readReport (std::vector<uint8_t> &report, int timeout);
 
 private:
 	int _fd;

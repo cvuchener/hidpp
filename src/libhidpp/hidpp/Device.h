@@ -95,8 +95,10 @@ public:
 	 * Read a HID++ report from this device.
 	 *
 	 * It discards any non-HID++ report.
+	 *
+	 * \param timeout If true, try to read a report with a time out, throw HIDRaw::TimeoutError if no valid report is read fast enough.
 	 */
-	Report getReport ();
+	Report getReport (bool timeout = false);
 
 private:
 	DeviceIndex _device_index;

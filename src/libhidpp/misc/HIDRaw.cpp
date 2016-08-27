@@ -118,5 +118,25 @@ int HIDRaw::readReport (std::vector<uint8_t> &report)
 			 report.begin (), report.end ());
 	return ret;
 }
-	
 
+int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
+{
+	int ret;
+	timeval to = { timeout, 0 };
+	fd_set fds;
+	FD_ZERO (&fds);
+	FD_SET (_fd, &fds);
+	ret = select (_fd+1, &fds, nullptr, nullptr, &to);
+	if (ret == -1) {
+		report.clear ();
+		throw SysCallError ("select", errno, __PRETTY_FUNCTION__);
+	}
+	if (FD_ISSET (_fd, &fds))
+		return readReport (report);
+	throw TimeoutError ();
+}
+
+const char *HIDRaw::TimeoutError::what () noexcept
+{
+	return "readReport timed out";
+}

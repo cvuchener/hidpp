@@ -109,6 +109,10 @@ int main (int argc, char *argv[])
 					Log::printf (Log::Error, "Error while querying %s device %d: %s\n",
 						     hidraw_node, index, e.what ());
 				}
+				catch (HIDRaw::TimeoutError e) {
+					Log::printf (Log::Warning, "Device %s (index %d) timed out\n",
+						     hidraw_node, index);
+				}
 			}
 
 		}
