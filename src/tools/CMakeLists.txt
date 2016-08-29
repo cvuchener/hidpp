@@ -77,3 +77,8 @@ if(TINYXML2_FOUND)
 else()
 	message("Profile tools require tinyxml2.")
 endif()
+
+add_executable(hidpp20-call-function
+	hidpp20-call-function.cpp
+	$<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp20-call-function hidpp)
