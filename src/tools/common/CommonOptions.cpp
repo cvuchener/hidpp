@@ -19,7 +19,7 @@ Option DeviceIndexOption (HIDPP::DeviceIndex &device_index)
 			}
 			switch (index) {
 			case 0:
-				device_index = HIDPP::WiredDevice0;
+				device_index = HIDPP::CordedDevice;
 				break;
 			case 1:
 				device_index = HIDPP::WirelessDevice1;

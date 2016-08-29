@@ -46,8 +46,8 @@ namespace HIDPP
 	 * the HID++ report to a particular device.
 	 */
 	enum DeviceIndex: uint8_t {
-		WiredDevice = 0xff,
-		WiredDevice0 = 0, // used by older devices
+		DefaultDevice = 0xff, // used by receiver or corded or bluetooth devices
+		CordedDevice = 0, // used by older corded devices
 		WirelessDevice1 = 1,
 		WirelessDevice2 = 2,
 		WirelessDevice3 = 3,

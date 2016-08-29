@@ -57,7 +57,7 @@ public:
 	 * \throws HIDPP10::Error Only for wireless devices, if there is an error
 	 *                        while reading device information.
 	 */
-	Device (const std::string &path, DeviceIndex device_index = WiredDevice);
+	Device (const std::string &path, DeviceIndex device_index = DefaultDevice);
 
 	/**
 	 * Access the device index.

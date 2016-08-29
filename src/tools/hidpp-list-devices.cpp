@@ -77,8 +77,8 @@ int main (int argc, char *argv[])
 		const char *hidraw_node = udev_device_get_devnode (device);
 		try {
 			for (HIDPP::DeviceIndex index: {
-					HIDPP::WiredDevice,
-					HIDPP::WiredDevice0,
+					HIDPP::DefaultDevice,
+					HIDPP::CordedDevice,
 					HIDPP::WirelessDevice1,
 					HIDPP::WirelessDevice2,
 					HIDPP::WirelessDevice3,
@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
 					unsigned int major, minor;
 					dev.getProtocolVersion (major, minor);
 					printf ("%s", hidraw_node);
-					if (index != HIDPP::WiredDevice)
+					if (index != HIDPP::DefaultDevice)
 						printf (" (device %d)", index);
 					printf (": %s (%04hx:%04hx) HID++ %d.%d\n",
 							dev.name ().c_str (),

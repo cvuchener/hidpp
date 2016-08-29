@@ -122,8 +122,8 @@ Device::Device (const std::string &path, DeviceIndex device_index):
 					 LongReportDesc2.end ()))
 		throw NoHIDPPReportException ();
 
-	if (device_index >= WirelessDevice1 && device_index < WiredDevice) {
-		HIDPP10::Device ur (path, WiredDevice);
+	if (device_index >= WirelessDevice1 && device_index <= WirelessDevice6) {
+		HIDPP10::Device ur (path, DefaultDevice);
 		HIDPP10::IReceiver ireceiver (&ur);
 		ireceiver.getDeviceInformation (device_index - 1,
 						nullptr,

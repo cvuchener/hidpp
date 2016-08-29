@@ -27,7 +27,7 @@ class Device: public HIDPP::Device
 {
 public:
 	static unsigned int softwareID;
-	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::WiredDevice);
+	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
 
 	ByteArray callFunction (uint8_t feature_index,
 				unsigned int function,

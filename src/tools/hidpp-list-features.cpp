@@ -83,7 +83,7 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 int main (int argc, char *argv[])
 {
 	static const char *args = "/dev/hidrawX";
-	HIDPP::DeviceIndex device_index = HIDPP::WiredDevice;
+	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 	bool do_write_tests = false;
 
 	std::vector<Option> options = {

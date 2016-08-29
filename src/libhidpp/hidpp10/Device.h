@@ -28,8 +28,8 @@ namespace HIDPP10
 class Device: public HIDPP::Device
 {
 public:
-	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::WiredDevice);
-	
+	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
+
 	void setRegister (uint8_t address,
 			  const ByteArray &params,
 			  ByteArray *results);
