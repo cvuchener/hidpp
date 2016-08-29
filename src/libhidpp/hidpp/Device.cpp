@@ -21,6 +21,7 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/IReceiver.h>
 #include <hidpp20/IRoot.h>
+#include <hidpp10/Error.h>
 #include <hidpp20/Error.h>
 #include <misc/Log.h>
 
@@ -170,6 +171,8 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 					      << std::endl;
 				continue;
 			}
+			if (error_code != HIDPP10::Error::InvalidSubID)
+				throw HIDPP10::Error (static_cast<HIDPP10::Error::ErrorCode> (error_code));
 			major = 1;
 			minor = 0;
 			return;
