@@ -48,7 +48,7 @@ uint16_t IFeatureSet::getFeatureID (uint8_t feature_index,
 				    bool *obsolete,
 				    bool *hidden)
 {
-	std::vector<uint8_t> params, results;
+	std::vector<uint8_t> params (1), results;
 	params[0] = feature_index;
 	results = _dev->callFunction (_index, GetFeatureID, params);
 	if (obsolete)

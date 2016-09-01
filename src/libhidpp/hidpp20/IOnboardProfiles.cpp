@@ -61,7 +61,7 @@ IOnboardProfiles::Mode IOnboardProfiles::getMode ()
 
 void IOnboardProfiles::setMode (Mode mode)
 {
-	std::vector<uint8_t> params;
+	std::vector<uint8_t> params (1);
 	params[0] = static_cast<uint8_t> (mode);
 	_dev->callFunction (_index, SetMode, params);
 }
@@ -75,14 +75,14 @@ int IOnboardProfiles::getCurrentProfile ()
 
 void IOnboardProfiles::setCurrentProfile (int index)
 {
-	std::vector<uint8_t> params;
+	std::vector<uint8_t> params (1);
 	params[0] = index;
 	_dev->callFunction (_index, SetCurrentProfile, params);
 }
 
 std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset)
 {
-	std::vector<uint8_t> params, results;
+	std::vector<uint8_t> params (4), results;
 	params[0] = mem_type;
 	params[1] = page;
 	params[3] = offset;
@@ -91,7 +91,7 @@ std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned
 
 void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset)
 {
-	std::vector<uint8_t> params;
+	std::vector<uint8_t> params (4);
 	params[0] = MemoryType::Writeable;
 	params[1] = page;
 	params[3] = offset;
@@ -118,7 +118,7 @@ int IOnboardProfiles::getCurrentDPIIndex ()
 
 void IOnboardProfiles::setCurrentDPIIndex (int index)
 {
-	std::vector<uint8_t> params;
+	std::vector<uint8_t> params (1);
 	params[0] = index;
 	_dev->callFunction (_index, SetCurrentDPIIndex, params);
 }

@@ -33,7 +33,7 @@ uint8_t IRoot::getFeature (uint16_t feature_id,
 			   bool *obsolete,
 			   bool *hidden)
 {
-	std::vector<uint8_t> params, results;
+	std::vector<uint8_t> params (2), results;
 	writeBE<uint16_t> (params, 0, feature_id);
 	results = _dev->callFunction (index, GetFeature, params);
 	if (obsolete)
