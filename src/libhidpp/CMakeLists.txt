@@ -4,7 +4,6 @@ project(libhidpp)
 set(LIBHIDPP_SOURCES
 	misc/HIDRaw.cpp
 	misc/Log.cpp
-	misc/ByteArray.cpp
 	misc/CRC.cpp
 	misc/UsageStrings.cpp
 	hidpp/Device.cpp

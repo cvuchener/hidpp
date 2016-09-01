@@ -30,7 +30,7 @@ IIndividualFeatures::IIndividualFeatures (Device *dev):
 
 unsigned int IIndividualFeatures::flags ()
 {
-	ByteArray results (HIDPP::ShortParamLength);
+	std::vector<uint8_t> results (HIDPP::ShortParamLength);
 	_dev->getRegister (EnableIndividualFeatures, nullptr, results);
 	unsigned int flags = 0;
 	for (unsigned int i = 0; i < 3; ++i)
@@ -40,7 +40,7 @@ unsigned int IIndividualFeatures::flags ()
 
 void IIndividualFeatures::setFlags (unsigned int f)
 {
-	ByteArray params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (HIDPP::ShortParamLength);
 	for (unsigned int i = 0; i < 3; ++i)
 		params[i] = (f >> (i*8)) & 0xFF;
 	_dev->setRegister (EnableIndividualFeatures, params, nullptr);

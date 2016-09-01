@@ -86,7 +86,7 @@ Report::Report (Type type,
 Report::Report (HIDPP::DeviceIndex device_index,
 		uint8_t sub_id,
 		uint8_t address,
-		const ByteArray &params):
+		const std::vector<uint8_t> &params):
 	_header({ 0, device_index, sub_id, address }),
 	_params (params)
 {
@@ -100,7 +100,7 @@ Report::Report (HIDPP::DeviceIndex device_index,
 	default:
 		throw InvalidReportLength ();
 	}
-} 
+}
 
 Report::Report (Type type,
 		DeviceIndex device_index,
@@ -124,7 +124,7 @@ Report::Report (DeviceIndex device_index,
 		uint8_t feature_index,
 		unsigned int function,
 		unsigned int sw_id,
-		const ByteArray &params):
+		const std::vector<uint8_t> &params):
 	_header({ 0, device_index, feature_index,
 		  static_cast<uint8_t> ((function & 0x0F) << 4 | (sw_id & 0x0F)) }),
 	_params (params)
@@ -218,12 +218,12 @@ std::size_t Report::paramLength (Type type)
 	}
 }
 
-ByteArray &Report::params ()
+std::vector<uint8_t> &Report::params ()
 {
 	return _params;
 }
 
-const ByteArray &Report::params () const
+const std::vector<uint8_t> &Report::params () const
 {
 	return _params;
 }

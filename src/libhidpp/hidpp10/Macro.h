@@ -21,7 +21,6 @@
 
 #include <cstdint>
 #include <list>
-#include <misc/ByteArray.h>
 #include <hidpp10/Address.h>
 #include <hidpp10/MemoryMapping.h>
 
@@ -113,7 +112,7 @@ public:
 
 	Macro ();
 	Macro (MemoryMapping &mem, Address address);
-	Macro (ByteArray::const_iterator begin, Address start_address);
+	Macro (std::vector<uint8_t>::const_iterator begin, Address start_address);
 
 	explicit Macro (const Macro &);
 	Macro (Macro &&) = default;
@@ -121,7 +120,7 @@ public:
 	Macro &operator= (const Macro &) = delete;
 	Macro &operator= (Macro &&) = default;
 
-	ByteArray::iterator write (ByteArray::iterator begin, Address start_address) const;
+	std::vector<uint8_t>::iterator write (std::vector<uint8_t>::iterator begin, Address start_address) const;
 	Address write (MemoryMapping &mem, Address start) const;
 
 	/**

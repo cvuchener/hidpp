@@ -28,7 +28,7 @@ ProfileDirectory::ProfileDirectory ()
 
 ProfileDirectory::ProfileDirectory (MemoryMapping *mem)
 {
-	const ByteArray &page = mem->getReadOnlyPage (1);
+	const std::vector<uint8_t> &page = mem->getReadOnlyPage (1);
 	unsigned int i = 0;
 	while (page[i] != 0xff) {
 		emplace_back (ProfileEntry ({
@@ -41,7 +41,7 @@ ProfileDirectory::ProfileDirectory (MemoryMapping *mem)
 
 void ProfileDirectory::write (MemoryMapping *mem) const
 {
-	ByteArray &page = mem->getWritablePage (1);
+	std::vector<uint8_t> &page = mem->getWritablePage (1);
 	unsigned int i = 0;
 	for (const ProfileEntry &entry: *this) {
 		page[i+0] = entry.address.page;

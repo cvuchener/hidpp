@@ -31,20 +31,20 @@ public:
 	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
 
 	void setRegister (uint8_t address,
-			  const ByteArray &params,
-			  ByteArray *results);
+			  const std::vector<uint8_t> &params,
+			  std::vector<uint8_t> *results);
 	void getRegister (uint8_t address,
-			  const ByteArray *params,
-			  ByteArray &results);
+			  const std::vector<uint8_t> *params,
+			  std::vector<uint8_t> &results);
 
 	void sendDataPacket (uint8_t sub_id, uint8_t seq_num,
-			     ByteArray &params,
+			     const std::vector<uint8_t> &params,
 			     bool wait_for_ack = false);
 private:
 	template<uint8_t sub_id, std::size_t params_length, std::size_t results_length>
 	void accessRegister (uint8_t address,
-			     const ByteArray *params,
-			     ByteArray *results);
+			     const std::vector<uint8_t> *params,
+			     std::vector<uint8_t> *results);
 };
 
 }

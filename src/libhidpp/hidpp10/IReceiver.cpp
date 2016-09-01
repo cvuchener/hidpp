@@ -21,6 +21,7 @@
 #include <hidpp10/defs.h>
 #include <hidpp10/Device.h>
 
+#include <misc/Endian.h>
 #include <stdexcept>
 
 using namespace HIDPP10;
@@ -39,8 +40,8 @@ void IReceiver::getDeviceInformation (unsigned int device,
 	if (device >= 16)
 		throw std::out_of_range ("Device index too big");
 
-	ByteArray params (HIDPP::ShortParamLength),
-			  results (HIDPP::LongParamLength);
+	std::vector<uint8_t> params (HIDPP::ShortParamLength),
+			     results (HIDPP::LongParamLength);
 
 	params[0] = DeviceInformation | (device & 0x0F);
 
@@ -54,7 +55,7 @@ void IReceiver::getDeviceInformation (unsigned int device,
 	if (report_interval)
 		*report_interval = results[2];
 	if (wpid)
-		*wpid = results.getBE<uint16_t> (3);
+		*wpid = readBE<uint16_t> (results, 3);
 	if (type)
 		*type = static_cast<DeviceType> (results[7]);
 }
@@ -67,8 +68,8 @@ void IReceiver::getDeviceExtendedInformation (unsigned int device,
 	if (device >= 16)
 		throw std::out_of_range ("Device index too big");
 
-	ByteArray params (HIDPP::ShortParamLength),
-			  results (HIDPP::LongParamLength);
+	std::vector<uint8_t> params (HIDPP::ShortParamLength),
+			     results (HIDPP::LongParamLength);
 
 	params[0] = ExtendedDeviceInformation | (device & 0x0F);
 
@@ -78,21 +79,20 @@ void IReceiver::getDeviceExtendedInformation (unsigned int device,
 		throw std::runtime_error ("Invalid DevicePairingInfo type");
 
 	if (serial)
-		*serial = results.getBE<uint32_t> (1);
+		*serial = readBE<uint32_t> (results, 1);
 	if (report_types)
-		*report_types = results.getBE<uint32_t> (5);
+		*report_types = readBE<uint32_t> (results, 5);
 	if (ps_loc)
 		*ps_loc = static_cast<PowerSwitchLocation> (results[9] & 0x0F);
 }
 
 std::string IReceiver::getDeviceName (unsigned int device)
 {
-	
 	if (device >= 16)
 		throw std::out_of_range ("Device index too big");
 
-	ByteArray params (HIDPP::ShortParamLength),
-			  results (HIDPP::LongParamLength);
+	std::vector<uint8_t> params (HIDPP::ShortParamLength),
+			     results (HIDPP::LongParamLength);
 
 	params[0] = DeviceName | (device & 0x0F);
 
@@ -100,7 +100,7 @@ std::string IReceiver::getDeviceName (unsigned int device)
 
 	if (params[0] != results[0])
 		throw std::runtime_error ("Invalid DevicePairingInfo type");
-	
+
 	std::size_t length = results[1];
 	return std::string (reinterpret_cast<char *> (&results[2]), std::min (length, 14ul));
 }

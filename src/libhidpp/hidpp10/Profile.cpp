@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <misc/Log.h>
+#include <misc/Endian.h>
 #include <hidpp10/Profile.h>
 #include <hidpp10/Sensor.h>
 
@@ -89,12 +90,12 @@ Profile::Button::Button ():
 {
 }
 
-void Profile::Button::read (ByteArray::const_iterator begin)
+void Profile::Button::read (std::vector<uint8_t>::const_iterator begin)
 {
 	switch (*begin) {
 	case MouseButton:
 		_type = MouseButton;
-		_params.button = ByteArray::getLE<uint16_t> (begin+1);
+		_params.button = readLE<uint16_t> (begin+1);
 		break;
 
 	case Key:
@@ -105,12 +106,12 @@ void Profile::Button::read (ByteArray::const_iterator begin)
 
 	case Special:
 		_type = Special;
-		_params.special = static_cast<SpecialFunction> (ByteArray::getLE<uint16_t> (begin+1));
+		_params.special = static_cast<SpecialFunction> (readLE<uint16_t> (begin+1));
 		break;
 
 	case ConsumerControl:
 		_type = ConsumerControl;
-		_params.consumer_control = ByteArray::getBE<uint16_t> (begin+1);
+		_params.consumer_control = readBE<uint16_t> (begin+1);
 		break;
 
 	case Disabled:
@@ -124,12 +125,12 @@ void Profile::Button::read (ByteArray::const_iterator begin)
 	}
 }
 
-void Profile::Button::write (ByteArray::iterator begin) const
+void Profile::Button::write (std::vector<uint8_t>::iterator begin) const
 {
 	switch (_type) {
 	case MouseButton:
 		*begin = MouseButton;
-		ByteArray::setLE<uint16_t> (begin+1, _params.button);
+		writeLE<uint16_t> (begin+1, _params.button);
 		break;
 
 	case Key:
@@ -140,12 +141,12 @@ void Profile::Button::write (ByteArray::iterator begin) const
 
 	case Special:
 		*begin = Special;
-		ByteArray::setLE<uint16_t> (begin+1, _params.special);
+		writeLE<uint16_t> (begin+1, _params.special);
 		break;
 
 	case ConsumerControl:
 		*begin = ConsumerControl;
-		ByteArray::setBE<uint16_t> (begin+1, _params.consumer_control);
+		writeBE<uint16_t> (begin+1, _params.consumer_control);
 		break;
 
 	case Disabled:
@@ -255,7 +256,7 @@ Profile::~Profile ()
 {
 }
 
-void Profile::readButtons (ByteArray::const_iterator begin)
+void Profile::readButtons (std::vector<uint8_t>::const_iterator begin)
 {
 	for (Button &button: _buttons) {
 		button.read (begin);
@@ -263,7 +264,7 @@ void Profile::readButtons (ByteArray::const_iterator begin)
 	}
 }
 
-void Profile::writeButtons (ByteArray::iterator begin) const
+void Profile::writeButtons (std::vector<uint8_t>::iterator begin) const
 {
 	for (const Button &button: _buttons) {
 		button.write (begin);
@@ -290,7 +291,7 @@ std::size_t G500Profile::profileLength () const
 	return 78;
 }
 
-void G500Profile::read (ByteArray::const_iterator begin)
+void G500Profile::read (std::vector<uint8_t>::const_iterator begin)
 {
 	_color.r = *(begin+0);
 	_color.g = *(begin+1);
@@ -298,11 +299,11 @@ void G500Profile::read (ByteArray::const_iterator begin)
 	_angle = *(begin+3);
 	_modes.clear ();
 	for (unsigned int i = 0; i < MaxModeCount; ++i) {
-		uint16_t x_res = ByteArray::getBE<uint16_t> (begin+4+i*6);
+		uint16_t x_res = readBE<uint16_t> (begin+4+i*6);
 		if (i > 0 && x_res == 0) // Mode is disabled
 			break;
-		uint16_t y_res = ByteArray::getBE<uint16_t> (begin+4+i*6+2);
-		uint16_t leds_raw = ByteArray::getLE<uint16_t> (begin+4+i*6+4);
+		uint16_t y_res = readBE<uint16_t> (begin+4+i*6+2);
+		uint16_t leds_raw = readLE<uint16_t> (begin+4+i*6+4);
 		std::vector<bool> leds;
 		for (unsigned int j = 0; j < 4; ++j) {
 			unsigned int l = (leds_raw >> j*4) & 0x0F;
@@ -328,25 +329,25 @@ void G500Profile::read (ByteArray::const_iterator begin)
 	readButtons (begin+39);
 }
 
-void G500Profile::write (ByteArray::iterator begin) const
+void G500Profile::write (std::vector<uint8_t>::iterator begin) const
 {
 	*(begin+0) = _color.r;
 	*(begin+1) = _color.g;
 	*(begin+2) = _color.b;
 	*(begin+3) = _angle;
 	for (unsigned int i = 0; i < _modes.size (); ++i) {
-		ByteArray::setBE<uint16_t> (begin+4+i*6,
-					    _sensor->fromDPI (_modes[i].x_res));
-		ByteArray::setBE<uint16_t> (begin+4+i*6+2,
-					    _sensor->fromDPI (_modes[i].y_res));
+		writeBE<uint16_t> (begin+4+i*6,
+				   _sensor->fromDPI (_modes[i].x_res));
+		writeBE<uint16_t> (begin+4+i*6+2,
+				   _sensor->fromDPI (_modes[i].y_res));
 		uint16_t leds = 0;
 		for (unsigned int j = 0; j < _modes[i].leds.size (); ++j)
 			leds |= (_modes[i].leds[j] ? 0x02 : 0x01) << (j*4);
-		ByteArray::setLE<uint16_t> (begin+4+i*6+4, leds);
+		writeLE<uint16_t> (begin+4+i*6+4, leds);
 	}
 	// Disable the mode after the last one
 	if (_modes.size () < MaxModeCount) {
-		ByteArray::setBE<uint16_t> (begin+4+_modes.size ()*6, 0);
+		writeBE<uint16_t> (begin+4+_modes.size ()*6, 0);
 	}
 	*(begin+34) = (_angle_snap ? 0x02 : 0x01);
 	*(begin+35) = _default_mode;

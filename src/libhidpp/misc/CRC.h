@@ -20,13 +20,13 @@
 #define CRC_H
 
 #include <cstdint>
-#include <misc/ByteArray.h>
+#include <vector>
 
 namespace CRC
 {
 
-uint16_t CCITT (ByteArray::const_iterator begin,
-		ByteArray::const_iterator end,
+uint16_t CCITT (std::vector<uint8_t>::const_iterator begin,
+		std::vector<uint8_t>::const_iterator end,
 		uint16_t start_value = 0xFFFF);
 
 }

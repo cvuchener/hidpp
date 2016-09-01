@@ -147,7 +147,7 @@ int main (int argc, char *argv[])
 					next_address = macros[i].write (mem, next_address);
 				}
 			}
-			ByteArray &page = mem.getWritablePage (profile_entry->address.page);
+			std::vector<uint8_t> &page = mem.getWritablePage (profile_entry->address.page);
 			profile->write (page.begin () + profile_entry->address.offset);
 
 			delete profile;
@@ -167,7 +167,7 @@ int main (int argc, char *argv[])
 		for (unsigned int i = 0; i < profile_dir.size (); ++i) {
 			const ProfileEntry &entry = profile_dir[i];
 			Profile *profile = new_profile ();
-			const ByteArray &page = mem.getReadOnlyPage (entry.address.page);
+			const std::vector<uint8_t> &page = mem.getReadOnlyPage (entry.address.page);
 			profile->read (page.begin () + entry.address.offset*2);
 
 			std::vector<Macro> macros (profile->buttonCount ());

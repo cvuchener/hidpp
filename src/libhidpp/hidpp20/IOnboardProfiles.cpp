@@ -21,6 +21,7 @@
 #include <hidpp20/Device.h>
 #include <hidpp20/IRoot.h>
 #include <misc/Log.h>
+#include <misc/Endian.h>
 
 using namespace HIDPP20;
 
@@ -38,7 +39,7 @@ uint8_t IOnboardProfiles::index () const
 
 IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 {
-	ByteArray params, results;
+	std::vector<uint8_t> params, results;
 	results = _dev->callFunction (_index, GetDescription, params);
 	return Description {
 		static_cast<MemoryModel> (results[0]),
@@ -46,52 +47,51 @@ IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 		static_cast<MacroFormat> (results[2]),
 		results[3], results[4], // Profile counts
 		results[5], // Button count
-		results[6], results.getBE<uint16_t> (7), // Sector (page) count and size
+		results[6], readBE<uint16_t> (results, 7), // Sector (page) count and size
 		results[9], results[10]
 	};
 }
 
 IOnboardProfiles::Mode IOnboardProfiles::getMode ()
 {
-	ByteArray params, results;
+	std::vector<uint8_t> params, results;
 	results = _dev->callFunction (_index, GetMode, params);
 	return static_cast<Mode> (results[0]);
 }
 
 void IOnboardProfiles::setMode (Mode mode)
 {
-	ByteArray params;
+	std::vector<uint8_t> params;
 	params[0] = static_cast<uint8_t> (mode);
 	_dev->callFunction (_index, SetMode, params);
 }
 
 int IOnboardProfiles::getCurrentProfile ()
 {
-	ByteArray params, results;
+	std::vector<uint8_t> params, results;
 	results = _dev->callFunction (_index, GetCurrentProfile, params);
 	return results[0];
 }
 
 void IOnboardProfiles::setCurrentProfile (int index)
 {
-	ByteArray params;
+	std::vector<uint8_t> params;
 	params[0] = index;
 	_dev->callFunction (_index, SetCurrentProfile, params);
 }
 
 std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset)
 {
-	ByteArray params, results;
+	std::vector<uint8_t> params, results;
 	params[0] = mem_type;
 	params[1] = page;
 	params[3] = offset;
-	results = _dev->callFunction (_index, MemoryRead, params);
-	return std::vector<uint8_t> (results.begin (), results.end ());
+	return _dev->callFunction (_index, MemoryRead, params);
 }
 
 void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset)
 {
-	ByteArray params;
+	std::vector<uint8_t> params;
 	params[0] = MemoryType::Writeable;
 	params[1] = page;
 	params[3] = offset;
@@ -100,27 +100,25 @@ void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset)
 
 void IOnboardProfiles::memoryWrite (const std::vector<uint8_t> &data)
 {
-	ByteArray params (16);
-	std::copy (data.begin (), data.end (), params.begin ());
-	_dev->callFunction (_index, MemoryWrite, params);
+	_dev->callFunction (_index, MemoryWrite, data);
 }
 
 void IOnboardProfiles::memoryWriteEnd ()
 {
-	ByteArray params;
+	std::vector<uint8_t> params;
 	_dev->callFunction (_index, MemoryWriteEnd, params);
 }
 
 int IOnboardProfiles::getCurrentDPIIndex ()
 {
-	ByteArray params, results;
+	std::vector<uint8_t> params, results;
 	results = _dev->callFunction (_index, GetCurrentDPIIndex, params);
 	return results[0];
 }
 
 void IOnboardProfiles::setCurrentDPIIndex (int index)
 {
-	ByteArray params;
+	std::vector<uint8_t> params;
 	params[0] = index;
 	_dev->callFunction (_index, SetCurrentDPIIndex, params);
 }

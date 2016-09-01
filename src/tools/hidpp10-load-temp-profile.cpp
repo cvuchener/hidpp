@@ -114,9 +114,9 @@ int main (int argc, char *argv[])
 
 	xml_to_profile (doc.RootElement (), profile, macros);
 
-	ByteArray data (RAMSize);
+	std::vector<uint8_t> data (RAMSize);
 	unsigned int profile_len = profile->profileLength ();
-	ByteArray::iterator next_pos = data.begin () + profile_len + profile_len%2;
+	std::vector<uint8_t>::iterator next_pos = data.begin () + profile_len + profile_len%2;
 	for (unsigned int i = 0; i < profile->buttonCount (); ++i) {
 		Profile::Button &button = profile->button (i);
 		if (button.type () == Profile::Button::Macro) {

@@ -20,6 +20,8 @@
 
 #include <hidpp20/Device.h>
 
+#include <misc/Endian.h>
+
 using namespace HIDPP20;
 
 IRoot::IRoot (Device *dev):
@@ -31,8 +33,8 @@ uint8_t IRoot::getFeature (uint16_t feature_id,
 			   bool *obsolete,
 			   bool *hidden)
 {
-	ByteArray params, results;
-	params.setBE<uint16_t> (0, feature_id);
+	std::vector<uint8_t> params, results;
+	writeBE<uint16_t> (params, 0, feature_id);
 	results = _dev->callFunction (index, GetFeature, params);
 	if (obsolete)
 		*obsolete = results[1] & (1<<7);

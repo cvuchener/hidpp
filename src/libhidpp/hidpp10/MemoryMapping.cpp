@@ -22,6 +22,7 @@
 #include <hidpp10/defs.h>
 #include <misc/CRC.h>
 #include <misc/Log.h>
+#include <misc/Endian.h>
 
 using namespace HIDPP10;
 
@@ -30,13 +31,13 @@ MemoryMapping::MemoryMapping (Device *dev):
 {
 }
 
-const ByteArray &MemoryMapping::getReadOnlyPage (unsigned int page)
+const std::vector<uint8_t> &MemoryMapping::getReadOnlyPage (unsigned int page)
 {
 	getPage (page);
 	return _pages[page].second;
 }
 
-ByteArray &MemoryMapping::getWritablePage (unsigned int page)
+std::vector<uint8_t> &MemoryMapping::getWritablePage (unsigned int page)
 {
 	getPage (page);
 	_pages[page].first = Modified;
@@ -51,7 +52,7 @@ void MemoryMapping::sync ()
 			uint16_t crc = CRC::CCITT (_pages[i].second.begin (),
 						   _pages[i].second.end () - sizeof (crc));
 			Log::printf (Log::Debug, "Page %d CRC is %04hx.\n", i, crc);
-			_pages[i].second.setBE (PageSize - sizeof (crc), crc);
+			writeBE (_pages[i].second, PageSize - sizeof (crc), crc);
 			_imem.writePage (i, _pages[i].second);
 			_pages[i].first = Synced;
 		}
@@ -61,13 +62,13 @@ void MemoryMapping::sync ()
 void MemoryMapping::getPage (unsigned int page)
 {
 	if (page >= _pages.size ())
-		_pages.resize (page+1, { Absent, ByteArray () });
+		_pages.resize (page+1, { Absent, std::vector<uint8_t> () });
 	if (_pages[page].first == Absent) {
 		_pages[page].second.resize (PageSize);
 		_imem.readMem ({static_cast<uint8_t> (page), 0}, _pages[page].second);
 		uint16_t crc = CRC::CCITT (_pages[page].second.begin (),
 					   _pages[page].second.end () - sizeof (crc));
-		if (crc != _pages[page].second.getBE<uint16_t> (PageSize - sizeof (crc)))
+		if (crc != readBE<uint16_t> (_pages[page].second, PageSize - sizeof (crc)))
 			Log::warning () << "Invalid CRC for page " << page << std::endl;
 		_pages[page].first = Synced;
 	}

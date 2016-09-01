@@ -20,7 +20,7 @@
 #define HIDPP10_MEMORY_MAPPING_H
 
 #include <hidpp10/IMemory.h>
-#include <misc/ByteArray.h>
+#include <vector>
 
 namespace HIDPP10
 {
@@ -32,11 +32,11 @@ class MemoryMapping
 public:
 	MemoryMapping (Device *dev);
 
-	const ByteArray &getReadOnlyPage (unsigned int page);
+	const std::vector<uint8_t> &getReadOnlyPage (unsigned int page);
 	/**
 	 * Get the page \p page and mark it as "modified".
 	 */
-	ByteArray &getWritablePage (unsigned int page);
+	std::vector<uint8_t> &getWritablePage (unsigned int page);
 
 	/**
 	 * Write all modified pages to the device memory except for page 0
@@ -54,7 +54,7 @@ private:
 		Synced,
 		Modified,
 	};
-	std::vector<std::pair<PageState, ByteArray>> _pages;
+	std::vector<std::pair<PageState, std::vector<uint8_t>>> _pages;
 };
 
 }

@@ -19,6 +19,7 @@
 #include <hidpp10/Macro.h>
 
 #include <misc/Log.h>
+#include <misc/Endian.h>
 #include <hidpp10/defs.h>
 
 #include <map>
@@ -235,7 +236,7 @@ Macro::Macro ()
 {
 }
 
-static Macro::Item parseItem (ByteArray::const_iterator begin,
+static Macro::Item parseItem (std::vector<uint8_t>::const_iterator begin,
 			      Address &jump_dest)
 {
 	Macro::Item item (*begin);
@@ -257,15 +258,15 @@ static Macro::Item parseItem (ByteArray::const_iterator begin,
 
 	case Macro::Item::MouseButtonPress:
 	case Macro::Item::MouseButtonRelease:
-		item.setButtons (ByteArray::getLE<uint16_t> (begin+1));
+		item.setButtons (readLE<uint16_t> (begin+1));
 		return item;
 
 	case Macro::Item::ConsumerControl:
-		item.setConsumerControl (ByteArray::getBE<uint16_t> (begin+1));
+		item.setConsumerControl (readBE<uint16_t> (begin+1));
 		return item;
 
 	case Macro::Item::Delay:
-		item.setDelay (ByteArray::getBE<uint16_t> (begin+1));
+		item.setDelay (readBE<uint16_t> (begin+1));
 		return item;
 
 	case Macro::Item::Jump:
@@ -275,12 +276,12 @@ static Macro::Item parseItem (ByteArray::const_iterator begin,
 		return item;
 
 	case Macro::Item::MousePointer:
-		item.setMouseX (ByteArray::getBE<int16_t> (begin+1));
-		item.setMouseY (ByteArray::getBE<int16_t> (begin+3));
+		item.setMouseX (readBE<int16_t> (begin+1));
+		item.setMouseY (readBE<int16_t> (begin+3));
 		return item;
 
 	case Macro::Item::JumpIfReleased:
-		item.setDelay (ByteArray::getBE<uint16_t> (begin+1));
+		item.setDelay (readBE<uint16_t> (begin+1));
 		jump_dest.page = *(begin+3);
 		jump_dest.offset = *(begin+4);
 		return item;
@@ -304,7 +305,7 @@ Macro::Macro (MemoryMapping &mem, Address address)
 
 	std::stack<Address> jump_dests;
 	while (true) {
-		const ByteArray &data = mem.getReadOnlyPage (current_page);
+		const std::vector<uint8_t> &data = mem.getReadOnlyPage (current_page);
 		Address dest;
 		_items.push_back (parseItem (data.begin () + current_index, dest));
 		Item *item = &_items.back ();
@@ -369,13 +370,13 @@ parse_end:
 	}
 }
 
-Macro::Macro (ByteArray::const_iterator begin, Address start_address)
+Macro::Macro (std::vector<uint8_t>::const_iterator begin, Address start_address)
 {
 	std::map<Address, iterator> parsed_items;
 	std::vector<std::pair <Item *, Address>> incomplete_ref;
 
 	unsigned int current_page = start_address.page;
-	ByteArray::const_iterator current = begin;
+	std::vector<uint8_t>::const_iterator current = begin;
 
 	std::stack<Address> jump_dests;
 	while (true) {
@@ -466,8 +467,8 @@ Macro::Macro (const Macro &other):
 }
 
 static void writeItem (const Macro::Item &item,
-		       ByteArray::iterator begin,
-		       ByteArray::iterator *jump_addr = nullptr)
+		       std::vector<uint8_t>::iterator begin,
+		       std::vector<uint8_t>::iterator *jump_addr = nullptr)
 {
 	uint8_t op_code = item.opCode ();
 
@@ -490,15 +491,15 @@ static void writeItem (const Macro::Item &item,
 
 	case Macro::Item::MouseButtonPress:
 	case Macro::Item::MouseButtonRelease:
-		ByteArray::setLE<uint16_t> (begin+1, item.buttons ());
+		writeLE<uint16_t> (begin+1, item.buttons ());
 		return;
 
 	case Macro::Item::ConsumerControl:
-		ByteArray::setBE<uint16_t> (begin+1, item.consumerControl ());
+		writeBE<uint16_t> (begin+1, item.consumerControl ());
 		return;
 
 	case Macro::Item::Delay:
-		ByteArray::setBE<uint16_t> (begin+1, item.delay ());
+		writeBE<uint16_t> (begin+1, item.delay ());
 		return;
 
 	case Macro::Item::Jump:
@@ -507,12 +508,12 @@ static void writeItem (const Macro::Item &item,
 		return;
 
 	case Macro::Item::MousePointer:
-		ByteArray::setBE<int16_t> (begin+1, item.mouseX ());
-		ByteArray::setBE<int16_t> (begin+3, item.mouseY ());
+		writeBE<int16_t> (begin+1, item.mouseX ());
+		writeBE<int16_t> (begin+3, item.mouseY ());
 		return;
 
 	case Macro::Item::JumpIfReleased:
-		ByteArray::setBE<uint16_t> (begin+1, item.delay ());
+		writeBE<uint16_t> (begin+1, item.delay ());
 		*jump_addr = begin+3;
 		return;
 
@@ -521,10 +522,12 @@ static void writeItem (const Macro::Item &item,
 	}
 }
 
-ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_address) const
+std::vector<uint8_t>::iterator
+Macro::write (std::vector<uint8_t>::iterator begin, Address start_address) const
 {
+	typedef std::vector<uint8_t>::iterator iterator;
 	std::map<const Item *, Address> jump_dests; // Associate address with jump destination items
-	std::vector<std::pair<const Item *, ByteArray::iterator>> jump_addrs; // Jumps and their address positions
+	std::vector<std::pair<const Item *, iterator>> jump_addrs; // Jumps and their address positions
 
 	for (auto item: _items) {
 		if (item.isJump ()) {
@@ -532,7 +535,7 @@ ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_addre
 		}
 	}
 
-	ByteArray::iterator current = begin;
+	iterator current = begin;
 
 	for (auto it = _items.begin (); it != _items.end (); ++it) {
 		const Item &item = *it;
@@ -560,7 +563,7 @@ ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_addre
 			     &item,
 			     static_cast<unsigned int> (current-begin),
 			     item.opCode ());
-		ByteArray::iterator addr;
+		iterator addr;
 		writeItem (item, current, &addr);
 
 		// Remember jump address position for later resolution
@@ -583,7 +586,7 @@ ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_addre
 	for (auto jump_addr: jump_addrs) {
 		const Item *dest = &*jump_addr.first->jumpDestination ();
 		Address addr = jump_dests[dest];
-		ByteArray::iterator addr_pos = jump_addr.second;
+		iterator addr_pos = jump_addr.second;
 		Log::printf (Log::Debug,
 			     "Macro item %p jump to %02hhx:%02hhx\n",
 			     jump_addr.first,
@@ -597,8 +600,10 @@ ByteArray::iterator Macro::write (ByteArray::iterator begin, Address start_addre
 
 Address Macro::write (MemoryMapping &mem, Address start) const
 {
+	typedef std::vector<uint8_t>::iterator iterator;
+	std::vector<uint8_t> *page_data;
 	std::map<const Item *, Address> jump_dests; // Associate address with jump destination items
-	std::vector<std::pair<const Item *, ByteArray::iterator>> jump_addrs; // Jumps and their address positions
+	std::vector<std::pair<const Item *, iterator>> jump_addrs; // Jumps and their address positions
 
 	for (auto item: _items) {
 		if (item.isJump ()) {
@@ -650,9 +655,9 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 					Log::printf (Log::Debug,
 						     "Write jump over end of page %02x at index %03x\n",
 						     current_page, current_index);
-					ByteArray *data = &mem.getWritablePage (current_page);
-					ByteArray::iterator addr;
-					writeItem (Item (Item::Jump), data->begin () + current_index, &addr);
+					page_data = &mem.getWritablePage (current_page);
+					iterator addr;
+					writeItem (Item (Item::Jump), page_data->begin () + current_index, &addr);
 					*addr = ++current_page;
 					*(addr+1) = current_index = 0;
 				}
@@ -664,14 +669,14 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 			}
 		}
 
-		ByteArray *data = &mem.getWritablePage (current_page);
+		page_data = &mem.getWritablePage (current_page);
 
 		// Add padding if required
 		if (is_jump_dest && current_index%2 == 1) {
 			Log::printf (Log::Debug,
 				     "Write padding at page %02x, index %03x\n",
 				     current_page, current_index);
-			writeItem (Item (Item::NoOp), data->begin () + current_index);
+			writeItem (Item (Item::NoOp), page_data->begin () + current_index);
 			++current_index;
 		}
 		if (is_jump_dest)
@@ -686,8 +691,8 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 			     &item,
 			     current_page, current_index,
 			     item.opCode ());
-		ByteArray::iterator addr;
-		writeItem (item, data->begin () + current_index, &addr);
+		iterator addr;
+		writeItem (item, page_data->begin () + current_index, &addr);
 
 		// Remember jump address position for later resolution
 		if (item.isJump ()) {
@@ -709,7 +714,7 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 	for (auto jump_addr: jump_addrs) {
 		const Item *dest = &*jump_addr.first->jumpDestination ();
 		Address addr = jump_dests[dest];
-		ByteArray::iterator addr_pos = jump_addr.second;
+		iterator addr_pos = jump_addr.second;
 		Log::printf (Log::Debug,
 			     "Macro item %p jump to %02hhx:%02hhx\n",
 			     jump_addr.first,

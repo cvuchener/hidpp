@@ -60,7 +60,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	ByteArray params, results;
+	std::vector<uint8_t> params, results;
 	for (int i = 0; first_arg+3+i < argc; ++i) {
 		int value = strtol (argv[first_arg+3+i], &endptr, 16);
 		if (*endptr != '\0' || value < 0 || value > 255) {

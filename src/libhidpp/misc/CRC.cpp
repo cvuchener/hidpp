@@ -18,8 +18,8 @@
 
 #include <misc/CRC.h>
 
-uint16_t CRC::CCITT (ByteArray::const_iterator begin,
-		     ByteArray::const_iterator end,
+uint16_t CRC::CCITT (std::vector<uint8_t>::const_iterator begin,
+		     std::vector<uint8_t>::const_iterator end,
 		     uint16_t start_value)
 {
 	uint16_t crc = start_value;

@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <string>
-#include <misc/ByteArray.h>
+#include <vector>
 #include <hidpp10/Address.h>
 
 namespace HIDPP10
@@ -71,8 +71,8 @@ public:
 
 		Button ();
 
-		void read (ByteArray::const_iterator begin);
-		void write (ByteArray::iterator begin) const;
+		void read (std::vector<uint8_t>::const_iterator begin);
+		void write (std::vector<uint8_t>::iterator begin) const;
 
 		Type type () const;
 
@@ -112,16 +112,16 @@ public:
 	virtual ~Profile ();
 
 	virtual std::size_t profileLength () const = 0;
-	virtual void read (ByteArray::const_iterator begin) = 0;
-	virtual void write (ByteArray::iterator begin) const = 0;
+	virtual void read (std::vector<uint8_t>::const_iterator begin) = 0;
+	virtual void write (std::vector<uint8_t>::iterator begin) const = 0;
 
 	unsigned int buttonCount () const;
 	const Button &button (unsigned int index) const;
 	Button &button (unsigned int index);
 
 protected:
-	void readButtons (ByteArray::const_iterator begin);
-	void writeButtons (ByteArray::iterator begin) const;
+	void readButtons (std::vector<uint8_t>::const_iterator begin);
+	void writeButtons (std::vector<uint8_t>::iterator begin) const;
 
 private:
 	std::vector<Button> _buttons;
@@ -134,8 +134,8 @@ public:
 	virtual ~G500Profile ();
 
 	virtual std::size_t profileLength () const;
-	virtual void read (ByteArray::const_iterator begin);
-	virtual void write (ByteArray::iterator begin) const;
+	virtual void read (std::vector<uint8_t>::const_iterator begin);
+	virtual void write (std::vector<uint8_t>::iterator begin) const;
 
 	struct ResolutionMode {
 		unsigned int x_res, y_res;

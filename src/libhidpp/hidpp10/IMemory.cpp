@@ -21,6 +21,8 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/defs.h>
 
+#include <misc/Endian.h>
+
 using namespace HIDPP10;
 
 IMemory::IMemory (Device *dev):
@@ -30,10 +32,10 @@ IMemory::IMemory (Device *dev):
 
 int IMemory::readSome (Address address, uint8_t *buffer, std::size_t maxlen)
 {
-	ByteArray params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (HIDPP::ShortParamLength);
 	params[0] = address.page;
 	params[1] = address.offset;
-	ByteArray results (HIDPP::LongParamLength);
+	std::vector<uint8_t> results (HIDPP::LongParamLength);
 	_dev->getRegister (MemoryRead, &params, results);
 	std::size_t len = std::min (HIDPP::LongParamLength, maxlen);
 	std::copy (results.begin (), results.begin () + len, buffer);
@@ -69,14 +71,14 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 	uint8_t seq_num = 0;
 	while (sent < data.size ()) {
 		uint8_t sub_id;
-		ByteArray params (HIDPP::LongParamLength);
+		std::vector<uint8_t> params (HIDPP::LongParamLength);
 		if (first) {
 			sub_id = SendDataBeginAck;
 			/* First packet header */
 			params[0] = 0x01; // Unknown meaning
 			params[1] = address.page;
 			params[2] = address.offset;
-			params.setBE<uint16_t> (5, data.size ());
+			writeBE<uint16_t> (params, 5, data.size ());
 			/* Start of data */
 			if (data.size () < FirstPacketDataLength) {
 				std::copy (data.begin (), data.end (),
@@ -122,14 +124,14 @@ void IMemory::writePage (uint8_t page, const std::vector<uint8_t> &data)
 
 void IMemory::resetSequenceNumber ()
 {
-	ByteArray params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (HIDPP::ShortParamLength);
 	params[0] = 1;
 	_dev->setRegister (ResetSeqNum, params, nullptr);
 }
 
 void IMemory::fillPage (uint8_t page)
 {
-	ByteArray params (HIDPP::LongParamLength);
+	std::vector<uint8_t> params (HIDPP::LongParamLength);
 	params[0] = Fill;
 	params[6] = page;
 	_dev->setRegister (MemoryOperation, params, nullptr);
