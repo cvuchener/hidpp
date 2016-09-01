@@ -82,3 +82,13 @@ add_executable(hidpp20-call-function
 	hidpp20-call-function.cpp
 	$<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp20-call-function hidpp)
+
+add_executable(hidpp20-onboard-profiles-get-description
+	hidpp20-onboard-profiles-get-description.cpp
+	$<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp20-onboard-profiles-get-description hidpp)
+
+add_executable(hidpp20-dump-page
+	hidpp20-dump-page.cpp
+	$<TARGET_OBJECTS:common>)
+target_link_libraries(hidpp20-dump-page hidpp)

@@ -28,6 +28,7 @@ set(LIBHIDPP_SOURCES
 	hidpp20/Error.cpp
 	hidpp20/IRoot.cpp
 	hidpp20/IFeatureSet.cpp
+	hidpp20/IOnboardProfiles.cpp
 )
 
 include_directories(.)
