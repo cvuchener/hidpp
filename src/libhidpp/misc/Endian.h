@@ -14,7 +14,7 @@ writeLE (InputIt it, T value)
 
 template<typename T, typename Container>
 typename std::enable_if<std::is_integral<T>::value>::type
-writeLE (Container cont, unsigned int index, T value)
+writeLE (Container &cont, unsigned int index, T value)
 {
 	writeLE (cont.begin () + index, value);
 }
@@ -31,14 +31,14 @@ readLE (InputIt it)
 
 template<typename T, typename Container>
 typename std::enable_if<std::is_integral<T>::value, T>::type
-readLE (Container cont, unsigned int index)
+readLE (const Container &cont, unsigned int index)
 {
 	return readLE<T> (cont.begin () + index);
 }
 
 template<typename T, typename Container>
 typename std::enable_if<std::is_integral<T>::value>::type
-pushLE (Container cont, T value)
+pushLE (Container &cont, T value)
 {
 	for (int i = 0; i < (int) sizeof (T); ++i)
 		cont.push_back ((value >> (i*8)) & 0xFF);
@@ -55,7 +55,7 @@ writeBE (InputIt it, T value)
 
 template<typename T, typename Container>
 typename std::enable_if<std::is_integral<T>::value>::type
-writeBE (Container cont, unsigned int index, T value)
+writeBE (Container &cont, unsigned int index, T value)
 {
 	writeBE (cont.begin () + index, value);
 }
@@ -73,14 +73,14 @@ readBE (InputIt it)
 
 template<typename T, typename Container>
 typename std::enable_if<std::is_integral<T>::value, T>::type
-readBE (Container cont, unsigned int index)
+readBE (const Container &cont, unsigned int index)
 {
 	return readBE<T> (cont.begin () + index);
 }
 
 template<typename T, typename Container>
 typename std::enable_if<std::is_integral<T>::value>::type
-pushBE (Container cont, T value)
+pushBE (Container &cont, T value)
 {
 	for (int i = sizeof (T)-1; i >= 0; --i)
 		cont.push_back ((value >> (i*8)) & 0xFF);
