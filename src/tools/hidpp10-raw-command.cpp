@@ -74,7 +74,7 @@ int main (int argc, char *argv[])
 			fprintf (stderr, "Invalid parameter %d value.\n", i);
 			return EXIT_FAILURE;
 		}
-		params[i] = static_cast<uint8_t> (value);
+		params.push_back (static_cast<uint8_t> (value));
 	}
 
 	try {
