@@ -24,35 +24,23 @@ else()
 	message("hidpp-list-devices require libudev.")
 endif()
 
-add_executable(hidpp-list-features
-	hidpp-list-features.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp-list-features hidpp)
-
-add_executable(hidpp10-dump-page
-	hidpp10-dump-page.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp10-dump-page hidpp)
-
-add_executable(hidpp10-write-page
-	hidpp10-write-page.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp10-write-page hidpp)
-
-add_executable(hidpp10-raw-command
-	hidpp10-raw-command.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp10-raw-command hidpp)
-
-add_executable(hidpp10-mouse-resolution
-	hidpp10-mouse-resolution.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp10-mouse-resolution hidpp)
-
-add_executable(hidpp10-active-profile
-	hidpp10-active-profile.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp10-active-profile hidpp)
+foreach(TOOL_NAME
+	hidpp-list-features
+	hidpp10-dump-page
+	hidpp10-write-page
+	hidpp10-raw-command
+	hidpp10-mouse-resolution
+	hidpp10-active-profile
+	hidpp20-call-function
+	hidpp20-onboard-profiles-get-description
+	hidpp20-dump-page
+	hidpp20-write-page
+)
+	add_executable(${TOOL_NAME}
+		${TOOL_NAME}.cpp
+		$<TARGET_OBJECTS:common>)
+	target_link_libraries(${TOOL_NAME} hidpp)
+endforeach()
 
 if(TINYXML2_FOUND)
 	add_library(profile OBJECT
@@ -77,18 +65,3 @@ if(TINYXML2_FOUND)
 else()
 	message("Profile tools require tinyxml2.")
 endif()
-
-add_executable(hidpp20-call-function
-	hidpp20-call-function.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp20-call-function hidpp)
-
-add_executable(hidpp20-onboard-profiles-get-description
-	hidpp20-onboard-profiles-get-description.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp20-onboard-profiles-get-description hidpp)
-
-add_executable(hidpp20-dump-page
-	hidpp20-dump-page.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp20-dump-page hidpp)
