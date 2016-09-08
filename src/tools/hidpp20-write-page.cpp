@@ -25,6 +25,8 @@ extern "C" {
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IOnboardProfiles.h>
+#include <misc/CRC.h>
+#include <misc/Endian.h>
 
 #include "common/common.h"
 #include "common/Option.h"
@@ -34,10 +36,18 @@ int main (int argc, char *argv[])
 {
 	static const char *args = "/dev/hidrawX page";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
+	bool add_crc = false;
 
 	std::vector<Option> options = {
 		DeviceIndexOption (device_index),
 		VerboseOption (),
+		Option ('c', "crc",
+			Option::NoArgument, "",
+			"Add CRC add the end of the page",
+			[&add_crc] (const char *) -> bool {
+				add_crc = true;
+				return true;
+			}),
 	};
 	Option help = HelpOption (argv[0], args, &options);
 	options.push_back (help);
@@ -75,9 +85,9 @@ int main (int argc, char *argv[])
 	iop.memoryAddrWrite (page, 0);
 
 	std::size_t r = 0;
-	std::vector<uint8_t> data (16);
+	std::vector<uint8_t> data (desc.sector_size, 0xff);
 	while (r < desc.sector_size) {
-		int ret = read (0, data.data (), data.size ());
+		int ret = read (0, &data[r], data.size () - r);
 		if (ret == -1) {
 			perror ("read");
 			return EXIT_FAILURE;
@@ -85,9 +95,16 @@ int main (int argc, char *argv[])
 		if (ret == 0) {
 			break;
 		}
-		iop.memoryWrite (data);
 		r += ret;
 	}
+	if (add_crc) {
+		size_t page_content_size = desc.sector_size - 2;
+		uint16_t crc = CRC::CCITT (data.begin (), data.begin () + page_content_size);
+		writeBE (data, page_content_size, crc);
+	}
+
+	for (unsigned int i = 0; i < data.size (); i += 16)
+		iop.memoryWrite (std::vector<uint8_t> (data.begin () + i, data.begin () + i + 16));
 
 	try {
 		iop.memoryWriteEnd ();
