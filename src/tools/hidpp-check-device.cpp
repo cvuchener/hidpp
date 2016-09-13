@@ -53,9 +53,9 @@ int main (int argc, char *argv[])
 		HIDPP::Device dev (path, device_index);
 		dev.getProtocolVersion (major, minor);
 		printf ("%d.%d\n", major, minor);
-		Log::printf (Log::Info, "Device is %s (%04hx:%04hx)\n",
-			     dev.name ().c_str (),
-			     dev.vendorID (), dev.productID ());
+		Log::info ().printf ("Device is %s (%04hx:%04hx)\n",
+				     dev.name ().c_str (),
+				     dev.vendorID (), dev.productID ());
 	}
 	catch (HIDPP::Device::NoHIDPPReportException e) {
 		Log::info () << "Device is not a HID++ device" << std::endl;

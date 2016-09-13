@@ -293,10 +293,8 @@ static Macro::Item parseItem (std::vector<uint8_t>::const_iterator begin,
 
 Macro::Macro (MemoryMapping &mem, Address address)
 {
-	Log::printf (Log::Debug,
-		     "Reading macro (%p) in persistent memory at address %02hhx:%02hhx\n",
-		     this,
-		     address.page, address.offset);
+	Log::debug ().printf ("Reading macro (%p) in persistent memory at address %02hhx:%02hhx\n",
+			      this, address.page, address.offset);
 	std::map<Address, iterator> parsed_items;
 	std::vector<std::pair <Item *, Address>> incomplete_ref;
 
@@ -309,11 +307,8 @@ Macro::Macro (MemoryMapping &mem, Address address)
 		Address dest;
 		_items.push_back (parseItem (data.begin () + current_index, dest));
 		Item *item = &_items.back ();
-		Log::printf (Log::Debug,
-			     "Parsed macro item %p at page %02hhx, index %03x, op_code is %02hhx\n",
-			     item,
-			     current_page, current_index,
-			     item->opCode ());
+		Log::debug ().printf ("Parsed macro item %p at page %02hhx, index %03x, op_code is %02hhx\n",
+				      item, current_page, current_index, item->opCode ());
 
 		// Memorize aligned items by address
 		if (current_index % 2 == 0) {
@@ -321,10 +316,8 @@ Macro::Macro (MemoryMapping &mem, Address address)
 				static_cast<uint8_t> (current_page),
 				static_cast<uint8_t> (current_index/2)
 			};
-			Log::printf (Log::Debug,
-				     "Macro item %p is aligned at %02hhx:%02hhx\n",
-				     item,
-				     addr.page, addr.offset);
+			Log::debug ().printf ("Macro item %p is aligned at %02hhx:%02hhx\n",
+					      item, addr.page, addr.offset);
 			parsed_items.insert ({
 				addr,
 				std::prev(_items.end ())
@@ -361,11 +354,8 @@ parse_end:
 		Item *item = pair.first;
 		Address &address = pair.second;
 		auto it = parsed_items[address];
-		Log::printf (Log::Debug,
-			     "Macro item %p references %02hhx:%02hhx: %p\n",
-			     item,
-			     address.page, address.offset,
-			     &(*it));
+		Log::debug ().printf ("Macro item %p references %02hhx:%02hhx: %p\n",
+				      item, address.page, address.offset, &(*it));
 		item->setJumpDestination (it);
 	}
 }
@@ -426,11 +416,8 @@ parse_end:
 		Item *item = pair.first;
 		Address &address = pair.second;
 		auto it = parsed_items[address];
-		Log::printf (Log::Debug,
-			     "Macro item %p references %02hhx:%02hhx: %p\n",
-			     item,
-			     address.page, address.offset,
-			     &(*it));
+		Log::debug ().printf ("Macro item %p references %02hhx:%02hhx: %p\n",
+				      item, address.page, address.offset, &(*it));
 		item->setJumpDestination (it);
 	}
 }
@@ -446,9 +433,8 @@ Macro::Macro (const Macro &other):
 	for (iterator it = _items.begin ();
 	     it != _items.end ();
 	     ++it, ++other_it) {
-		Log::printf (Log::Debug,
-			     "Add translation %p to %p\n",
-			     &(*other_it), &(*it));
+		Log::debug ().printf ("Add translation %p to %p\n",
+				      &(*other_it), &(*it));
 
 		translation.insert ({ &(*other_it), it });
 	}
@@ -457,9 +443,8 @@ Macro::Macro (const Macro &other):
 		if (item.isJump ()) {
 			Item *old_item = &(*item.jumpDestination ());
 			iterator new_item = translation[old_item];
-			Log::printf (Log::Debug,
-				     "Replace %p with %p\n",
-				     old_item, &(*new_item));
+			Log::debug ().printf ("Replace %p with %p\n",
+					      old_item, &(*new_item));
 
 			item.setJumpDestination (new_item);
 		}
@@ -545,24 +530,19 @@ Macro::write (std::vector<uint8_t>::iterator begin, Address start_address) const
 
 		// Add padding if required
 		if (is_jump_dest && (current-begin)%2 == 1) {
-			Log::printf (Log::Debug,
-				     "Write padding at index %03x\n",
-				     static_cast<unsigned int> (current-begin));
+			Log::debug ().printf ("Write padding at index %03x\n",
+					      static_cast<unsigned int> (current-begin));
 			writeItem (Item (Item::NoOp), current);
 			++current;
 		}
 		if (is_jump_dest)
-			Log::printf (Log::Debug,
-				     "Macro item %p is aligned at %02hhx:%02hhx\n",
-				     &item,
-				     start_address.page, start_address.offset + static_cast<uint8_t> ((current-begin)/2));
+			Log::debug ().printf ("Macro item %p is aligned at %02hhx:%02hhx\n",
+					      &item, start_address.page,
+					      start_address.offset + static_cast<uint8_t> ((current-begin)/2));
 
 		// Write the item itself
-		Log::printf (Log::Debug,
-			     "Write macro item %p index %03x, op_code is %02hhx\n",
-			     &item,
-			     static_cast<unsigned int> (current-begin),
-			     item.opCode ());
+		Log::debug ().printf ("Write macro item %p index %03x, op_code is %02hhx\n",
+				      &item, static_cast<unsigned int> (current-begin), item.opCode ());
 		iterator addr;
 		writeItem (item, current, &addr);
 
@@ -587,10 +567,8 @@ Macro::write (std::vector<uint8_t>::iterator begin, Address start_address) const
 		const Item *dest = &*jump_addr.first->jumpDestination ();
 		Address addr = jump_dests[dest];
 		iterator addr_pos = jump_addr.second;
-		Log::printf (Log::Debug,
-			     "Macro item %p jump to %02hhx:%02hhx\n",
-			     jump_addr.first,
-			     addr.page, addr.offset);
+		Log::debug ().printf ("Macro item %p jump to %02hhx:%02hhx\n",
+				      jump_addr.first, addr.page, addr.offset);
 		*addr_pos = addr.page;
 		*(addr_pos+1) = addr.offset;
 	}
@@ -652,9 +630,8 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 				}
 				if (need_jump) {
 					// Jump to the beginning of the next page
-					Log::printf (Log::Debug,
-						     "Write jump over end of page %02x at index %03x\n",
-						     current_page, current_index);
+					Log::debug ().printf ("Write jump over end of page %02x at index %03x\n",
+							      current_page, current_index);
 					page_data = &mem.getWritablePage (current_page);
 					iterator addr;
 					writeItem (Item (Item::Jump), page_data->begin () + current_index, &addr);
@@ -673,24 +650,18 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 
 		// Add padding if required
 		if (is_jump_dest && current_index%2 == 1) {
-			Log::printf (Log::Debug,
-				     "Write padding at page %02x, index %03x\n",
-				     current_page, current_index);
+			Log::debug ().printf ("Write padding at page %02x, index %03x\n",
+					      current_page, current_index);
 			writeItem (Item (Item::NoOp), page_data->begin () + current_index);
 			++current_index;
 		}
 		if (is_jump_dest)
-			Log::printf (Log::Debug,
-				     "Macro item %p is aligned at %02hhx:%02hhx\n",
-				     &item,
-				     current_page, current_index/2);
+			Log::debug ().printf ("Macro item %p is aligned at %02hhx:%02hhx\n",
+					      &item, current_page, current_index/2);
 
 		// Write the item itself
-		Log::printf (Log::Debug,
-			     "Write macro item %p at page %02x, index %03x, op_code is %02hhx\n",
-			     &item,
-			     current_page, current_index,
-			     item.opCode ());
+		Log::debug ().printf ("Write macro item %p at page %02x, index %03x, op_code is %02hhx\n",
+				      &item, current_page, current_index, item.opCode ());
 		iterator addr;
 		writeItem (item, page_data->begin () + current_index, &addr);
 
@@ -715,10 +686,8 @@ Address Macro::write (MemoryMapping &mem, Address start) const
 		const Item *dest = &*jump_addr.first->jumpDestination ();
 		Address addr = jump_dests[dest];
 		iterator addr_pos = jump_addr.second;
-		Log::printf (Log::Debug,
-			     "Macro item %p jump to %02hhx:%02hhx\n",
-			     jump_addr.first,
-			     addr.page, addr.offset);
+		Log::debug ().printf ("Macro item %p jump to %02hhx:%02hhx\n",
+				      jump_addr.first, addr.page, addr.offset);
 		*addr_pos = addr.page;
 		*(addr_pos+1) = addr.offset;
 	}
@@ -747,9 +716,8 @@ void Macro::simplify ()
 			for (Item *jump: back_refs[&*it]) {
 				jump->setJumpDestination (std::next(it));
 			}
-			Log::printf (Log::Debug,
-				     "Remove useless macro item %p: op_code = %02hhx\n",
-				     &*it, it->opCode ());
+			Log::debug ().printf ("Remove useless macro item %p: op_code = %02hhx\n",
+					      &*it, it->opCode ());
 			it = _items.erase (it);
 		}
 		else

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,14 +19,19 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include <iostream>
+#include <ostream>
+#include <sstream>
 #include <iomanip>
-#include <fstream>
 #include <algorithm>
+#include <mutex>
 
-class Log
+class Log: public std::ostream
 {
 public:
+	Log (const Log &) = delete;
+	Log (Log &&);
+	~Log ();
+
 	enum Level {
 		Error,
 		Warning,
@@ -35,44 +40,52 @@ public:
 		DebugReport,
 	};
 
-	Log () = delete;
-
 	static void setLevel (Level level);
 	static Level level ();
 
-	static std::ostream &stream (Level level);
+	static Log log (Level level);
 
-	static inline std::ostream &error () { return stream (Error); }
-	static inline std::ostream &warning () { return stream (Warning); }
-	static inline std::ostream &info () { return stream (Info); }
-	static inline std::ostream &debug () { return stream (Debug); }
+	static inline Log error () { return log (Error); }
+	static inline Log warning () { return log (Warning); }
+	static inline Log info () { return log (Info); }
+	static inline Log debug () { return log (Debug); }
+	static inline Log debugReport () { return log (DebugReport); }
 
-	static void printf (Level level, const char *format, ...)
+	void printf (const char *format, ...)
 		__attribute__ ((format (printf, 2, 3)));
-	
-	template<class InputIterator>
-	static
-	void printBytes (Level level, const std::string &prefix,
+
+	template <class InputIterator>
+	void printBytes (const std::string &prefix,
 			 InputIterator begin, InputIterator end) {
-		std::ostream &os = stream (level);
-		if (!os)
+		if (!*this)
 			return;
-		os << prefix;
-		std::for_each (begin, end, [&os] (uint8_t byte) {
-			os << " "
-			   << std::hex
-			   << std::setw (2)
-			   << std::setfill ('0')
-			   << static_cast<unsigned int> (byte);
+		*this << prefix;
+		std::for_each (begin, end, [this] (uint8_t byte) {
+			*this << " "
+			      << std::hex
+			      << std::setw (2)
+			      << std::setfill ('0')
+			      << static_cast<unsigned int> (byte);
 		});
-		os << std::endl;
+		*this << std::endl;
 	}
 
 private:
-	static const char *levelTag (Level level);
+	Log ();
+	Log (const std::string &prefix);
+
+	class LogBuf: public std::stringbuf {
+	public:
+		LogBuf (const std::string &prefix);
+		virtual int sync ();
+
+	private:
+		std::string _prefix;
+	} _buf;
 
 	static Level _level;
-	static std::ofstream _null_stream;
+	static Log _error, _warning, _info, _debug, _null;
+	static std::mutex _mutex;
 };
 
 #endif

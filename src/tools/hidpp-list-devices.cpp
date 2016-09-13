@@ -99,17 +99,16 @@ int main (int argc, char *argv[])
 				}
 				catch (HIDPP10::Error e) {
 					if (e.errorCode () != HIDPP10::Error::UnknownDevice && e.errorCode () != HIDPP10::Error::InvalidSubID) {
-						Log::printf (Log::Error,
-							     "Error while querying %s wireless device %d: %s\n",
-							     hidraw_node, index, e.what ());
+						Log::error ().printf ("Error while querying %s wireless device %d: %s\n",
+								      hidraw_node, index, e.what ());
 					}
 				}
 				catch (HIDPP20::Error e) {
-					Log::printf (Log::Error, "Error while querying %s device %d: %s\n",
+					Log::error ().printf ("Error while querying %s device %d: %s\n",
 						     hidraw_node, index, e.what ());
 				}
 				catch (HIDRaw::TimeoutError e) {
-					Log::printf (Log::Warning, "Device %s (index %d) timed out\n",
+					Log::warning ().printf ("Device %s (index %d) timed out\n",
 						     hidraw_node, index);
 				}
 			}
@@ -118,7 +117,7 @@ int main (int argc, char *argv[])
 		catch (HIDPP::Device::NoHIDPPReportException e) {
 		}
 		catch (std::system_error e) {
-			Log::printf (Log::Warning, "Failed to open %s: %s\n", hidraw_node, e.what ());
+			Log::warning ().printf ("Failed to open %s: %s\n", hidraw_node, e.what ());
 		}
 		udev_device_unref (device);
 	}

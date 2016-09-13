@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,37 @@
  *
  */
 
-#include <misc/Log.h>
+#include "Log.h"
 
+#include <iostream>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 
 Log::Level Log::_level = Log::Error;
-std::ofstream Log::_null_stream;
+
+std::mutex Log::_mutex;
+
+Log::Log ():
+	_buf ("null")
+{
+}
+
+Log::Log (const std::string &prefix):
+	std::ostream (&_buf),
+	_buf (prefix)
+{
+}
+
+Log::Log (Log &&log):
+	std::ostream (std::move (log)),
+	_buf (std::move (log._buf))
+{
+}
+
+Log::~Log ()
+{
+}
 
 void Log::setLevel (Log::Level level)
 {
@@ -34,40 +58,58 @@ Log::Level Log::level ()
 	return _level;
 }
 
-std::ostream &Log::stream (Log::Level level)
+Log Log::log (Log::Level level)
 {
 	if (level <= _level) {
-		std::cerr << "[" << levelTag (level) << "] ";
-		return std::cerr;
+		switch (level) {
+		case Error:
+			return Log ("error");
+		case Warning:
+			return Log ("warning");
+		case Info:
+			return Log ("info");
+		case Debug:
+			return Log ("debug");
+		case DebugReport:
+			return Log ("debug report");
+		}
 	}
-	else
-		return _null_stream;
+	return Log ();
 }
 
-void Log::printf (Level level, const char *format, ...)
+void Log::printf (const char *format, ...)
 {
-	if (level <= _level) {
-		std::string new_format = std::string ("[") + levelTag (level) + "] " + format;
-		va_list args;
-		va_start (args, format);
-		vprintf (new_format.c_str (), args);
-		va_end (args);
+	char *str, *current, *end;
+	int len;
+	if (!*this)
+		return;
+	va_list args, copy;
+	va_start (args, format);
+	va_copy (copy, args);
+	len = vsnprintf (nullptr, 0, format, copy);
+	str = new char[len+1];
+	vsnprintf (str, len+1, format, args);
+	current = str;
+	while (*current != '\0' && (end = strchr (current, '\n'))) {
+		*this << std::string (current, end) << std::endl;
+		current = end+1;
 	}
+	if (*current != '\0') {
+		*this << std::string (current);
+	}
+	delete[] str;
+	va_end (args);
 }
 
-const char *Log::levelTag (Level level)
+Log::LogBuf::LogBuf (const std::string &prefix):
+	_prefix (prefix)
 {
-	switch (level) {
-	case Error:
-		return "Error";
-	case Warning:
-		return "Warning";
-	case Info:
-		return "Info";
-	case Debug:
-		return "Debug";
-	case DebugReport:
-		return "Debug Report";
-	}
-	return "Invalid";
+}
+
+int Log::LogBuf::sync ()
+{
+	std::unique_lock<std::mutex> lock (_mutex);
+	std::cerr << "[" << _prefix << "] " << str ();
+	str (std::string ());
+	return 0;
 }

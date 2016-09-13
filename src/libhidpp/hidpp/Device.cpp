@@ -232,16 +232,16 @@ Report Device::getReport (bool timeout)
 			// Ignore non-HID++ reports
 			Log::debug () << __FUNCTION__ << ": "
 				      << "Ignored non HID++ report" << std::endl;
-			Log::printBytes (Log::Debug, "Ignored report:",
-					 raw_report.begin (), raw_report.end ());
+			Log::debug ().printBytes ("Ignored report:",
+						  raw_report.begin (), raw_report.end ());
 			continue;
 		}
 		catch (Report::InvalidReportLength e) {
 			// Ignore non-HID++ reports
 			Log::warning () << __FUNCTION__ << ": "
 					<< "Invalid HID++ report length" << std::endl;
-			Log::printBytes (Log::Warning, "Ignored report:",
-					 raw_report.begin (), raw_report.end ());
+			Log::warning ().printBytes ("Ignored report:",
+						    raw_report.begin (), raw_report.end ());
 			continue;
 		}
 	}

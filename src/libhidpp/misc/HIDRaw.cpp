@@ -100,8 +100,8 @@ int HIDRaw::writeReport (const std::vector<uint8_t> &report)
 	if (ret == -1) {
 		throw std::system_error (errno, std::system_category (), "write");
 	}
-	Log::printBytes (Log::DebugReport, "Send HID report:",
-			 report.begin (), report.end ());
+	Log::debugReport ().printBytes ("Send HID report:",
+					report.begin (), report.end ());
 	return ret;
 }
 
@@ -113,8 +113,8 @@ int HIDRaw::readReport (std::vector<uint8_t> &report)
 		throw std::system_error (errno, std::system_category (), "read");
 	}
 	report.resize (ret);
-	Log::printBytes (Log::DebugReport, "Recv HID report:",
-			 report.begin (), report.end ());
+	Log::debugReport ().printBytes ("Recv HID report:",
+					report.begin (), report.end ());
 	return ret;
 }
 

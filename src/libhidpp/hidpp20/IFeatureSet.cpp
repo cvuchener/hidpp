@@ -29,7 +29,7 @@ IFeatureSet::IFeatureSet (Device *dev):
 	_dev (dev),
 	_index (IRoot (dev).getFeature (ID))
 {
-	Log::printf (Log::Debug, "Feature [0x%04hx] IFeatureSet has index 0x%02hhx\n", ID, _index);
+	Log::debug ().printf ("Feature [0x%04hx] IFeatureSet has index 0x%02hhx\n", ID, _index);
 }
 
 uint8_t IFeatureSet::index () const

@@ -34,10 +34,9 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 					   unsigned int function,
 					   const std::vector<uint8_t> &params)
 {
-	Log::printf (Log::Debug, "Calling feature 0x%02hhx/function %u\n",
-				 feature_index, function);
-	Log::printBytes (Log::Debug, "Parameters:",
-			 params.begin (), params.end ());
+	Log::debug ().printf ("Calling feature 0x%02hhx/function %u\n",
+			      feature_index, function);
+	Log::debug ().printBytes ("Parameters:", params.begin (), params.end ());
 	std::vector<uint8_t> in (params);
 	if (in.size () <= HIDPP::ShortParamLength)
 		in.resize (HIDPP::ShortParamLength, 0);
@@ -50,7 +49,7 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 	sendReport (request);
 	while (true) {
 		HIDPP::Report response = getReport ();
-		
+
 		if (response.deviceIndex () != deviceIndex ()) {
 				Log::debug () << __FUNCTION__ << ": "
 					      << "Ignored report with wrong device index"
@@ -73,15 +72,13 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 				continue;
 			}
 
-			Log::printf (Log::Debug, "Received error message with code 0x%02hhx\n", error_code);
+			Log::debug ().printf ("Received error message with code 0x%02hhx\n", error_code);
 			throw Error (static_cast<Error::ErrorCode> (error_code));
 		}
 		if (response.featureIndex () == feature_index &&
 		    response.function () == function &&
 		    response.softwareID () == softwareID) {
-			Log::printBytes (Log::Debug, "Results:",
-					 response.params ().begin (),
-					 response.params ().end ());
+			Log::debug ().printBytes ("Results:", response.params ().begin (), response.params ().end ());
 			return response.params ();
 		}
 		Log::debug () << __FUNCTION__ << ": "

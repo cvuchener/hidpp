@@ -51,7 +51,7 @@ void MemoryMapping::sync ()
 		if (_pages[i].first == Modified) {
 			uint16_t crc = CRC::CCITT (_pages[i].second.begin (),
 						   _pages[i].second.end () - sizeof (crc));
-			Log::printf (Log::Debug, "Page %d CRC is %04hx.\n", i, crc);
+			Log::debug ().printf ("Page %d CRC is %04hx.\n", i, crc);
 			writeBE (_pages[i].second, PageSize - sizeof (crc), crc);
 			_imem.writePage (i, _pages[i].second);
 			_pages[i].first = Synced;
