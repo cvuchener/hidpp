@@ -191,14 +191,16 @@ int main (int argc, char *argv[])
 		for (unsigned int i = 1; i <= feature_count; ++i) {
 			uint8_t feature_index = i;
 			uint16_t feature_id;
-			bool obsolete, hidden;
+			bool obsolete, hidden, internal;
 
-			feature_id = ifeatureset.getFeatureID (feature_index, &obsolete, &hidden);
+			feature_id = ifeatureset.getFeatureID (feature_index, &obsolete, &hidden, &internal);
 			printf ("Feature 0x%02hhx: [0x%04hx]", feature_index, feature_id);
 			if (obsolete)
 				printf (" obsolete");
 			if (hidden)
 				printf (" hidden");
+			if (internal)
+				printf (" internal");
 			printf ("\n");
 		}
 	}

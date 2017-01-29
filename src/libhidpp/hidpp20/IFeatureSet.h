@@ -43,7 +43,8 @@ public:
 	unsigned int getCount ();
 	uint16_t getFeatureID (uint8_t feature_index,
 			       bool *obsolete = nullptr,
-			       bool *hidden = nullptr);
+			       bool *hidden = nullptr,
+			       bool *internal = nullptr);
 
 private:
 	Device *_dev;
