@@ -19,23 +19,32 @@
 #ifndef PROFILE_XML_H
 #define PROFILE_XML_H
 
-#include <hidpp10/Profile.h>
-#include <hidpp10/Macro.h>
+#include <hidpp/Profile.h>
+#include <hidpp/ProfileDirectory.h>
+#include <base/ProfileFormat.h>
+#include <base/ProfileDirectoryFormat.h>
 #include <tinyxml2.h>
 #include <functional>
 
-typedef std::function<void (const HIDPP10::Profile *,
-			    const std::vector<HIDPP10::Macro> &macros,
-			    tinyxml2::XMLNode *)> ProfileToXML;
-typedef std::function<void (const tinyxml2::XMLNode *,
-			    HIDPP10::Profile *,
-			    std::vector<HIDPP10::Macro> &macros)> XMLToProfile;
+class ProfileXML
+{
+public:
+	ProfileXML (const HIDPP::Base::ProfileFormat *profile_format,
+		    const HIDPP::Base::ProfileDirectoryFormat *profdir_format);
 
-void G500ProfileToXML (const HIDPP10::Profile *profile,
-		       const std::vector<HIDPP10::Macro> &macros,
-		       tinyxml2::XMLNode *node);
-void XMLToG500Profile (const tinyxml2::XMLNode *node,
-		       HIDPP10::Profile *profile,
-		       std::vector<HIDPP10::Macro> &macros);
+	// TODO: add macro vector
+	void write (const HIDPP::Profile &profile,
+		    const HIDPP::ProfileDirectory::Entry &entry,
+		    tinyxml2::XMLNode *node);
+	void read (const tinyxml2::XMLNode *node,
+		   HIDPP::Profile &profile,
+		   HIDPP::ProfileDirectory::Entry &entry);
+
+private:
+	const std::map<std::string, HIDPP::SettingDesc> &_profile_settings;
+	const std::map<std::string, HIDPP::SettingDesc> &_mode_settings;
+	const std::map<std::string, HIDPP::SettingDesc> &_entry_settings;
+	const HIDPP::EnumDesc &_special_actions;
+};
 
 #endif

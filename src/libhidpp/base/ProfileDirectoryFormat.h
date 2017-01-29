@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,29 @@
  *
  */
 
-#include <hidpp10/Address.h>
+#ifndef HIDPP_PROFILE_DIRECTORY_FORMAT_H
+#define HIDPP_PROFILE_DIRECTORY_FORMAT_H
 
-using namespace HIDPP10;
+#include <hidpp/ProfileDirectory.h>
 
-bool Address::operator< (const Address &other) const
+namespace HIDPP
 {
-	return page < other.page ||
-		(page == other.page && offset < other.offset);
+
+namespace Base
+{
+
+class ProfileDirectoryFormat
+{
+public:
+	virtual ~ProfileDirectoryFormat () = default;
+
+	virtual const std::map<std::string, SettingDesc> &settings () const = 0;
+
+	virtual ProfileDirectory read (std::vector<uint8_t>::const_iterator begin) const = 0;
+	virtual void write (const ProfileDirectory &profiles_directory, std::vector<uint8_t>::iterator begin) const = 0;
+};
+
+}
 }
 
+#endif

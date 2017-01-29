@@ -18,48 +18,56 @@
 
 #include "MemoryMapping.h"
 
-#include <hidpp10/defs.h>
-#include <misc/Log.h>
+#include <algorithm>
+#include <cassert>
 
 using namespace HIDPP;
-using namespace HIDPP10;
+using namespace HIDPP20;
 
 MemoryMapping::MemoryMapping (Device *dev, bool write_crc):
 	Base::MemoryMapping (write_crc),
-	_imem (dev),
-	_iprofile (dev)
+	_iop (dev),
+	_desc (_iop.getDescription ())
 {
 }
 
 std::vector<uint8_t>::const_iterator MemoryMapping::getReadOnlyIterator (const Address &address)
 {
 	auto &page = getReadOnlyPage (address);
-	return page.begin () + address.offset*2;
+	return page.begin () + address.offset;
 }
 
 std::vector<uint8_t>::iterator MemoryMapping::getWritableIterator (const Address &address)
 {
 	auto &page = getWritablePage (address);
-	return page.begin () + address.offset*2;
+	return page.begin () + address.offset;
 }
 
 bool MemoryMapping::computeOffset (std::vector<uint8_t>::const_iterator it, Address &address)
 {
 	auto &page = getReadOnlyPage (address);
 	int dist = distance (page.begin (), it);
-	if (dist % 2 == 1)
-		return false;
-	address.offset = dist/2;
+	address.offset = dist;
 	return true;
 }
 
 void MemoryMapping::readPage (const Address &address, std::vector<uint8_t> &data)
 {
-	data.resize (PageSize);
-	_imem.readMem (address, data);
+	data.resize (_desc.sector_size);
+	for (unsigned int i = 0; i < _desc.sector_size; i += IOnboardProfiles::LineSize) {
+		auto vec = _iop.memoryRead (static_cast<IOnboardProfiles::MemoryType> (address.mem_type), address.page, i);
+		std::copy_n (vec.begin (), IOnboardProfiles::LineSize, &data[i]);
+	}
 }
 
 void MemoryMapping::writePage (const Address &address, const std::vector<uint8_t> &data)
 {
-	_imem.writePage (address.page, data);
+	assert (address.mem_type == IOnboardProfiles::Writeable);
+	_iop.memoryAddrWrite (address.page, address.offset);
+	constexpr size_t LineSize = IOnboardProfiles::LineSize;
+	for (unsigned int i = 0; i < _desc.sector_size; i += LineSize) {
+		_iop.memoryWrite (data.begin () + i, data.begin () + i + LineSize);
+	}
+	_iop.memoryWriteEnd ();
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,41 +16,24 @@
  *
  */
 
-#ifndef HIDPP10_IMEMORY_H
-#define HIDPP10_IMEMORY_H
-
-#include <vector>
-#include <cstdint>
+#ifndef HIDPP_PROFILE_DIRECTORY_H
+#define HIDPP_PROFILE_DIRECTORY_H
 
 #include <hidpp/Address.h>
+#include <hidpp/Setting.h>
 
-namespace HIDPP10
+namespace HIDPP
 {
 
-class Device;
-
-class IMemory
+struct ProfileDirectory
 {
-public:
-	enum MemoryOp: uint8_t {
-		Fill = 2,
-		Copy = 3,
+	struct Entry
+	{
+		Address profile_address;
+		std::map<std::string, Setting> settings;
 	};
 
-	IMemory (Device *dev);
-
-	int readSome (HIDPP::Address address, uint8_t *buffer, std::size_t maxlen);
-	void readMem (HIDPP::Address address, std::vector<uint8_t> &data);
-
-
-	void writeMem (HIDPP::Address address, const std::vector<uint8_t> &data);
-	void writePage (uint8_t page, const std::vector<uint8_t> &data);
-
-	void resetSequenceNumber ();
-	void fillPage (uint8_t page);
-
-private:
-	Device *_dev;
+	std::vector<Entry> entries;
 };
 
 }

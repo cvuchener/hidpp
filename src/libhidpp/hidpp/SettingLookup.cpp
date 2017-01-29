@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,47 +16,12 @@
  *
  */
 
-#ifndef HIDPP10_IPROFILE_H
-#define HIDPP10_IPROFILE_H
+#include "SettingLookup.h"
 
-#include <hidpp10/IMemory.h>
+using namespace HIDPP;
 
-namespace HIDPP10
+SettingLookup::SettingLookup (const std::map<std::string, Setting> &values, const std::map<std::string, SettingDesc> &descs):
+	_values (values),
+	_descs (descs)
 {
-
-class Device;
-
-class IProfile
-{
-public:
-	IProfile (Device *dev);
-
-	enum ProfileType: uint8_t {
-		ProfileIndex = 0x00,
-		ProfileAddress = 0x01,
-		FactoryDefault = 0xFF,
-	};
-
-	/**
-	 * Get active profile.
-	 *
-	 * Returns -1 for factory default, or a positive
-	 * integer for current profile index.
-	 */
-	int activeProfile ();
-
-	void loadFactoryDefault ();
-	void loadProfileFromIndex (unsigned int index);
-	void loadProfileFromAddress (HIDPP::Address address);
-
-	void reloadActiveProfile ();
-
-private:
-	Device *_dev;
-};
-
 }
-
-#endif
-
-

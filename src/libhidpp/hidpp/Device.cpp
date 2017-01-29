@@ -16,7 +16,7 @@
  *
  */
 
-#include <hidpp/Device.h>
+#include "Device.h"
 
 #include <hidpp10/Device.h>
 #include <hidpp10/IReceiver.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,22 +16,33 @@
  *
  */
 
-#ifndef HIDPP10_ADDRESS_H
-#define HIDPP10_ADDRESS_H
+#include "ProfileFormat.h"
 
-#include <cstdint>
+using namespace HIDPP::Base;
 
-namespace HIDPP10
+ProfileFormat::ProfileFormat (size_t size, unsigned int max_button_count, unsigned int max_mode_count):
+	_size (size),
+	_max_button_count (max_button_count),
+	_max_mode_count (max_mode_count)
 {
-
-struct Address {
-	uint8_t page;
-	uint8_t offset;
-
-	bool operator< (const Address &other) const;
-};
-
 }
 
-#endif
+ProfileFormat::~ProfileFormat ()
+{
+}
+
+size_t ProfileFormat::size () const
+{
+	return _size;
+}
+
+unsigned int ProfileFormat::maxButtonCount () const
+{
+	return _max_button_count;
+}
+
+unsigned int ProfileFormat::maxModeCount () const
+{
+	return _max_mode_count;
+}
 

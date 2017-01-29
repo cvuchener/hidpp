@@ -16,14 +16,13 @@
  *
  */
 
-#ifndef HIDPP10_MEMORY_MAPPING_H
-#define HIDPP10_MEMORY_MAPPING_H
+#ifndef HIDPP20_MEMORY_MAPPING_H
+#define HIDPP20_MEMORY_MAPPING_H
 
 #include <base/MemoryMapping.h>
-#include <hidpp10/IMemory.h>
-#include <hidpp10/IProfile.h>
+#include <hidpp20/IOnboardProfiles.h>
 
-namespace HIDPP10
+namespace HIDPP20
 {
 
 class MemoryMapping: public HIDPP::Base::MemoryMapping
@@ -40,8 +39,8 @@ protected:
 	virtual void writePage (const HIDPP::Address &address, const std::vector<uint8_t> &data);
 
 private:
-	IMemory _imem;
-	IProfile _iprofile;
+	IOnboardProfiles _iop;
+	IOnboardProfiles::Description _desc;
 };
 
 }

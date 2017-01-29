@@ -9,8 +9,14 @@ set(LIBHIDPP_SOURCES
 	hidpp/Device.cpp
 	hidpp/Report.cpp
 	hidpp/DeviceInfo.cpp
+	hidpp/Setting.cpp
+	hidpp/SettingLookup.cpp
+	hidpp/Enum.cpp
+	hidpp/Address.cpp
+	hidpp/Profile.cpp
+	base/ProfileFormat.cpp
+	base/MemoryMapping.cpp
 	hidpp10/Device.cpp
-	hidpp10/Address.cpp
 	hidpp10/Error.cpp
 	hidpp10/WriteError.cpp
 	hidpp10/IMemory.cpp
@@ -19,15 +25,17 @@ set(LIBHIDPP_SOURCES
 	hidpp10/Sensor.cpp
 	hidpp10/IResolution.cpp
 	hidpp10/IProfile.cpp
+	hidpp10/ProfileDirectoryFormat.cpp
+	hidpp10/ProfileFormat.cpp
 	hidpp10/MemoryMapping.cpp
-	hidpp10/ProfileDirectory.cpp
-	hidpp10/Profile.cpp
-	hidpp10/Macro.cpp
 	hidpp20/Device.cpp
 	hidpp20/Error.cpp
 	hidpp20/IRoot.cpp
 	hidpp20/IFeatureSet.cpp
 	hidpp20/IOnboardProfiles.cpp
+	hidpp20/ProfileDirectoryFormat.cpp
+	hidpp20/ProfileFormat.cpp
+	hidpp20/MemoryMapping.cpp
 )
 
 include_directories(.)
