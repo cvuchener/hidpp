@@ -52,6 +52,7 @@ private:
 	static const std::map<std::string, HIDPP::SettingDesc> ModeSettings;
 	static const HIDPP::EnumDesc SpecialActions;
 	static const HIDPP::EnumDesc LEDEffects;
+	static const HIDPP::EnumDesc PowerModes;
 };
 
 std::unique_ptr<HIDPP::Base::ProfileFormat> getProfileFormat (Device *device);

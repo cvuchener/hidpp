@@ -21,6 +21,8 @@
 #include <misc/Endian.h>
 #include <misc/Log.h>
 
+#include <codecvt>
+
 using namespace HIDPP;
 using namespace HIDPP20;
 
@@ -77,7 +79,7 @@ ComposedSetting ProfileFormat::readLEDEffect (std::vector<uint8_t>::const_iterat
 	case 0: // Off
 		break;
 	case 0x01: // Constant
-		settings.emplace ("color", Color { begin[2], begin[3], begin[4] });
+		settings.emplace ("color", Color { begin[1], begin[2], begin[3] });
 		break;
 	case 0x0a: // Pulse
 		settings.emplace ("color", Color { begin[2], begin[3], begin[4] });
@@ -120,7 +122,10 @@ Profile ProfileFormat::read (std::vector<uint8_t>::const_iterator begin) const
 		begin[14],
 		begin[15]
 	});
+	profile.settings.emplace ("power_mode", EnumValue (PowerModes, begin[16]));
 	profile.settings.emplace ("angle_snapping", begin[17] == 0x02);
+	profile.settings.emplace ("unknown0", static_cast<int> (begin[18]));
+	profile.settings.emplace ("unknown1", static_cast<int> (begin[19]));
 	for (unsigned int i = 0; i < MaxButtonCount; ++i) {
 		auto button_data = begin+32 + 4*i;
 		switch (button_data[0]) {
@@ -153,6 +158,11 @@ Profile ProfileFormat::read (std::vector<uint8_t>::const_iterator begin) const
 			profile.buttons.emplace_back ();
 		}
 	}
+	std::u16string name;
+	for (int i = 0; i < 24; ++i)
+		name.push_back (readLE<char16_t> (begin+160+2*i));
+	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv16;
+	profile.settings.emplace ("name", conv16.to_bytes (name));
 	profile.settings.emplace ("logo_effect", readLEDEffect (begin+208));
 	profile.settings.emplace ("side_effect", readLEDEffect (begin+219));
 	return profile;
@@ -166,9 +176,11 @@ const std::map<std::string, SettingDesc> ProfileFormat::GeneralSettings = {
 	{ "report_rate", SettingDesc (1, 8, 4) },
 	{ "default_dpi", SettingDesc (0, MaxModeCount-1, 0) },
 	{ "switched_dpi", SettingDesc (0, MaxModeCount-1, 0) },
-	{ "color", SettingDesc (Color { 255, 255, 255 }) }, // Unused on G502
-	//{ "power_mode", },
+	{ "color", SettingDesc (Color { 255, 255, 255 }) }, // Unused on G502 (profile format 2)
+	{ "power_mode", SettingDesc (PowerModes, -1)}, // Only for profile format 3?
 	{ "angle_snapping", SettingDesc (false) },
+	{ "unknown", SettingDesc (0, 65535, 65535) },
+	{ "name", SettingDesc ("") },
 	{ "logo_effect", SettingDesc {
 		{ "type", SettingDesc (LEDEffects, EffectConstant) },
 		{ "color", SettingDesc (Color { 255, 255, 255 }) },
@@ -205,6 +217,10 @@ const EnumDesc ProfileFormat::LEDEffects = {
 	{ "Constant", EffectConstant },
 	{ "Pulse", EffectPulse },
 	{ "Cycle", EffectCycle },
+};
+
+const EnumDesc ProfileFormat::PowerModes = {
+	{ "NotApplicable", 0xff },
 };
 
 std::unique_ptr<Base::ProfileFormat> HIDPP20::getProfileFormat (HIDPP20::Device *device)
