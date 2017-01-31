@@ -91,7 +91,7 @@ public:
 		ROM = 1,
 	};
 	std::vector<uint8_t> memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset);
-	void memoryAddrWrite (unsigned int page, unsigned int offset);
+	void memoryAddrWrite (unsigned int page, unsigned int offset, unsigned int length);
 	void memoryWrite (const std::vector<uint8_t> &data);
 	void memoryWriteEnd ();
 

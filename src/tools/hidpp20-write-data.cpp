@@ -34,20 +34,12 @@ extern "C" {
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX page";
+	static const char *args = "/dev/hidrawX page offset";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
-	bool add_crc = false;
 
 	std::vector<Option> options = {
 		DeviceIndexOption (device_index),
 		VerboseOption (),
-		Option ('c', "crc",
-			Option::NoArgument, "",
-			"Add CRC add the end of the page",
-			[&add_crc] (const char *) -> bool {
-				add_crc = true;
-				return true;
-			}),
 	};
 	Option help = HelpOption (argv[0], args, &options);
 	options.push_back (help);
@@ -56,7 +48,7 @@ int main (int argc, char *argv[])
 	if (!Option::processOptions (argc, argv, options, first_arg))
 		return EXIT_FAILURE;
 
-	if (argc-first_arg != 2) {
+	if (argc-first_arg != 3) {
 		fprintf (stderr, "%s", getUsage (argv[0], args, &options).c_str ());
 		return EXIT_FAILURE;
 	}
@@ -64,56 +56,43 @@ int main (int argc, char *argv[])
 	const char *path = argv[first_arg];
 	char *end;
 	int page = strtol (argv[first_arg+1], &end, 0);
-	if (*end != '\0') {
-		fprintf (stderr, "Page index must be a number.\n");
+	if (*end != '\0' || page < 0) {
+		fprintf (stderr, "Invalid page index.\n");
 		return EXIT_FAILURE;
 	}
-	if (page < 0) {
-		fprintf (stderr, "Page index must be positive.\n");
+	int offset = strtol (argv[first_arg+2], &end, 0);
+	if (*end != '\0' || offset < 0) {
+		fprintf (stderr, "Invalid offset.\n");
 		return EXIT_FAILURE;
 	}
 
 	HIDPP20::Device dev (path, device_index);
 	HIDPP20::IOnboardProfiles iop (&dev);
-	auto desc = iop.getDescription ();
 
-	if (page >= desc.sector_count) {
-		fprintf (stderr, "Page index too big: page count is %d.\n", desc.sector_count);
+
+	std::size_t r = 0;
+	std::vector<uint8_t> data;
+	uint8_t buffer[256];
+	int ret;
+	while ((ret = read (0, buffer, sizeof (buffer))) > 0) {
+		data.insert (data.end (), buffer, buffer+ret);
+	}
+	if (ret == -1) {
+		perror ("read");
 		return EXIT_FAILURE;
 	}
 
-	iop.memoryAddrWrite (page, 0, desc.sector_size);
-
-	std::size_t r = 0;
-	std::vector<uint8_t> data (desc.sector_size, 0xff);
-	while (r < desc.sector_size) {
-		int ret = read (0, &data[r], data.size () - r);
-		if (ret == -1) {
-			perror ("read");
-			return EXIT_FAILURE;
-		}
-		if (ret == 0) {
-			break;
-		}
-		r += ret;
-	}
-	if (add_crc) {
-		size_t page_content_size = desc.sector_size - 2;
-		uint16_t crc = CRC::CCITT (data.begin (), data.begin () + page_content_size);
-		writeBE (data, page_content_size, crc);
-	}
-
-	for (unsigned int i = 0; i < data.size (); i += 16)
-		iop.memoryWrite (std::vector<uint8_t> (data.begin () + i, data.begin () + i + 16));
-
 	try {
+		iop.memoryAddrWrite (page, offset, data.size ());
+
+		for (unsigned int i = 0; i < data.size (); i += 16)
+			iop.memoryWrite (std::vector<uint8_t> (data.begin () + i, data.begin () + i + 16));
+
 		iop.memoryWriteEnd ();
 	}
 	catch (HIDPP20::Error e) {
-		if (e.errorCode () == HIDPP20::Error::HWError) {
-			fprintf (stderr, "memoryWriteEnd returned Hardware Error, maybe the CRC in wrong but the page is actually written.\n");
-		}
-		else throw e;
+		fprintf (stderr, "Error while writing data: %s (%d).\n", e.what (), e.errorCode ());
+		return e.errorCode ();
 	}
 
 	return EXIT_SUCCESS;

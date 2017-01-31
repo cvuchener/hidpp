@@ -89,13 +89,13 @@ std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned
 	return _dev->callFunction (_index, MemoryRead, params);
 }
 
-void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset)
+void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset, unsigned int length)
 {
-	std::vector<uint8_t> params (5);
+	std::vector<uint8_t> params (6);
 	params[0] = MemoryType::Writeable;
 	params[1] = page;
 	writeBE<uint16_t> (params, 2, offset);
-	params[4] = 0x01;
+	writeBE<uint16_t> (params, 4, length);
 	_dev->callFunction (_index, MemoryAddrWrite, params);
 }
 

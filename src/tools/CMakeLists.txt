@@ -35,6 +35,7 @@ foreach(TOOL_NAME
 	hidpp20-onboard-profiles-get-description
 	hidpp20-dump-page
 	hidpp20-write-page
+	hidpp20-write-data
 )
 	add_executable(${TOOL_NAME}
 		${TOOL_NAME}.cpp
