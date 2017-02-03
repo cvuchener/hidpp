@@ -27,7 +27,7 @@ class HIDRaw
 public:
 	class TimeoutError: public std::exception
 	{
-		const char *what () noexcept;
+		virtual const char *what () const noexcept;
 	};
 	typedef std::basic_string<uint8_t> ReportDescriptor;
 

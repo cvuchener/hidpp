@@ -135,7 +135,7 @@ int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
 	throw TimeoutError ();
 }
 
-const char *HIDRaw::TimeoutError::what () noexcept
+const char *HIDRaw::TimeoutError::what () const noexcept
 {
 	return "readReport timed out";
 }
