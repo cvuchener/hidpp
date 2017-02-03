@@ -76,6 +76,7 @@ int main (int argc, char *argv[])
 		struct udev_device *device = udev_device_new_from_syspath (ctx, udev_list_entry_get_name (current));
 		const char *hidraw_node = udev_device_get_devnode (device);
 		try {
+			bool has_receiver_index = false;
 			for (HIDPP::DeviceIndex index: {
 					HIDPP::DefaultDevice,
 					HIDPP::CordedDevice,
@@ -85,6 +86,9 @@ int main (int argc, char *argv[])
 					HIDPP::WirelessDevice4,
 					HIDPP::WirelessDevice5,
 					HIDPP::WirelessDevice6 }) {
+				// Skip wireless devices, if the default index (used by the receiver) already failed.
+				if (!has_receiver_index && index == HIDPP::WirelessDevice1)
+					break;
 				try {
 					HIDPP::Device dev (hidraw_node, index);
 					unsigned int major, minor;
@@ -96,6 +100,8 @@ int main (int argc, char *argv[])
 							dev.name ().c_str (),
 							dev.vendorID (), dev.productID (),
 							major, minor);
+					if (index == HIDPP::DefaultDevice)
+						has_receiver_index = true;
 				}
 				catch (HIDPP10::Error e) {
 					if (e.errorCode () != HIDPP10::Error::UnknownDevice && e.errorCode () != HIDPP10::Error::InvalidSubID) {
