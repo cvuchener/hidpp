@@ -41,17 +41,24 @@ public:
 
 private:
 	IOnboardProfiles::Description _desc;
+	std::map<std::string, HIDPP::SettingDesc> _general_settings;
+	bool _has_g_shift;
+	bool _has_dpi_shift;
+	bool _has_rgb_effects;
+	bool _has_power_modes;
 
-	static HIDPP::ComposedSetting readLEDEffect (std::vector<uint8_t>::const_iterator begin);
+	static HIDPP::ComposedSetting readRGBEffect (std::vector<uint8_t>::const_iterator begin);
+	static void writeRGBEffect (std::vector<uint8_t>::iterator begin, const HIDPP::ComposedSetting &settings);
 
-	static constexpr size_t ProfileSize = 230;
-	static constexpr unsigned int MaxButtonCount = 32;
+	static const std::map<IOnboardProfiles::ProfileFormat, size_t> ProfileLength;
+	static constexpr unsigned int MaxButtonCount = 16;
 	static constexpr unsigned int MaxModeCount = 5;
 
-	static const std::map<std::string, HIDPP::SettingDesc> GeneralSettings;
+	static const std::map<std::string, HIDPP::SettingDesc> RGBEffectSettings;
+	static const std::map<std::string, HIDPP::SettingDesc> CommonGeneralSettings;
 	static const std::map<std::string, HIDPP::SettingDesc> ModeSettings;
 	static const HIDPP::EnumDesc SpecialActions;
-	static const HIDPP::EnumDesc LEDEffects;
+	static const HIDPP::EnumDesc RGBEffects;
 	static const HIDPP::EnumDesc PowerModes;
 };
 

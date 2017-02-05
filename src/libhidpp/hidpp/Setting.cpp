@@ -209,6 +209,13 @@ SettingDesc::SettingDesc (std::initializer_list<container::value_type> sub_setti
 {
 }
 
+SettingDesc::SettingDesc (const container &sub_settings):
+	_type (Setting::Type::ComposedSetting),
+	_sub_settings (sub_settings),
+	_default_value (ComposedSetting ())
+{
+}
+
 SettingDesc::SettingDesc (const EnumDesc &enum_desc, int default_value):
 	_type (Setting::Type::Enum),
 	_enum_desc (&enum_desc),
@@ -239,8 +246,18 @@ bool SettingDesc::check (const Setting &setting) const
 		return &value.desc () == _enum_desc && _enum_desc->check (value.get ());
 	}
 	case Setting::Type::ComposedSetting:
-		Log::error () << "Checking ComposedSetting is not implemented." << std::endl;
-		return false;
+		for (const auto &pair: setting.get<ComposedSetting> ()) {
+			auto it = _sub_settings.find (pair.first);
+			if (it == _sub_settings.end ()) {
+				Log::debug () << "Unknwon sub-setting: " << pair.first << std::endl;
+				return false;
+			}
+			if (!it->second.check (pair.second)) {
+				Log::debug () << "Sub-setting \"" << pair.first << "\" is not valid." << std::endl;
+				return false;
+			}
+		}
+		return true;
 	}
 }
 

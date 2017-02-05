@@ -114,6 +114,7 @@ public:
 	SettingDesc (const LEDVector &default_value);
 	SettingDesc (const Color &default_value);
 	SettingDesc (std::initializer_list<container::value_type> sub_settings);
+	SettingDesc (const container &sub_settings);
 	SettingDesc (const EnumDesc &enum_desc, int default_value);
 
 	bool check (const Setting &setting) const;

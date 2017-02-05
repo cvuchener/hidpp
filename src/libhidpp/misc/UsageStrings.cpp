@@ -205,10 +205,14 @@ uint8_t modifierMask (const std::string &string)
 	do {
 		next = string.find ('+', current);
 		std::string mod;
-		if (next == std::string::npos)
+		if (next == std::string::npos) {
 			mod = string.substr (current);
-		else
+			current = std::string::npos;
+		}
+		else {
 			mod = string.substr (current, next-current);
+			current = next + 1;
+		}
 		auto it = key_string_map.find (mod);
 		if (it != key_string_map.end ()) {
 			if (it->second < 0xe0 || it->second >= 0xe8) {
@@ -224,7 +228,6 @@ uint8_t modifierMask (const std::string &string)
 			}
 			mask |= code;
 		}
-		current = next;
 	} while (current != std::string::npos);
 
 	return mask;
