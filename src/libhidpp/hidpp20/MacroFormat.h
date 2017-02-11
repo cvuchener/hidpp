@@ -1,0 +1,51 @@
+/*
+ * Copyright 2017 Clément Vuchener
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef HIDPP20_MACRO_FORMAT_H
+#define HIDPP20_MACRO_FORMAT_H
+
+#include <base/MacroFormat.h>
+
+#include <memory>
+
+namespace HIDPP20
+{
+
+class MacroFormat: public HIDPP::Base::MacroFormat
+{
+public:
+	virtual std::size_t getLength (const HIDPP::Macro::Item &item) const;
+
+	virtual void writeAddress (std::vector<uint8_t>::iterator it,
+				   const HIDPP::Address &addr) const;
+
+	virtual std::vector<uint8_t>::iterator
+	writeItem (std::vector<uint8_t>::iterator it,
+		   const HIDPP::Macro::Item &item,
+		   std::vector<uint8_t>::iterator &jump_addr_it) const;
+
+
+	virtual HIDPP::Macro::Item parseItem (std::vector<uint8_t>::const_iterator &it, HIDPP::Address &jump_addr) const;
+};
+
+class Device;
+std::unique_ptr<HIDPP::Base::MacroFormat> getMacroFormat (Device *device);
+
+}
+
+#endif

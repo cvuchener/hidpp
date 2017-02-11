@@ -18,6 +18,8 @@
 
 #include "ProfileXML.h"
 
+#include "MacroText.h"
+
 #include <misc/UsageStrings.h>
 #include <misc/Log.h>
 #include <sstream>
@@ -46,23 +48,21 @@ void InsertCData (XMLElement *el, const std::string &str)
 
 // TODO: add macro vector
 static
-void insertButton (const Profile::Button &button, XMLNode *parent, const EnumDesc &special_actions)
+void insertButton (const Profile::Button &button, const Macro &macro, XMLNode *parent, const EnumDesc &special_actions)
 {
 	XMLDocument *doc = parent->GetDocument ();
 	XMLElement *el;
 	switch (button.type ()) {
 	case Profile::Button::Type::Macro: {
 		el = doc->NewElement ("macro");
-		/*Macro::const_iterator pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end;
+		Macro::const_iterator pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end;
 		unsigned int loop_delay;
-		if (macros[i].isSimple ()) {
-			std::string str = std::string ("\n") +
-					  macroToText (macros[i].begin (),
-						       std::prev (macros[i].end ()));
+		if (macro.isSimple ()) {
+			std::string str = std::string ("\n") + macroToText (macro.begin (), std::prev (macro.end ()));
 			InsertCData (el, str);
 			el->SetAttribute ("type", "simple");
 		}
-		else if (macros[i].isLoop (pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end, loop_delay)) {
+		else if (macro.isLoop (pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end, loop_delay)) {
 			std::string pre_str = std::string ("\n") + macroToText (pre_begin, pre_end);
 			std::string loop_str = std::string ("\n") + macroToText (loop_begin, loop_end);
 			std::string post_str = std::string ("\n") + macroToText (post_begin, post_end);
@@ -83,14 +83,12 @@ void insertButton (const Profile::Button &button, XMLNode *parent, const EnumDes
 			el->SetAttribute ("loop-delay", loop_delay);
 		}
 		else {
-			std::string str = std::string ("\n") +
-					  macroToText (macros[i].begin (),
-						       macros[i].end ());
+			std::string str = std::string ("\n") + macroToText (macro.begin (), macro.end ());
 			XMLText *txt = doc->NewText (str.c_str ());
 			txt->SetCData (true);
 			el->InsertEndChild (txt);
 			el->SetAttribute ("type", "advanced");
-		}*/
+		}
 		break;
 	}
 
@@ -148,7 +146,7 @@ void insertSetting (const std::string &name, const Setting &value, XMLNode *pare
 	parent->InsertEndChild (element);
 }
 
-void ProfileXML::write (const Profile &profile, const ProfileDirectory::Entry &entry, XMLNode *node)
+void ProfileXML::write (const Profile &profile, const ProfileDirectory::Entry &entry, const std::vector<Macro> &macros, XMLNode *node)
 {
 	XMLDocument *doc = node->GetDocument ();
 
@@ -168,24 +166,27 @@ void ProfileXML::write (const Profile &profile, const ProfileDirectory::Entry &e
 		insertSetting (p.first, p.second, node);
 
 	XMLElement *buttons = doc->NewElement ("buttons");
-	for (const auto &button: profile.buttons)
-		insertButton (button, buttons, _special_actions);
+	for (unsigned int i = 0; i < profile.buttons.size (); ++i) {
+		const auto &button = profile.buttons[i];
+		const auto &macro = macros[i];
+		insertButton (button, macro, buttons, _special_actions);
+	}
 	node->InsertEndChild (buttons);
 }
 
 static
-void readButton (const XMLElement *element, Profile::Button &button, const EnumDesc &special_actions)
+void readButton (const XMLElement *element, Profile::Button &button, Macro &macro, const EnumDesc &special_actions)
 {
 
 	std::string name = element->Name ();
 	if (name == "macro") {
-		/*button.setMacro (Address ());
+		button.setMacro (Address ());
 		std::string type;
 		if (element->Attribute ("type"))
 			type = element->Attribute ("type");
 		if (type.empty () || type == "simple") {
 			Macro simple = textToMacro (element->GetText ());
-			macros[i] = Macro::buildSimple (simple.begin (), simple.end ());
+			macro = Macro::buildSimple (simple.begin (), simple.end ());
 		}
 		else if (type == "loop") {
 			unsigned int loop_delay;
@@ -215,15 +216,15 @@ void readButton (const XMLElement *element, Profile::Button &button, const EnumD
 			if (post_el) {
 				post = textToMacro (post_el->GetText ());
 			}
-			macros[i] = Macro::buildLoop (pre.begin (), pre.end (),
-						      loop.begin (), loop.end (),
-						      post.begin (), post.end (),
-						      loop_delay);
+			macro = Macro::buildLoop (pre.begin (), pre.end (),
+						  loop.begin (), loop.end (),
+						  post.begin (), post.end (),
+						  loop_delay);
 
 		}
 		else if (type == "advanced") {
-			macros[i] = textToMacro (element->GetText ());
-		}*/
+			macro = textToMacro (element->GetText ());
+		}
 	}
 	else if (name == "mouse-button") {
 		std::string str = element->GetText ();
@@ -280,7 +281,7 @@ Setting readSetting (const XMLElement *element, const SettingDesc &desc)
 	}
 }
 
-void ProfileXML::read (const XMLNode *node, Profile &profile, ProfileDirectory::Entry &entry)
+void ProfileXML::read (const XMLNode *node, Profile &profile, ProfileDirectory::Entry &entry, std::vector<Macro> &macros)
 {
 	const XMLElement *element = node->FirstChildElement ();
 	while (element) {
@@ -309,9 +310,12 @@ void ProfileXML::read (const XMLNode *node, Profile &profile, ProfileDirectory::
 		}
 		else if (name == "buttons") {
 			const XMLElement *button = element->FirstChildElement ();
+			profile.buttons.clear ();
+			macros.clear ();
 			while (button) {
 				profile.buttons.emplace_back ();
-				readButton (button, profile.buttons.back (), _special_actions);
+				macros.emplace_back ();
+				readButton (button, profile.buttons.back (), macros.back (),  _special_actions);
 				button = button->NextSiblingElement ();
 			}
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2015-2017 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,16 +16,22 @@
  *
  */
 
-#ifndef HIDPP10_MACRO_H
-#define HIDPP10_MACRO_H
+#ifndef HIDPP_MACRO_H
+#define HIDPP_MACRO_H
 
+#include <string>
+#include <map>
 #include <cstdint>
 #include <list>
-#include <hidpp10/Address.h>
-#include <hidpp10/MemoryMapping.h>
+#include <hidpp/Address.h>
 
-namespace HIDPP10
+namespace HIDPP
 {
+
+namespace Base {
+class MacroFormat;
+class MemoryMapping;
+}
 
 class Macro
 {
@@ -33,36 +39,38 @@ public:
 	class Item
 	{
 	public:
-		Item (uint8_t op_code);
-
-		enum OpCode: uint8_t {
-			NoOp = 0x00,
-			WaitRelease = 0x01,
-			RepeatUntilRelease = 0x02,
-			RepeatForever = 0x03,
-			KeyPress = 0x20,
-			KeyRelease = 0x21,
-			ModifierPress = 0x22,
-			ModifierRelease = 0x23,
-			MouseWheel = 0x24,
-			MouseButtonPress = 0x40,
-			MouseButtonRelease = 0x41,
-			ConsumerControl = 0x42,
-			Delay = 0x43,
-			Jump = 0x44,
-			JumpIfPressed = 0x45,
-			MousePointer = 0x60,
-			JumpIfReleased = 0x61,
-			End = 0xff,
+		enum Instruction {
+			NoOp,
+			WaitRelease,
+			RepeatUntilRelease,
+			RepeatForever,
+			KeyPress,
+			KeyRelease,
+			ModifiersPress,
+			ModifiersRelease,
+			ModifiersKeyPress,
+			ModifiersKeyRelease,
+			MouseWheel,
+			MouseHWheel,
+			MouseButtonPress,
+			MouseButtonRelease,
+			ConsumerControl,
+			ConsumerControlPress,
+			ConsumerControlRelease,
+			Delay,
+			ShortDelay,
+			Jump,
+			JumpIfPressed,
+			MousePointer,
+			JumpIfReleased,
+			End,
 		};
 
-		static std::size_t getOpLength (uint8_t op_code);
+		static const std::map<Instruction, std::string> InstructionStrings;
 
-		static uint8_t getShortDelayCode (unsigned int delay);
-		static unsigned int getShortDelayDuration (uint8_t op_code);
+		Item (Instruction instr);
 
-		uint8_t opCode () const;
-		bool isShortDelay () const;
+		Instruction instruction () const;
 
 		uint8_t keyCode () const;
 		void setKeyCode (uint8_t key);
@@ -70,8 +78,8 @@ public:
 		uint8_t modifiers () const;
 		void setModifiers (uint8_t modifiers);
 
-		int8_t wheel () const;
-		void setWheel (int8_t wheel);
+		int wheel () const;
+		void setWheel (int wheel);
 
 		uint16_t buttons () const;
 		void setButtons (uint16_t buttons);
@@ -93,26 +101,28 @@ public:
 		void setMouseY (int delta);
 
 		bool isSimple () const;
+		bool hasSuccessor () const;
 
 	private:
-		uint8_t _op_code;
+		Instruction _instr;
 		union {
-			uint8_t key;
-			uint8_t modifiers;
-			int8_t wheel;
+			struct {
+				uint8_t key;
+				uint8_t modifiers;
+			} key;
+			int wheel;
 			uint16_t buttons;
 			uint16_t cc;
-			uint16_t delay;
+			unsigned int delay;
 			struct {
-				int16_t x, y;
+				int x, y;
 			} mouse;
 		} _params;
 		std::list<Item>::iterator _dest;
 	};
 
 	Macro ();
-	Macro (MemoryMapping &mem, Address address);
-	Macro (std::vector<uint8_t>::const_iterator begin, Address start_address);
+	Macro (const Base::MacroFormat &format, Base::MemoryMapping &mem, Address address);
 
 	explicit Macro (const Macro &);
 	Macro (Macro &&) = default;
@@ -120,8 +130,7 @@ public:
 	Macro &operator= (const Macro &) = delete;
 	Macro &operator= (Macro &&) = default;
 
-	std::vector<uint8_t>::iterator write (std::vector<uint8_t>::iterator begin, Address start_address) const;
-	Address write (MemoryMapping &mem, Address start) const;
+	Address write (const Base::MacroFormat &format, Base::MemoryMapping &mem, Address start) const;
 
 	/**
 	 * Remove no-op and useless unconditional jumps.
@@ -139,7 +148,7 @@ public:
 	const Item &back () const;
 	Item &back ();
 
-	void emplace_back (uint8_t op_code);
+	void emplace_back (Item::Instruction instr);
 
 	bool isSimple () const;
 	bool isLoop (const_iterator &pre_begin, const_iterator &pre_end,

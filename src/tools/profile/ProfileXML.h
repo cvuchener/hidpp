@@ -21,6 +21,7 @@
 
 #include <hidpp/Profile.h>
 #include <hidpp/ProfileDirectory.h>
+#include <hidpp/Macro.h>
 #include <base/ProfileFormat.h>
 #include <base/ProfileDirectoryFormat.h>
 #include <tinyxml2.h>
@@ -35,10 +36,12 @@ public:
 	// TODO: add macro vector
 	void write (const HIDPP::Profile &profile,
 		    const HIDPP::ProfileDirectory::Entry &entry,
+		    const std::vector<HIDPP::Macro> &macros,
 		    tinyxml2::XMLNode *node);
 	void read (const tinyxml2::XMLNode *node,
 		   HIDPP::Profile &profile,
-		   HIDPP::ProfileDirectory::Entry &entry);
+		   HIDPP::ProfileDirectory::Entry &entry,
+		   std::vector<HIDPP::Macro> &macros);
 
 private:
 	const std::map<std::string, HIDPP::SettingDesc> &_profile_settings;

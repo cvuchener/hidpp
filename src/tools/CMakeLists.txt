@@ -44,6 +44,7 @@ endforeach()
 
 if(TINYXML2_FOUND)
 	add_library(profile OBJECT
+		profile/MacroText.cpp
 		profile/ProfileXML.cpp)
 	
 	add_executable(hidpp-persistent-profiles

@@ -14,8 +14,10 @@ set(LIBHIDPP_SOURCES
 	hidpp/Enum.cpp
 	hidpp/Address.cpp
 	hidpp/Profile.cpp
+	hidpp/Macro.cpp
 	base/ProfileFormat.cpp
 	base/MemoryMapping.cpp
+	base/MacroFormat.cpp
 	hidpp10/Device.cpp
 	hidpp10/Error.cpp
 	hidpp10/WriteError.cpp
@@ -28,6 +30,7 @@ set(LIBHIDPP_SOURCES
 	hidpp10/ProfileDirectoryFormat.cpp
 	hidpp10/ProfileFormat.cpp
 	hidpp10/MemoryMapping.cpp
+	hidpp10/MacroFormat.cpp
 	hidpp20/Device.cpp
 	hidpp20/Error.cpp
 	hidpp20/IRoot.cpp
@@ -36,6 +39,7 @@ set(LIBHIDPP_SOURCES
 	hidpp20/ProfileDirectoryFormat.cpp
 	hidpp20/ProfileFormat.cpp
 	hidpp20/MemoryMapping.cpp
+	hidpp20/MacroFormat.cpp
 )
 
 include_directories(.)

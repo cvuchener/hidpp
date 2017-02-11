@@ -33,6 +33,8 @@ extern "C" {
 #include <hidpp20/ProfileFormat.h>
 #include <hidpp10/MemoryMapping.h>
 #include <hidpp20/MemoryMapping.h>
+#include <hidpp10/MacroFormat.h>
+#include <hidpp20/MacroFormat.h>
 #include <misc/Log.h>
 
 #include "common/common.h"
@@ -89,6 +91,7 @@ int main (int argc, char *argv[])
 	std::unique_ptr<HIDPP::Base::ProfileDirectoryFormat> profdir_format;
 	std::unique_ptr<HIDPP::Base::ProfileFormat> profile_format;
 	std::unique_ptr<HIDPP::Base::MemoryMapping> memory;
+	std::unique_ptr<HIDPP::Base::MacroFormat> macro_format;
 	HIDPP::Address dir_address;
 
 	/*
@@ -99,6 +102,7 @@ int main (int argc, char *argv[])
 		device.reset (dev);
 		profdir_format = HIDPP10::getProfileDirectoryFormat (dev);
 		profile_format = HIDPP10::getProfileFormat (dev);
+		macro_format = HIDPP10::getMacroFormat (dev);
 		memory.reset (new HIDPP10::MemoryMapping (dev));
 		dir_address = HIDPP::Address { 0, 1, 0 };
 	}
@@ -110,6 +114,7 @@ int main (int argc, char *argv[])
 		device.reset (dev);
 		profdir_format = HIDPP20::getProfileDirectoryFormat (dev);
 		profile_format = HIDPP20::getProfileFormat (dev);
+		macro_format = HIDPP20::getMacroFormat (dev);
 		memory.reset (new HIDPP20::MemoryMapping (dev));
 		dir_address = HIDPP::Address { HIDPP20::IOnboardProfiles::Writeable, 0, 0 };
 	}
@@ -148,7 +153,7 @@ int main (int argc, char *argv[])
 
 		HIDPP::ProfileDirectory profdir;
 		std::vector<HIDPP::Profile> profiles;
-		//std::vector<std::vector<HIDPP::Macro>> macros
+		std::vector<std::vector<HIDPP::Macro>> macros;
 
 		// The first profile will be written on the page after the directory
 		HIDPP::Address prof_address = dir_address;
@@ -163,13 +168,16 @@ int main (int argc, char *argv[])
 			profdir.entries.push_back ({ prof_address });
 			auto &entry = profdir.entries.back ();
 
-			profxml.read (element, profile, entry);
+			macros.emplace_back ();
+			auto &pmacros = macros.back ();
+
+			profxml.read (element, profile, entry, pmacros);
 
 			element = element->NextSiblingElement ("profile");
 			++prof_address.page;
 		}
 
-		// TODO: Macro are written from the next page after profiles
+		// Macro are written from the next page after profiles
 		HIDPP::Address macro_address = prof_address;
 		for (unsigned int i = 0; i < profiles.size (); ++i) {
 			auto &entry = profdir.entries[i];
@@ -177,9 +185,9 @@ int main (int argc, char *argv[])
 			for (unsigned int j = 0; j < profile.buttons.size (); ++j) {
 				auto &button = profile.buttons[j];
 				if (button.type () == HIDPP::Profile::Button::Type::Macro) {
-					//auto &macro = macros[i][j];
+					auto &macro = macros[i][j];
 					button.setMacro (macro_address);
-					//TODO: write macro and increment address
+					macro_address = macro.write (*macro_format, *memory, macro_address);
 				}
 			}
 			auto it = memory->getWritableIterator (entry.profile_address);
@@ -203,10 +211,18 @@ int main (int argc, char *argv[])
 			auto it = memory->getReadOnlyIterator (entry.profile_address);
 			HIDPP::Profile profile = profile_format->read (it);
 
-			// TODO: read macros
+			std::vector<HIDPP::Macro> macros;
+			for (const auto &button: profile.buttons) {
+				if (button.type () == HIDPP::Profile::Button::Type::Macro) {
+					macros.emplace_back (*macro_format, *memory, button.macro ());
+					macros.back ().simplify ();
+				}
+				else
+					macros.emplace_back ();
+			}
 
 			XMLElement *element = doc.NewElement ("profile");
-			profxml.write (profile, entry, element);
+			profxml.write (profile, entry, macros, element);
 			root->InsertEndChild (element);
 		}
 		doc.InsertEndChild (root);
