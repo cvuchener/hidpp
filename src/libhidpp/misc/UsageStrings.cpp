@@ -200,7 +200,9 @@ std::string modifierString (uint8_t modifier_mask)
 
 uint8_t modifierMask (const std::string &string)
 {
-	uint8_t mask;
+	if (string.empty ())
+		return 0;
+	uint8_t mask = 0;
 	std::size_t current = 0, next;
 	do {
 		next = string.find ('+', current);

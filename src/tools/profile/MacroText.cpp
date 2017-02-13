@@ -21,11 +21,23 @@
 #include <sstream>
 #include <map>
 #include <regex>
+#include <algorithm>
+#include <cassert>
 
 #include <misc/Log.h>
 #include <misc/UsageStrings.h>
 
 using HIDPP::Macro;
+
+static const std::string WhiteSpaces = " \t\r\n";
+
+static
+std::string formatParam (std::string param)
+{
+	if (param.empty () || param.find_first_of (WhiteSpaces+";") != std::string::npos)
+		return std::string ("\"") + param + "\"";
+	return param;
+}
 
 std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 {
@@ -58,18 +70,18 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 		switch (item.instruction ()) {
 		case Macro::Item::KeyPress:
 		case Macro::Item::KeyRelease:
-			ss << " " << keyString (item.keyCode ());
+			ss << " " << formatParam (keyString (item.keyCode ()));
 			break;
 
 		case Macro::Item::ModifiersPress:
 		case Macro::Item::ModifiersRelease:
-			ss << " " << modifierString (item.modifiers ());
+			ss << " " << formatParam (modifierString (item.modifiers ()));
 			break;
 
 		case Macro::Item::ModifiersKeyPress:
 		case Macro::Item::ModifiersKeyRelease:
-			ss << " " << modifierString (item.modifiers ())
-			   << " " << keyString (item.keyCode ());
+			ss << " " << formatParam (modifierString (item.modifiers ()))
+			   << " " << formatParam (keyString (item.keyCode ()));
 			break;
 
 		case Macro::Item::MouseWheel:
@@ -79,13 +91,13 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 
 		case Macro::Item::MouseButtonPress:
 		case Macro::Item::MouseButtonRelease:
-			ss << " " << buttonString (item.buttons ());
+			ss << " " << formatParam (buttonString (item.buttons ()));
 			break;
 
 		case Macro::Item::ConsumerControl:
 		case Macro::Item::ConsumerControlPress:
 		case Macro::Item::ConsumerControlRelease:
-			ss << " " << consumerControlString (item.consumerControl ());
+			ss << " " << formatParam (consumerControlString (item.consumerControl ()));
 			break;
 
 		case Macro::Item::Delay:
@@ -116,30 +128,56 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 	return ss.str ();
 }
 
+static inline
+std::string::const_iterator
+skipWhiteSpaces (std::string::const_iterator begin, std::string::const_iterator end)
+{
+	static const std::regex WhiteSpaceRegex ("\\s*");
+	std::smatch results;
+	assert (std::regex_search (begin, end,
+				   results, WhiteSpaceRegex,
+				   std::regex_constants::match_continuous));
+	return results[0].second;
+}
+
 Macro textToMacro (const std::string &text)
 {
-	static const std::regex InstructionRegex ("(?:\\s*(\\w+):)?\\s*(\\w+)(?:\\s+([^;]+))?\\s*(?:;|$)");
-	static const std::regex ParamRegex ("\\S+");
+	static const std::regex LabeledInstructionRegex ("(?:(\\w+):)?\\s*(\\w+)");
+	static const std::regex ParamRegex ("(;)|\"([^\"]*)\"|([^[:space:];]+)");
 
 	std::map<std::string, Macro::iterator> labels;
 	std::vector<std::pair<Macro::Item *, std::string>> jumps;
 
 	Macro macro;
 
-	std::string::const_iterator current = text.begin ();
+	auto current = skipWhiteSpaces (text.begin (), text.end ());
 	std::smatch results;
-	while (std::regex_search (current, text.end (),
-				  results, InstructionRegex,
-				  std::regex_constants::match_continuous)) {
+	while (current != text.end ()) {
+		if (!std::regex_search (current, text.end (),
+					results, LabeledInstructionRegex,
+					std::regex_constants::match_continuous)) {
+			std::string invalid_text (current, text.end ());
+			static constexpr std::size_t MaxTextLength = 20;
+			if (invalid_text.size () > MaxTextLength)
+				invalid_text.resize (MaxTextLength);
+			Log::error () << "Syntax error when parsing macro instruction: \"" << invalid_text << "\"" << std::endl;
+			return Macro ();
+		}
 		std::string label = results.str (1);
 		std::string instruction = results.str (2);
-		std::vector<std::string> params;
+		current = skipWhiteSpaces (results[0].second, text.end ());
 
-		std::smatch param_res;
-		std::string::const_iterator current_param = results[3].first;
-		while (std::regex_search (current_param, results[3].second, param_res, ParamRegex)) {
-			params.push_back (param_res.str (0));
-			current_param = param_res[0].second;
+		std::vector<std::string> params;
+		while (current != text.end ()) {
+			assert (std::regex_search (current, text.end (), results, ParamRegex, std::regex_constants::match_continuous));
+			current = skipWhiteSpaces (results[0].second, text.end ());
+			if (results[1].matched) // semi-colon
+				break;
+			for (unsigned int i = 2; i <= 3; ++i)
+				if (results[i].matched) {
+					params.push_back (results[i]);
+					break;
+				}
 		}
 
 		Macro::Item *item = nullptr;
@@ -230,8 +268,6 @@ Macro textToMacro (const std::string &text)
 		if (!label.empty ()) {
 			labels.emplace (label, std::prev (macro.end ()));
 		}
-
-		current = results[0].second;
 	}
 
 	for (auto pair: jumps) {
