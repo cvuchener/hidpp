@@ -130,7 +130,15 @@ public:
 	Macro &operator= (const Macro &) = delete;
 	Macro &operator= (Macro &&) = default;
 
-	Address write (const Base::MacroFormat &format, Base::MemoryMapping &mem, Address start) const;
+	/**
+	 * Writes the macro in \p mem using \p format.
+	 *
+	 * \p start may be changed if there is not enough space at the
+	 * given address.
+	 *
+	 * \returns the first address after the macro.
+	 */
+	Address write (const Base::MacroFormat &format, Base::MemoryMapping &mem, Address &start) const;
 
 	/**
 	 * Remove no-op and useless unconditional jumps.

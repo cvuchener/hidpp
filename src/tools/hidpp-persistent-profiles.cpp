@@ -186,8 +186,9 @@ int main (int argc, char *argv[])
 				auto &button = profile.buttons[j];
 				if (button.type () == HIDPP::Profile::Button::Type::Macro) {
 					auto &macro = macros[i][j];
+					auto next_address = macro.write (*macro_format, *memory, macro_address);
 					button.setMacro (macro_address);
-					macro_address = macro.write (*macro_format, *memory, macro_address);
+					macro_address = next_address;
 				}
 			}
 			auto it = memory->getWritableIterator (entry.profile_address);

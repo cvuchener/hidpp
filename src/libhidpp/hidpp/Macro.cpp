@@ -293,7 +293,7 @@ Macro::Macro (const Macro &other):
 	}
 }
 
-Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address start) const
+Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address &start) const
 {
 	typedef std::vector<uint8_t>::iterator iterator;
 	std::map<const Item *, Address> jump_dests; // Associate address with jump destination items
@@ -313,6 +313,7 @@ Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address sta
 	constexpr std::size_t CRCLength = 2;
 	const std::size_t jump_len = format.getJumpLength ();
 	bool check_end_of_page_jump = true;
+	bool first_instruction = true;
 
 	for (auto it = _items.begin (); it != _items.end (); ++it) {
 		const Item &item = *it;
@@ -330,7 +331,7 @@ Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address sta
 				// the destination of a jump. We need to add padding.
 				++instr_location;
 			}
-			if (item_len + jump_len + CRCLength > std::distance (instr_location, page_end)) {
+			if ((int) (item_len + jump_len + CRCLength) > std::distance (instr_location, page_end)) {
 				// If we write this item now, there will not be enough
 				// room to write a jump. We check if the whole macro can
 				// fit before the end of page.
@@ -352,14 +353,22 @@ Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address sta
 				if (need_jump) {
 					// Jump to the beginning of the next page
 					++current_page.page;
-					Log::debug () << "Adding jump to page " << current_page.page << std::endl;
-					format.writeJump (current, current_page);
+					if (!first_instruction) {
+						assert (std::distance (current, page_end) > (int) (jump_len + CRCLength));
+						Log::debug () << "Adding jump to page " << current_page.page << std::endl;
+						format.writeJump (current, current_page);
+					}
 					current = mem.getWritableIterator (current_page);
 					page_end = mem.getWritablePage (current_page).end ();
+					if (first_instruction) {
+						Log::debug () << "Macro start was moved because of lacking space at the given address" << std::endl;
+						start = current_page;
+					}
 				}
 				else {
 					// The macro will fit in the current page, no need
 					// to check again.
+					Log::debug () << "Macro end fits in the current page" << std::endl;
 					check_end_of_page_jump = false;
 				}
 			}
@@ -385,6 +394,9 @@ Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address sta
 		if (is_jump_dest) {
 			jump_dest->second = item_addr;
 		}
+
+		if (first_instruction)
+			first_instruction = false;
 	}
 
 	// Write jump addresses
