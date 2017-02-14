@@ -55,13 +55,13 @@ if(TINYXML2_FOUND)
 		PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
 	target_link_libraries(hidpp-persistent-profiles hidpp ${TINYXML2_LIBRARIES})
 	
-#	add_executable(hidpp10-load-temp-profile
-#		hidpp10-load-temp-profile.cpp
-#		$<TARGET_OBJECTS:profile>
-#		$<TARGET_OBJECTS:common>)
-#	target_include_directories(hidpp10-load-temp-profile
-#		PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
-#	target_link_libraries(hidpp10-load-temp-profile hidpp ${TINYXML2_LIBRARIES})
+	add_executable(hidpp10-load-temp-profile
+		hidpp10-load-temp-profile.cpp
+		$<TARGET_OBJECTS:profile>
+		$<TARGET_OBJECTS:common>)
+	target_include_directories(hidpp10-load-temp-profile
+		PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
+	target_link_libraries(hidpp10-load-temp-profile hidpp ${TINYXML2_LIBRARIES})
 else()
 	message("Profile tools require tinyxml2.")
 endif()

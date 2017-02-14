@@ -30,6 +30,7 @@ set(LIBHIDPP_SOURCES
 	hidpp10/ProfileDirectoryFormat.cpp
 	hidpp10/ProfileFormat.cpp
 	hidpp10/MemoryMapping.cpp
+	hidpp10/RAMMapping.cpp
 	hidpp10/MacroFormat.cpp
 	hidpp20/Device.cpp
 	hidpp20/Error.cpp
