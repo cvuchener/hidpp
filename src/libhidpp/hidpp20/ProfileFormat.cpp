@@ -103,8 +103,8 @@ ComposedSetting ProfileFormat::readRGBEffect (std::vector<uint8_t>::const_iterat
 		settings.emplace ("color", Color { begin[1], begin[2], begin[3] });
 		break;
 	case RGBEffectPulse:
-		settings.emplace ("color", Color { begin[2], begin[3], begin[4] });
-		settings.emplace ("period", static_cast<int> (readBE<uint16_t> (begin+5)));
+		settings.emplace ("color", Color { begin[1], begin[2], begin[3] });
+		settings.emplace ("period", static_cast<int> (readBE<uint16_t> (begin+4)));
 		settings.emplace ("brightness", static_cast<int> (begin[7]));
 		break;
 	case RGBEffectCycle:
@@ -138,10 +138,10 @@ void ProfileFormat::writeRGBEffect (std::vector<uint8_t>::iterator begin, const 
 		break;
 	case RGBEffectPulse:
 		color = effect.get<Color> ("color");
-		begin[2] = color.r;
-		begin[3] = color.g;
-		begin[4] = color.b;
-		writeBE<uint16_t> (begin+5, effect.get<int> ("period"));
+		begin[1] = color.r;
+		begin[2] = color.g;
+		begin[3] = color.b;
+		writeBE<uint16_t> (begin+4, effect.get<int> ("period"));
 		begin[7] = effect.get<int> ("brightness");
 		break;
 	case RGBEffectCycle:
