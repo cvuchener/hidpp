@@ -21,18 +21,31 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>
 #include <hidpp/SettingLookup.h>
-#include <misc/Endian.h>
+#include <hidpp/Field.h>
 
 using namespace HIDPP;
 using namespace HIDPP10;
 
+static constexpr auto ButtonSize = 3;
+namespace ButtonFields
+{
+static constexpr auto Type =		Field<uint8_t> (0);
+static constexpr auto MouseButtons =	Field<uint16_t, LittleEndian> (1);
+static constexpr auto Modifiers =	Field<uint8_t> (1);
+static constexpr auto Key =		Field<uint8_t> (2);
+static constexpr auto Special =		Field<uint16_t, LittleEndian> (1);
+static constexpr auto ConsumerControl =	Field<uint16_t, LittleEndian> (1);
+static constexpr auto MacroPage =	Field<uint8_t> (0);
+static constexpr auto MacroOffset =	Field<uint8_t> (1);
+}
+
 enum ButtonType: uint8_t
 {
-	MouseButtons = 0x81,
-	Key = 0x82,
-	Special = 0x83,
-	ConsumerControl = 0x84,
-	Disabled = 0x8f,
+	ButtonMouse = 0x81,
+	ButtonKey = 0x82,
+	ButtonSpecial = 0x83,
+	ButtonConsumerControl = 0x84,
+	ButtonDisabled = 0x8f,
 };
 
 enum SpecialAction: uint16_t
@@ -54,55 +67,86 @@ enum SpecialAction: uint16_t
 static
 Profile::Button parseButton (std::vector<uint8_t>::const_iterator begin)
 {
-	switch (*begin) {
-	case ButtonType::MouseButtons:
-		return Profile::Button (Profile::Button::MouseButtonsType (), readLE<uint16_t> (begin+1));
-	case ButtonType::Key:
-		return Profile::Button (begin[1], begin[2]);
-	case ButtonType::Special:
-		return Profile::Button (Profile::Button::SpecialType (), readLE<uint16_t> (begin+1));
-	case ButtonType::ConsumerControl:
-		return Profile::Button (Profile::Button::ConsumerControlType (), readLE<uint16_t> (begin+1));
-	case ButtonType::Disabled:
+	using namespace ButtonFields;
+	switch (Type.read (begin)) {
+	case ButtonMouse:
+		return Profile::Button (Profile::Button::MouseButtonsType (),
+					MouseButtons.read (begin));
+	case ButtonKey:
+		return Profile::Button (Modifiers.read (begin),
+					Key.read (begin));
+	case ButtonSpecial:
+		return Profile::Button (Profile::Button::SpecialType (),
+					Special.read (begin));
+	case ButtonConsumerControl:
+		return Profile::Button (Profile::Button::ConsumerControlType (),
+					ConsumerControl.read (begin));
+	case ButtonDisabled:
 		return Profile::Button ();
 	default:
-		return Profile::Button (Address { 0, begin[0], begin[1] });
+		return Profile::Button (Address {
+			0,
+			MacroPage.read (begin),
+			MacroOffset.read (begin)
+		});
 	}
 }
 
 static
 void writeButton (std::vector<uint8_t>::iterator begin, const Profile::Button &button)
 {
+	using namespace ButtonFields;
+	std::fill (begin, begin+ButtonSize, 0);
 	switch (button.type ()) {
 	case Profile::Button::Type::Disabled:
-		begin[0] = ButtonType::Disabled;
-		begin[1] = begin[2] = 0;
+		Type.write (begin, ButtonDisabled);
 		break;
 	case Profile::Button::Type::MouseButtons:
-		begin[0] = ButtonType::MouseButtons;
-		writeLE<uint16_t> (begin+1, button.mouseButtons ());
+		Type.write (begin, ButtonMouse);
+		MouseButtons.write (begin, button.mouseButtons ());
 		break;
 	case Profile::Button::Type::Key:
-		begin[0] = ButtonType::Key;
-		begin[1] = button.modifierKeys ();
-		begin[2] = button.key ();
+		Type.write (begin, ButtonKey);
+		Modifiers.write (begin, button.modifierKeys ());
+		Key.write (begin, button.key ());
 		break;
 	case Profile::Button::Type::ConsumerControl:
-		begin[0] = ButtonType::ConsumerControl;
-		writeLE<uint16_t> (begin+1, button.consumerControl ());
+		Type.write (begin, ButtonConsumerControl);
+		ConsumerControl.write (begin, button.consumerControl ());
 		break;
 	case Profile::Button::Type::Special:
-		begin[0] = ButtonType::Special;
-		writeLE<uint16_t> (begin+1, button.special ());
+		Type.write (begin, ButtonSpecial);
+		Special.write (begin, button.special ());
 		break;
 	case Profile::Button::Type::Macro: {
 		Address addr = button.macro ();
-		begin[0] = addr.page;
-		begin[1] = addr.offset;
-		begin[2] = 0;
+		MacroPage.write (begin, addr.page);
+		MacroOffset.write (begin, addr.offset);
 		break;
 	}
 	}
+}
+
+namespace G500Fields
+{
+static constexpr std::size_t ModeSize = 6;
+
+static constexpr auto ProfileColor =	Field<Color> (0);
+static constexpr auto Angle =		Field<uint8_t> (3);
+static constexpr auto Modes =		StructArrayField<ModeSize, 5> (4);
+static constexpr auto AngleSnapping =	Field<uint8_t> (34);
+static constexpr auto DefaultDPI =	Field<uint8_t> (35);
+static constexpr auto LiftThreshold =	Field<uint8_t> (36);
+static constexpr auto Unknown =		Field<uint8_t> (37);
+static constexpr auto ReportRate =	Field<uint8_t> (38);
+static constexpr auto Buttons =		StructArrayField<ButtonSize, 13> (39);
+
+namespace Mode
+{
+static constexpr auto DPIX =	Field<uint16_t, BigEndian> (0);
+static constexpr auto DPIY =	Field<uint16_t, BigEndian> (2);
+static constexpr auto LEDs =	Field<uint16_t, LittleEndian> (4);
+}
 }
 
 const std::map<std::string, SettingDesc> G500ProfileFormat::GeneralSettings = {
@@ -164,21 +208,20 @@ const EnumDesc &G500ProfileFormat::specialActions () const
 
 Profile G500ProfileFormat::read (std::vector<uint8_t>::const_iterator begin) const
 {
+	using namespace G500Fields;
 	Profile profile;
-	profile.settings.emplace ("color", Color {
-		begin[0],
-		begin[1],
-		begin[2]
-	});
-	profile.settings.emplace ("angle", static_cast<int> (begin[3]));
+	profile.settings.emplace ("color", ProfileColor.read (begin));
+	profile.settings.emplace ("angle", static_cast<int> (Angle.read (begin)));
 	for (unsigned int i = 0; i < MaxModeCount; ++i) {
-		uint16_t dpi_x = readBE<uint16_t> (begin+4+6*i);
+		auto mode = Modes.begin (begin, i);
+		uint16_t dpi_x = Mode::DPIX.read (mode);
 		if (i > 0 && dpi_x == 0)
 			break;
-		uint16_t dpi_y = readBE<uint16_t> (begin+4+6*i+2);
+		uint16_t dpi_y = Mode::DPIY.read (mode);
 		LEDVector leds;
+		uint16_t led_flags = Mode::LEDs.read (mode);
 		for (unsigned int j = 0; j < LEDCount; ++j) {
-			int led = (begin[4+6*i+4+j/2] >> 4*(j%2)) & 0x0f;
+			int led = (led_flags >> 4*j) & 0x0f;
 			if (led == 0)
 				break;
 			leds.push_back (led == 0x02);
@@ -189,64 +232,62 @@ Profile G500ProfileFormat::read (std::vector<uint8_t>::const_iterator begin) con
 			{ "leds", leds },
 		});
 	}
-	profile.settings.emplace ("angle_snapping", begin[34] == 0x02);
-	profile.settings.emplace ("default_dpi", static_cast<int> (begin[35]));
-	profile.settings.emplace ("lift_threshold", static_cast<int> (begin[36])-16);
-	profile.settings.emplace ("unknown", static_cast<int> (begin[37]));
-	profile.settings.emplace ("report_rate", static_cast<int> (begin[38]));
+	profile.settings.emplace ("angle_snapping", AngleSnapping.read (begin) == 0x02);
+	profile.settings.emplace ("default_dpi", static_cast<int> (DefaultDPI.read (begin)));
+	profile.settings.emplace ("lift_threshold", static_cast<int> (LiftThreshold.read (begin))-16);
+	profile.settings.emplace ("unknown", static_cast<int> (Unknown.read (begin)));
+	profile.settings.emplace ("report_rate", static_cast<int> (ReportRate.read (begin)));
 	for (unsigned int i = 0; i < MaxButtonCount; ++i) {
-		profile.buttons.push_back (parseButton (begin+39+3*i));
+		profile.buttons.push_back (parseButton (Buttons.begin (begin, i)));
 	}
 	return profile;
 }
 
 void G500ProfileFormat::write (const Profile &profile, std::vector<uint8_t>::iterator begin) const
 {
+	using namespace G500Fields;
 	SettingLookup general (profile.settings, GeneralSettings);
-	Color color = general.get<Color> ("color");
-	begin[0] = color.r;
-	begin[1] = color.g;
-	begin[2] = color.b;
-
-	begin[3] = general.get<int> ("angle");
+	ProfileColor.write (begin, general.get<Color> ("color"));
+	Angle.write (begin, general.get<int> ("angle"));
 
 	for (unsigned int i = 0; i < MaxModeCount; ++i) {
-		auto it = begin+4+6*i;
+		auto it = Modes.begin (begin, i);
 		if (i >= profile.modes.size ()) {
-			std::fill (it, it+6, 0);
+			std::fill (Modes.begin (begin, i), Modes.end (begin, i), 0);
 		}
 		else {
 			SettingLookup mode (profile.modes[i], _mode_settings);
 
 			int dpi_x = mode.get<int> ("dpi_x");
-			writeBE<uint16_t> (it, _sensor.fromDPI (dpi_x));
+			Mode::DPIX.write (it, _sensor.fromDPI (dpi_x));
 			int dpi_y = mode.get ("dpi_y", dpi_x);
-			writeBE<uint16_t> (it+2, _sensor.fromDPI (dpi_y));
+			Mode::DPIY.write (it, _sensor.fromDPI (dpi_y));
 
 			LEDVector leds = mode.get<LEDVector> ("leds");
-			writeLE<uint16_t> (it+4, 0);
-			for (unsigned int j = 0; j < LEDCount; ++j)
-				it[4+j/2] |= (leds[j] ? 0x02 : 0x01) << 4*(j%2);
+			uint16_t led_flags = 0;
+			for (unsigned int j = 0; j < LEDCount && j < leds.size (); ++j)
+				led_flags |= (leds[j] ? 0x02 : 0x01) << 4*j;
+			Mode::LEDs.write (it, led_flags);
 		}
 	}
 
 	bool angle_snapping = general.get<bool> ("angle_snapping");
-	begin[34] = (angle_snapping ? 0x01 : 0x02);
+	AngleSnapping.write (begin, angle_snapping ? 0x01 : 0x02);
 
 	unsigned int default_dpi = general.get<int> ("default_dpi");
 	if (default_dpi >= profile.modes.size ())
 		default_dpi = profile.modes.size () - 1;
-	begin[35] = default_dpi;
+	DefaultDPI.write (begin, default_dpi);
 
-	begin[36] = 16 + general.get<int> ("lift_threshold");
-	begin[37] = general.get<int> ("unknown");
-	begin[38] = general.get<int> ("report_rate");
+	LiftThreshold.write (begin, 16 + general.get<int> ("lift_threshold"));
+	Unknown.write (begin, general.get<int> ("unknown"));
+	ReportRate.write (begin, general.get<int> ("report_rate"));
 
 	for (unsigned int i = 0; i < MaxButtonCount; ++i) {
 		Profile::Button button;
 		if (i < profile.buttons.size ())
 			button = profile.buttons[i];
-		writeButton (begin+39+3*i, button);
+		writeButton (Buttons.begin (begin, i), button);
 	}
 }
 

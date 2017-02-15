@@ -19,6 +19,7 @@
 #include "ProfileFormat.h"
 #include <hidpp20/IOnboardProfiles.h>
 #include <hidpp/SettingLookup.h>
+#include <hidpp/Field.h>
 #include <misc/Endian.h>
 #include <misc/Log.h>
 
@@ -27,6 +28,57 @@
 
 using namespace HIDPP;
 using namespace HIDPP20;
+
+namespace Fields
+{
+
+static constexpr std::size_t ButtonSize = 4;
+static constexpr std::size_t RGBEffectSize = 11;
+
+static constexpr auto ReportRate =	Field<uint8_t> (0);
+static constexpr auto DefaultDPI =	Field<uint8_t> (1);
+static constexpr auto SwitchedDPI =	Field<uint8_t> (2);
+static constexpr auto Modes =		ArrayField<uint16_t, 5, LittleEndian> (3);
+static constexpr auto ProfileColor =	Field<Color> (13);
+static constexpr auto PowerMode =	Field<uint8_t> (16);
+static constexpr auto AngleSnapping =	Field<uint8_t> (17);
+static constexpr auto Revision =	Field<uint16_t, LittleEndian> (18);
+static constexpr auto Buttons =		StructArrayField<ButtonSize, 32> (32);
+static constexpr auto Name =		ArrayField<char16_t, 24, LittleEndian> (160);
+static constexpr auto LogoEffect =	StructField<RGBEffectSize> (208);
+static constexpr auto SideEffect =	StructField<RGBEffectSize> (219);
+
+namespace Button
+{
+static constexpr auto Type =		Field<uint8_t> (0);
+
+static constexpr auto HIDType =		Field<uint8_t> (1);
+static constexpr auto MouseButtons =	Field<uint16_t, BigEndian> (2);
+static constexpr auto Modifiers =	Field<uint8_t> (2);
+static constexpr auto Key =		Field<uint8_t> (3);
+static constexpr auto ConsumerControl =	Field<uint16_t, BigEndian> (2);
+
+static constexpr auto Special =		Field<uint8_t> (1);
+
+static constexpr auto MacroMemType =	Field<uint8_t> (0);
+static constexpr auto MacroPage =	Field<uint8_t> (1);
+static constexpr auto MacroOffset =	Field<uint16_t, BigEndian> (2);
+}
+
+namespace RGBEffect
+{
+static constexpr auto Type =		Field<uint8_t> (0);
+
+static constexpr auto ConstantColor =	Field<Color> (1);
+
+static constexpr auto PulseColor =	Field<Color> (1);
+static constexpr auto PulsePeriod =	Field<uint16_t, BigEndian> (4);
+static constexpr auto PulseBrightness =	Field<uint8_t> (7);
+
+static constexpr auto CyclePeriod =	Field<uint16_t, BigEndian> (6);
+static constexpr auto CycleBrightness =	Field<uint8_t> (8);
+}
+}
 
 enum ButtonType: uint8_t
 {
@@ -92,24 +144,100 @@ const EnumDesc &ProfileFormat::specialActions () const
 	return SpecialActions;
 }
 
+static
+Profile::Button readButton (std::vector<uint8_t>::const_iterator begin)
+{
+	using namespace Fields::Button;
+	uint8_t type;
+	switch (type = Type.read (begin)) {
+	case ButtonHID:
+		switch (type = HIDType.read (begin)) {
+		case ButtonHIDMouse:
+			return Profile::Button (Profile::Button::MouseButtonsType (),
+						MouseButtons.read (begin));
+		case ButtonHIDKey:
+			return Profile::Button (Modifiers.read (begin), Key.read (begin));
+		case ButtonHIDConsumerControl:
+			return Profile::Button (Profile::Button::ConsumerControlType (),
+						ConsumerControl.read (begin));
+		default:
+			Log::error () << "Invalid HID type code: " << type << std::endl;
+			return Profile::Button ();
+		}
+	case ButtonSpecial:
+		return Profile::Button (Profile::Button::SpecialType (),
+					Special.read (begin));
+	case ButtonMacro:
+		return Profile::Button (Address {
+			MacroMemType.read (begin),
+			MacroPage.read (begin),
+			MacroOffset.read (begin)
+		});
+	case ButtonDisabled:
+		return Profile::Button ();
+	default:
+		Log::error () << "Invalid button type code: " << type << std::endl;
+		return Profile::Button ();
+	}
+}
+
+static
+void writeButton (std::vector<uint8_t>::iterator begin, const Profile::Button &button)
+{
+	using namespace Fields::Button;
+	switch (button.type ()) {
+	case Profile::Button::Type::Disabled:
+		Type.write (begin, ButtonDisabled);
+		return;
+	case Profile::Button::Type::MouseButtons:
+		Type.write (begin, ButtonHID);
+		HIDType.write (begin, ButtonHIDMouse);
+		MouseButtons.write (begin, button.mouseButtons ());
+		return;
+	case Profile::Button::Type::Key:
+		Type.write (begin, ButtonHID);
+		HIDType.write (begin, ButtonHIDKey);
+		Modifiers.write (begin, button.modifierKeys ());
+		Key.write (begin, button.key ());
+		return;
+	case Profile::Button::Type::ConsumerControl:
+		Type.write (begin, ButtonHID);
+		HIDType.write (begin, ButtonHIDConsumerControl);
+		ConsumerControl.write (begin, button.consumerControl ());
+		return;
+	case Profile::Button::Type::Special:
+		Type.write (begin, ButtonSpecial);
+		Special.write (begin, button.special ());
+		return;
+	case Profile::Button::Type::Macro: {
+		Address addr = button.macro ();
+		MacroMemType.write (begin, addr.mem_type);
+		MacroPage.write (begin, addr.page);
+		MacroOffset.write (begin, addr.offset);
+		return;
+	}
+	}
+}
+
 ComposedSetting ProfileFormat::readRGBEffect (std::vector<uint8_t>::const_iterator begin)
 {
+	using namespace Fields::RGBEffect;
 	ComposedSetting settings;
-	uint8_t type = begin[0];
+	uint8_t type = Type.read (begin);
 	switch (type) {
 	case RGBEffectOff:
 		break;
 	case RGBEffectConstant:
-		settings.emplace ("color", Color { begin[1], begin[2], begin[3] });
+		settings.emplace ("color", ConstantColor.read (begin));
 		break;
 	case RGBEffectPulse:
-		settings.emplace ("color", Color { begin[1], begin[2], begin[3] });
-		settings.emplace ("period", static_cast<int> (readBE<uint16_t> (begin+4)));
-		settings.emplace ("brightness", static_cast<int> (begin[7]));
+		settings.emplace ("color", PulseColor.read (begin));
+		settings.emplace ("period", static_cast<int> (PulsePeriod.read (begin)));
+		settings.emplace ("brightness", static_cast<int> (PulseBrightness.read (begin)));
 		break;
 	case RGBEffectCycle:
-		settings.emplace ("period", static_cast<int> (readBE<uint16_t> (begin+6)));
-		settings.emplace ("brightness", static_cast<int> (begin[8]));
+		settings.emplace ("period", static_cast<int> (CyclePeriod.read (begin)));
+		settings.emplace ("brightness", static_cast<int> (CycleBrightness.read (begin)));
 		break;
 	default:
 		Log::error () << "Invalid LED effect type" << std::endl;
@@ -122,181 +250,116 @@ ComposedSetting ProfileFormat::readRGBEffect (std::vector<uint8_t>::const_iterat
 
 void ProfileFormat::writeRGBEffect (std::vector<uint8_t>::iterator begin, const ComposedSetting &settings)
 {
+	using namespace Fields::RGBEffect;
 	std::fill (begin, begin+11, 0);
 	SettingLookup effect (settings, RGBEffectSettings);
 	int type = effect.get<EnumValue> ("type").get ();
-	begin[0] = type;
-	Color color;
+	Type.write (begin, type);
 	switch (type) {
 	case RGBEffectOff:
 		break;
 	case RGBEffectConstant:
-		color = effect.get<Color> ("color");
-		begin[1] = color.r;
-		begin[2] = color.g;
-		begin[3] = color.b;
+		ConstantColor.write (begin, effect.get<Color> ("color"));
 		break;
 	case RGBEffectPulse:
-		color = effect.get<Color> ("color");
-		begin[1] = color.r;
-		begin[2] = color.g;
-		begin[3] = color.b;
-		writeBE<uint16_t> (begin+4, effect.get<int> ("period"));
-		begin[7] = effect.get<int> ("brightness");
+		PulseColor.write (begin, effect.get<Color> ("color"));
+		PulsePeriod.write (begin, effect.get<int> ("period"));
+		PulseBrightness.write (begin, effect.get<int> ("brightness"));
 		break;
 	case RGBEffectCycle:
-		writeBE<uint16_t> (begin+6, effect.get<int> ("period"));
-		begin[8] = effect.get<int> ("brightness");
+		CyclePeriod.write (begin, effect.get<int> ("period"));
+		CycleBrightness.write (begin, effect.get<int> ("brightness"));
 		break;
 	}
 }
 
+
 Profile ProfileFormat::read (std::vector<uint8_t>::const_iterator begin) const
 {
+	using namespace Fields;
 	for (unsigned int i = 0; i < 16; ++i)
 		Log::debug ().printBytes ("profile", begin+16*i, begin+16*(i+1));
 	// TODO: missing settings
 	// TODO: add settings depending on desc
 	Profile profile;
-	profile.settings.emplace ("report_rate", static_cast<int> (begin[0]));
-	profile.settings.emplace ("default_dpi", static_cast<int> (begin[1]));
-	profile.settings.emplace ("switched_dpi", static_cast<int> (begin[2]));
+	profile.settings.emplace ("report_rate", static_cast<int> (ReportRate.read (begin)));
+	profile.settings.emplace ("default_dpi", static_cast<int> (DefaultDPI.read (begin)));
+	profile.settings.emplace ("switched_dpi", static_cast<int> (SwitchedDPI.read (begin)));
 	for (unsigned int i = 0; i < MaxModeCount; ++i) {
-		uint16_t dpi = readLE<uint16_t> (begin+3+2*i);
+		uint16_t dpi = Modes.read (begin, i);
 		if (dpi == 0x0000 || dpi == 0xFFFF)
 			break;
 		profile.modes.push_back ({
 			{ "dpi", static_cast<int> (dpi) },
 		});
 	}
-	profile.settings.emplace ("color", Color {
-		begin[13],
-		begin[14],
-		begin[15]
-	});
+	profile.settings.emplace ("color", ProfileColor.read (begin));
 	if (_has_power_modes) {
 		profile.settings.emplace ("power_mode",
-					  EnumValue (PowerModes, begin[16]));
+					  EnumValue (PowerModes, PowerMode.read (begin)));
 	}
-	profile.settings.emplace ("angle_snapping", begin[17] != 0);
-	int rev = readLE<uint16_t> (begin+18);
-	profile.settings.emplace ("revision", rev);
+	profile.settings.emplace ("angle_snapping", AngleSnapping.read (begin) != 0);
+	profile.settings.emplace ("revision", static_cast<int> (Revision.read (begin)));
 	for (unsigned int i = 0; i < (_has_g_shift ? 2 : 1); ++i) { // Normal/alternate buttons
 		for (unsigned int j = 0; j < _desc.button_count; ++j) {
-			auto button_data = begin+32 + 4*(i*MaxButtonCount + j);
-			switch (button_data[0]) {
-			case ButtonHID:
-				switch (button_data[1]) {
-				case ButtonHIDMouse:
-					profile.buttons.emplace_back (Profile::Button::MouseButtonsType (),
-								      readBE<uint16_t> (button_data+2));
-					break;
-				case ButtonHIDKey:
-					profile.buttons.emplace_back (button_data[2], button_data[3]);
-					break;
-				case ButtonHIDConsumerControl:
-					profile.buttons.emplace_back (Profile::Button::ConsumerControlType (),
-								      readBE<uint16_t> (button_data+2));
-					break;
-				}
-				break;
-			case ButtonSpecial:
-				profile.buttons.emplace_back (Profile::Button::SpecialType (), button_data[1]);
-				break;
-			case ButtonMacro:
-				profile.buttons.emplace_back (Address { button_data[2], button_data[1], button_data[3]});
-				break;
-			case ButtonDisabled:
-				profile.buttons.emplace_back ();
-				break;
-			default:
-				Log::error () << "Invalid button type code" << std::endl;
-				profile.buttons.emplace_back ();
-			}
+			auto button_data = Buttons.begin (begin, i*MaxButtonCount + j);
+			profile.buttons.emplace_back (readButton (button_data));
 		}
 	}
 	std::u16string name;
 	for (int i = 0; i < 24; ++i)
-		name.push_back (readLE<char16_t> (begin+160+2*i));
+		name.push_back (Name.read (begin, i));
 	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv16;
 	profile.settings.emplace ("name", conv16.to_bytes (name));
 	if (_has_rgb_effects) {
-		profile.settings.emplace ("logo_effect", readRGBEffect (begin+208));
-		profile.settings.emplace ("side_effect", readRGBEffect (begin+219));
+		profile.settings.emplace ("logo_effect",
+					  readRGBEffect (LogoEffect.begin (begin)));
+		profile.settings.emplace ("side_effect",
+					  readRGBEffect (SideEffect.begin (begin)));
 	}
 	return profile;
 }
 
 void ProfileFormat::write (const Profile &profile, std::vector<uint8_t>::iterator begin) const
 {
+	using namespace Fields;
 	std::fill (begin, begin + ProfileLength.at (_desc.profile_format), 0xff);
 	SettingLookup general (profile.settings, _general_settings);
-	begin[0] = general.get<int> ("report_rate");
-	begin[1] = general.get<int> ("default_dpi");
-	begin[2] = general.get<int> ("switched_dpi");
+	ReportRate.write (begin, general.get<int> ("report_rate"));
+	DefaultDPI.write (begin, general.get<int> ("default_dpi"));
+	SwitchedDPI.write (begin, general.get<int> ("switched_dpi"));
 	for (unsigned int i = 0; i < MaxModeCount; ++i) {
 		if (i < profile.modes.size ()) {
 			SettingLookup mode (profile.modes[i], ModeSettings);
-			writeLE<uint16_t> (begin+3+2*i, mode.get<int> ("dpi"));
+			Modes.write (begin, i, mode.get<int> ("dpi"));
 		}
 		else {
-			// Write 0 after for disabled modes. Not sure if useful but it mimics LGS
-			writeLE<uint16_t> (begin+3+2*i, 0);
+			// Write 0 after for disabled modes.
+			// Not sure if useful (0xffff works too) but it mimics LGS
+			Modes.write (begin, i, 0);
 		}
 	}
-	Color color = general.get<Color> ("color");
-	begin[13] = color.r;
-	begin[14] = color.g,
-	begin[15] = color.b;
+	ProfileColor.write (begin, general.get<Color> ("color"));
 	if (_has_power_modes)
-		begin[16] = general.get<EnumValue> ("power_mode").get ();
-	begin[17] = (general.get<bool> ("angle_snapping") ? 0x01 : 0x00);
-	writeLE<uint16_t> (begin+18, general.get<int> ("revision"));
+		PowerMode.write (begin, general.get<EnumValue> ("power_mode").get ());
+	AngleSnapping.write (begin, general.get<bool> ("angle_snapping") ? 0x01 : 0x00);
+	Revision.write (begin, general.get<int> ("revision"));
 	for (unsigned int i = 0; i < (_has_g_shift ? 2 : 1); ++i) { // Normal/alternate buttons
 		for (unsigned int j = 0; j < _desc.button_count; ++j) {
-			auto button_data = begin+32 + 4*(MaxButtonCount*i + j);
+			auto button_data = Buttons.begin (begin, MaxButtonCount*i + j);
 			const auto &button = profile.buttons[i*_desc.button_count + j];
-			switch (button.type ()) {
-			case Profile::Button::Type::Disabled:
-				button_data[0] = ButtonDisabled;
-				break;
-			case Profile::Button::Type::MouseButtons:
-				button_data[0] = ButtonHID;
-				button_data[1] = ButtonHIDMouse;
-				writeBE<uint16_t> (button_data+2, button.mouseButtons ());
-				break;
-			case Profile::Button::Type::Key:
-				button_data[0] = ButtonHID;
-				button_data[1] = ButtonHIDKey;
-				button_data[2] = button.modifierKeys ();
-				button_data[3] = button.key ();
-				break;
-			case Profile::Button::Type::ConsumerControl:
-				button_data[0] = ButtonHID;
-				button_data[1] = ButtonHIDConsumerControl;
-				writeBE<uint16_t> (button_data+2, button.consumerControl ());
-				break;
-			case Profile::Button::Type::Special:
-				button_data[0] = ButtonSpecial;
-				button_data[1] = button.special ();
-				break;
-			case Profile::Button::Type::Macro: {
-				Address addr = button.macro ();
-				button_data[0] = addr.mem_type;
-				button_data[1] = addr.page;
-				writeBE<uint16_t> (button_data+2, addr.offset);
-				break;
-			}
-			}
+			writeButton (button_data, button);
 		}
 	}
 	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv16;
 	std::u16string name = conv16.from_bytes (general.get<std::string> ("name"));
 	for (int i = 0; i < 24; ++i)
-		writeLE<char16_t> (begin+160+2*i, name[i]);
+		Name.write (begin, i, name[i]);
 	if (_has_rgb_effects) {
-		writeRGBEffect (begin+208, general.get<ComposedSetting> ("logo_effect"));
-		writeRGBEffect (begin+219, general.get<ComposedSetting> ("side_effect"));
+		writeRGBEffect (LogoEffect.begin (begin),
+				general.get<ComposedSetting> ("logo_effect"));
+		writeRGBEffect (SideEffect.begin (begin),
+				general.get<ComposedSetting> ("side_effect"));
 	}
 }
 
