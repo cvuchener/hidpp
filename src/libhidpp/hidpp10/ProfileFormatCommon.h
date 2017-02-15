@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Clément Vuchener
+ * Copyright 2017 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,26 +16,34 @@
  *
  */
 
-#ifndef HIDPP10_PROFILE_FORMAT_H
-#define HIDPP10_PROFILE_FORMAT_H
+#ifndef HIDPP10_PROFILE_FORMAT_COMMON_H
+#define HIDPP10_PROFILE_FORMAT_COMMON_H
 
-#include <base/ProfileFormat.h>
-
-#include <memory>
+#include <hidpp/Profile.h>
 
 namespace HIDPP10
 {
 
-class Device;
-
-enum ProfileType {
-	NoProfile,
-	G9ProfileType,
-	G500ProfileType,
-	G700ProfileType,
+enum SpecialAction: uint16_t
+{
+	WheelLeft = 0x01,
+	WheelRight = 0x02,
+	BatteryLevel = 0x03,
+	ResolutionNext = 0x04,
+	ResolutionCycleNext = 0x05,
+	ResolutionPrev = 0x08,
+	ResolutionCyclePrev = 0x09,
+	ProfileNext = 0x10,
+	ProfileCycleNext = 0x11,
+	ProfilePrev = 0x20,
+	ProfileCyclePrev = 0x21,
+	ProfileSwitch = 0x40,
 };
 
-std::unique_ptr<HIDPP::Base::ProfileFormat> getProfileFormat (Device *device);
+constexpr std::size_t ButtonSize = 3;
+
+HIDPP::Profile::Button parseButton (std::vector<uint8_t>::const_iterator begin);
+void writeButton (std::vector<uint8_t>::iterator begin, const HIDPP::Profile::Button &button);
 
 }
 

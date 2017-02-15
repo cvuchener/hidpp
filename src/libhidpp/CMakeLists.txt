@@ -29,6 +29,8 @@ set(LIBHIDPP_SOURCES
 	hidpp10/IProfile.cpp
 	hidpp10/ProfileDirectoryFormat.cpp
 	hidpp10/ProfileFormat.cpp
+	hidpp10/ProfileFormatCommon.cpp
+	hidpp10/ProfileFormatG500.cpp
 	hidpp10/MemoryMapping.cpp
 	hidpp10/RAMMapping.cpp
 	hidpp10/MacroFormat.cpp
