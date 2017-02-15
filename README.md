@@ -62,17 +62,26 @@ Dump the content of page *page* in the HID++ 1.0 device memory in stdout.
 Write the content of stdin in page *page* of the HID++ 1.0 device.
 
 
-### Profile management
+### On-board profiles
 
 Profiles are stored in XML format, see *profile_format.md* for details.
 
-    hidpp10-persistent-profiles /dev/hidrawX read [file]
+    hidpp-persistent-profiles /dev/hidrawX read [file]
 
 Read the persistent profiles from the device and write them in XML format in *file* or stdout.
 
-    hidpp10-persistent-profiles /dev/hidrawX write [file]
+    hidpp-persistent-profiles /dev/hidrawX write [file]
 
 Write the persistent profiles from the XML in *file* or stdin to the device.
+
+Supported devices:
+ - G9 (experimental, untested)
+ - G9x, G500, G500s
+ - G700, G700s (experimental, untested)
+ - HID++2.0 or later supporting On-board profiles (feature 0x8100) with profile format 1, 2 or 3 (only format 2 was tested with a G502 spectrum, other formats may be incomplete) and macro format 1. Use `hidpp20-onboard-profiles-get-description` to get the format used by the device.
+
+
+### HID++ 1.0 profile management
 
     hidpp10-load-temp-profile /dev/hidrawX [file]
 
@@ -109,20 +118,19 @@ Get the current resolution from the mouse.
 
 Set the current resolution for the mouse. If only one resolution is given, both axes use *x_dpi*. Some mice do not support per-axis resolution.
 
+Supported devices: G5, G9, G9x, G500, G500x, G700, G700s
+
+
 ### Advanced HID++ 1.0 commands
 
     hidpp10-raw-command /dev/hidrawX command read|write short|long [parameters...]
 
-Used for raw interaction with HID++ 1.0 register *command*. Default parameters are zeroes.
+Used for raw interaction with HID++ 1.0 register *command*. Parameters are hexadecimal and default are zeroes.
 
 
-Support Matrix
---------------
+### Advanced HID++ 2.0 or later commands
 
-### HID++ 1.0 mice
+    hidpp20-call-function /dev/hidrawX feature_index function [parameters...]
 
-| Feature    | G5   | G9   | G9x  | G500(s) | G700(s) |
-| ---------- | ---- | ---- | ---- | ------- | ------- |
-| Resolution | OK   | OK   | OK   | OK      | OK      |
-| Profiles   | N/A  | TODO | OK   | OK      | TODO    |
+Call the low-level function given by `feature_index` and `function`. Parameters are hexadecimal and default are zeroes.
 
