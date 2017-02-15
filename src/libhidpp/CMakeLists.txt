@@ -30,6 +30,7 @@ set(LIBHIDPP_SOURCES
 	hidpp10/ProfileDirectoryFormat.cpp
 	hidpp10/ProfileFormat.cpp
 	hidpp10/ProfileFormatCommon.cpp
+	hidpp10/ProfileFormatG9.cpp
 	hidpp10/ProfileFormatG500.cpp
 	hidpp10/ProfileFormatG700.cpp
 	hidpp10/MemoryMapping.cpp

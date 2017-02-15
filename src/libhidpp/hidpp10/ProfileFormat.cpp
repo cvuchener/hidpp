@@ -21,6 +21,7 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>
 
+#include <hidpp10/ProfileFormatG9.h>
 #include <hidpp10/ProfileFormatG500.h>
 #include <hidpp10/ProfileFormatG700.h>
 
@@ -31,6 +32,8 @@ std::unique_ptr<Base::ProfileFormat> HIDPP10::getProfileFormat (HIDPP10::Device 
 {
 	auto info = getMouseInfo (device->productID ());
 	switch (info->profile_type) {
+	case G9ProfileType:
+		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG9 (*info->sensor));
 	case G500ProfileType:
 		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG500 (*info->sensor));
 	case G700ProfileType:
