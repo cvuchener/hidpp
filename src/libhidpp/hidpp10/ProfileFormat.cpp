@@ -22,6 +22,7 @@
 #include <hidpp10/DeviceInfo.h>
 
 #include <hidpp10/ProfileFormatG500.h>
+#include <hidpp10/ProfileFormatG700.h>
 
 using namespace HIDPP;
 using namespace HIDPP10;
@@ -32,6 +33,8 @@ std::unique_ptr<Base::ProfileFormat> HIDPP10::getProfileFormat (HIDPP10::Device 
 	switch (info->profile_type) {
 	case G500ProfileType:
 		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG500 (*info->sensor));
+	case G700ProfileType:
+		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG700 (*info->sensor));
 	default:
 		throw std::runtime_error ("Unsupported device");
 	}
