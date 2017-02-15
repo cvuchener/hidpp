@@ -152,6 +152,8 @@ Macro language
 
 Macro instructions are separated by semi-colons (;). A instruction may be prepended by a label if it is the destination of a jump, the label is a identifier followed by a colon: `label_name:`.
 
+Values that are empty or contain white spaces or semi-colons must surrounded by double-quotes.
+
 Macro instruction are split in two categories. Simple instructions are input events (mouse buttons, keyboard keys, ...) and delays; advanced instructions are all other instructions: jumps, waiting and looping instructions, ...
 
 
