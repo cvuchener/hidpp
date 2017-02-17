@@ -19,13 +19,13 @@
 #ifndef HIDPP20_MEMORY_MAPPING_H
 #define HIDPP20_MEMORY_MAPPING_H
 
-#include <base/MemoryMapping.h>
+#include <hidpp/AbstractMemoryMapping.h>
 #include <hidpp20/IOnboardProfiles.h>
 
 namespace HIDPP20
 {
 
-class MemoryMapping: public HIDPP::Base::MemoryMapping
+class MemoryMapping: public HIDPP::AbstractMemoryMapping
 {
 public:
 	MemoryMapping (Device *dev, bool write_crc = true);

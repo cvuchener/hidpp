@@ -16,32 +16,32 @@
  *
  */
 
-#include "ProfileFormat.h"
+#include "AbstractProfileFormat.h"
 
-using namespace HIDPP::Base;
+using namespace HIDPP;
 
-ProfileFormat::ProfileFormat (size_t size, unsigned int max_button_count, unsigned int max_mode_count):
+AbstractProfileFormat::AbstractProfileFormat (size_t size, unsigned int max_button_count, unsigned int max_mode_count):
 	_size (size),
 	_max_button_count (max_button_count),
 	_max_mode_count (max_mode_count)
 {
 }
 
-ProfileFormat::~ProfileFormat ()
+AbstractProfileFormat::~AbstractProfileFormat ()
 {
 }
 
-size_t ProfileFormat::size () const
+size_t AbstractProfileFormat::size () const
 {
 	return _size;
 }
 
-unsigned int ProfileFormat::maxButtonCount () const
+unsigned int AbstractProfileFormat::maxButtonCount () const
 {
 	return _max_button_count;
 }
 
-unsigned int ProfileFormat::maxModeCount () const
+unsigned int AbstractProfileFormat::maxModeCount () const
 {
 	return _max_mode_count;
 }

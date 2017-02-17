@@ -70,7 +70,7 @@ std::size_t MacroFormat::getLength (const Macro::Item &item) const
 	}
 	auto it = OpCodes.find (instr);
 	if (it == OpCodes.end ())
-		throw Base::MacroFormat::UnsupportedInstruction (instr);
+		throw AbstractMacroFormat::UnsupportedInstruction (instr);
 	return getOpLength (it->second);
 }
 
@@ -117,7 +117,7 @@ MacroFormat::writeItem (std::vector<uint8_t>::iterator it,
 
 	auto op = OpCodes.find (instr);
 	if (op == OpCodes.end ())
-		throw Base::MacroFormat::UnsupportedInstruction (instr);
+		throw AbstractMacroFormat::UnsupportedInstruction (instr);
 	*(it++) = op->second;
 	switch (instr) {
 	case Macro::Item::MouseWheel:
@@ -211,7 +211,7 @@ Macro::Item MacroFormat::parseItem (std::vector<uint8_t>::const_iterator &it, Ad
 	throw std::runtime_error ("Invalid op-code in HID++2.0 macro");
 }
 
-std::unique_ptr<Base::MacroFormat> HIDPP20::getMacroFormat (Device *device)
+std::unique_ptr<AbstractMacroFormat> HIDPP20::getMacroFormat (Device *device)
 {
-	return std::unique_ptr<Base::MacroFormat> (new MacroFormat ());
+	return std::unique_ptr<AbstractMacroFormat> (new MacroFormat ());
 }

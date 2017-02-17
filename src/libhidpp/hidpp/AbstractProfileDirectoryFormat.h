@@ -16,21 +16,18 @@
  *
  */
 
-#ifndef HIDPP_PROFILE_DIRECTORY_FORMAT_H
-#define HIDPP_PROFILE_DIRECTORY_FORMAT_H
+#ifndef HIDPP_ABSTRACT_PROFILE_DIRECTORY_FORMAT_H
+#define HIDPP_ABSTRACT_PROFILE_DIRECTORY_FORMAT_H
 
 #include <hidpp/ProfileDirectory.h>
 
 namespace HIDPP
 {
 
-namespace Base
-{
-
-class ProfileDirectoryFormat
+class AbstractProfileDirectoryFormat
 {
 public:
-	virtual ~ProfileDirectoryFormat () = default;
+	virtual ~AbstractProfileDirectoryFormat () = default;
 
 	virtual const std::map<std::string, SettingDesc> &settings () const = 0;
 
@@ -38,7 +35,6 @@ public:
 	virtual void write (const ProfileDirectory &profiles_directory, std::vector<uint8_t>::iterator begin) const = 0;
 };
 
-}
 }
 
 #endif

@@ -19,13 +19,13 @@
 #ifndef HIDPP20_PROFILE_DIRECTORY_FORMAT_H
 #define HIDPP20_PROFILE_DIRECTORY_FORMAT_H
 
-#include <base/ProfileDirectoryFormat.h>
+#include <hidpp/AbstractProfileDirectoryFormat.h>
 #include <memory>
 
 namespace HIDPP20
 {
 
-class ProfileDirectoryFormat: public HIDPP::Base::ProfileDirectoryFormat
+class ProfileDirectoryFormat: public HIDPP::AbstractProfileDirectoryFormat
 {
 public:
 	virtual const std::map<std::string, HIDPP::SettingDesc> &settings () const;
@@ -39,7 +39,7 @@ private:
 
 class Device;
 
-std::unique_ptr<HIDPP::Base::ProfileDirectoryFormat> getProfileDirectoryFormat (Device *device);
+std::unique_ptr<HIDPP::AbstractProfileDirectoryFormat> getProfileDirectoryFormat (Device *device);
 
 }
 

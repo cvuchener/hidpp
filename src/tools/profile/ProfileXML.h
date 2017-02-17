@@ -22,16 +22,16 @@
 #include <hidpp/Profile.h>
 #include <hidpp/ProfileDirectory.h>
 #include <hidpp/Macro.h>
-#include <base/ProfileFormat.h>
-#include <base/ProfileDirectoryFormat.h>
+#include <hidpp/AbstractProfileFormat.h>
+#include <hidpp/AbstractProfileDirectoryFormat.h>
 #include <tinyxml2.h>
 #include <functional>
 
 class ProfileXML
 {
 public:
-	ProfileXML (const HIDPP::Base::ProfileFormat *profile_format,
-		    const HIDPP::Base::ProfileDirectoryFormat *profdir_format);
+	ProfileXML (const HIDPP::AbstractProfileFormat *profile_format,
+		    const HIDPP::AbstractProfileDirectoryFormat *profdir_format);
 
 	// TODO: add macro vector
 	void write (const HIDPP::Profile &profile,

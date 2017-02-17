@@ -16,32 +16,32 @@
  *
  */
 
-#include "MemoryMapping.h"
+#include "AbstractMemoryMapping.h"
 
 #include <misc/Endian.h>
 #include <misc/CRC.h>
 #include <misc/Log.h>
 
-using namespace HIDPP::Base;
+using namespace HIDPP;
 
-MemoryMapping::MemoryMapping (bool write_crc):
+AbstractMemoryMapping::AbstractMemoryMapping (bool write_crc):
 	_write_crc (write_crc)
 {
 }
 
-const std::vector<uint8_t> &MemoryMapping::getReadOnlyPage (const Address &address)
+const std::vector<uint8_t> &AbstractMemoryMapping::getReadOnlyPage (const Address &address)
 {
 	return getPage (address).data;
 }
 
-std::vector<uint8_t> &MemoryMapping::getWritablePage (const Address &address)
+std::vector<uint8_t> &AbstractMemoryMapping::getWritablePage (const Address &address)
 {
 	auto &page = getPage (address);
 	page.modified = true;
 	return page.data;
 }
 
-void MemoryMapping::sync ()
+void AbstractMemoryMapping::sync ()
 {
 	for (auto &p: _pages) {
 		auto &address = p.first;
@@ -58,7 +58,7 @@ void MemoryMapping::sync ()
 	}
 }
 
-MemoryMapping::Page &MemoryMapping::getPage (Address address)
+AbstractMemoryMapping::Page &AbstractMemoryMapping::getPage (Address address)
 {
 	address.offset = 0;
 	auto it = _pages.find (address);

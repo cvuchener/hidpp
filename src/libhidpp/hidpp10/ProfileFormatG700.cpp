@@ -93,7 +93,7 @@ const EnumDesc ProfileFormatG700::SpecialActions = {
 };
 
 ProfileFormatG700::ProfileFormatG700 (const Sensor &sensor):
-	Base::ProfileFormat (ProfileSize, MaxButtonCount, MaxModeCount),
+	AbstractProfileFormat (ProfileSize, MaxButtonCount, MaxModeCount),
 	_sensor (sensor),
 	_dpi_setting (sensor.minimumResolution (), sensor.maximumResolution (),
 			std::min (800u, sensor.maximumResolution ())),

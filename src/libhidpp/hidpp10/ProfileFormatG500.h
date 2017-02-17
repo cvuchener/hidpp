@@ -19,13 +19,13 @@
 #ifndef HIDPP10_PROFILE_FORMAT_G500_H
 #define HIDPP10_PROFILE_FORMAT_G500_H
 
-#include <base/ProfileFormat.h>
+#include <hidpp/AbstractProfileFormat.h>
 #include <hidpp10/Sensor.h>
 
 namespace HIDPP10
 {
 
-class ProfileFormatG500: public HIDPP::Base::ProfileFormat
+class ProfileFormatG500: public HIDPP::AbstractProfileFormat
 {
 public:
 	ProfileFormatG500 (const Sensor &sensor);

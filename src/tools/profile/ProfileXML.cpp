@@ -25,11 +25,10 @@
 #include <sstream>
 
 using namespace HIDPP;
-using namespace HIDPP::Base;
 using namespace tinyxml2;
 
-ProfileXML::ProfileXML (const ProfileFormat *profile_format,
-			const ProfileDirectoryFormat *profdir_format):
+ProfileXML::ProfileXML (const AbstractProfileFormat *profile_format,
+			const AbstractProfileDirectoryFormat *profdir_format):
 	_profile_settings (profile_format->generalSettings ()),
 	_mode_settings (profile_format->modeSettings ()),
 	_entry_settings (profdir_format->settings ()),

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_MACRO_FORMAT_H
-#define HIDPP_MACRO_FORMAT_H
+#ifndef HIDPP_ABSTRACT_MACRO_FORMAT_H
+#define HIDPP_ABSTRACT_MACRO_FORMAT_H
 
 #include <hidpp/Address.h>
 #include <hidpp/Macro.h>
@@ -28,15 +28,12 @@
 namespace HIDPP
 {
 
-namespace Base
-{
-
 /**
  * Abstract class from macro formats.
  *
  * NoOp is used for padding and is expected to be exactly one byte long
  */
-class MacroFormat
+class AbstractMacroFormat
 {
 public:
 	class UnsupportedInstruction: public std::exception
@@ -71,7 +68,6 @@ public:
 	virtual Macro::Item parseItem (std::vector<uint8_t>::const_iterator &it, Address &jump_addr) const = 0;
 };
 
-}
 }
 
 #endif

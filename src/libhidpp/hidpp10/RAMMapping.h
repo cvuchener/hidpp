@@ -19,14 +19,14 @@
 #ifndef HIDPP10_RAM_MAPPING_H
 #define HIDPP10_RAM_MAPPING_H
 
-#include <base/MemoryMapping.h>
+#include <hidpp/AbstractMemoryMapping.h>
 #include <hidpp10/IMemory.h>
 #include <hidpp10/IProfile.h>
 
 namespace HIDPP10
 {
 
-class RAMMapping: public HIDPP::Base::MemoryMapping
+class RAMMapping: public HIDPP::AbstractMemoryMapping
 {
 public:
 	RAMMapping (Device *dev);

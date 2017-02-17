@@ -64,7 +64,7 @@ const std::map<std::string, SettingDesc> ProfileDirectoryFormat::Settings = {
 	{ "dir_unknown", SettingDesc (0, 255, 0) },
 };
 
-std::unique_ptr<Base::ProfileDirectoryFormat> HIDPP20::getProfileDirectoryFormat (HIDPP20::Device *device)
+std::unique_ptr<AbstractProfileDirectoryFormat> HIDPP20::getProfileDirectoryFormat (HIDPP20::Device *device)
 {
-	return std::unique_ptr<Base::ProfileDirectoryFormat> (new ProfileDirectoryFormat ());
+	return std::unique_ptr<AbstractProfileDirectoryFormat> (new ProfileDirectoryFormat ());
 }

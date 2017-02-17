@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_MEMORY_MAPPING_H
-#define HIDPP_MEMORY_MAPPING_H
+#ifndef HIDPP_ABSTRACT_MEMORY_MAPPING_H
+#define HIDPP_ABSTRACT_MEMORY_MAPPING_H
 
 #include <hidpp/Address.h>
 #include <vector>
@@ -27,13 +27,10 @@
 namespace HIDPP
 {
 
-namespace Base
-{
-
-class MemoryMapping
+class AbstractMemoryMapping
 {
 public:
-	MemoryMapping (bool write_crc = true);
+	AbstractMemoryMapping (bool write_crc = true);
 
 	/**
 	 * Get the page at \p address (offset is ignored) as read-only.
@@ -76,7 +73,6 @@ private:
 	Page &getPage (Address address);
 };
 
-}
 }
 
 #endif

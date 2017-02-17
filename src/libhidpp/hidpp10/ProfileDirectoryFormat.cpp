@@ -72,7 +72,7 @@ void ProfileDirectoryFormat::write (const ProfileDirectory &dir, std::vector<uin
 	begin[0] = 0xFF;
 }
 
-std::unique_ptr<Base::ProfileDirectoryFormat> HIDPP10::getProfileDirectoryFormat (Device *device)
+std::unique_ptr<AbstractProfileDirectoryFormat> HIDPP10::getProfileDirectoryFormat (Device *device)
 {
-	return std::unique_ptr<Base::ProfileDirectoryFormat> (new ProfileDirectoryFormat (4));
+	return std::unique_ptr<AbstractProfileDirectoryFormat> (new ProfileDirectoryFormat (4));
 }

@@ -19,7 +19,7 @@
 #ifndef HIDPP20_PROFILE_FORMAT_H
 #define HIDPP20_PROFILE_FORMAT_H
 
-#include <base/ProfileFormat.h>
+#include <hidpp/AbstractProfileFormat.h>
 #include <hidpp20/IOnboardProfiles.h>
 
 #include <memory>
@@ -27,7 +27,7 @@
 namespace HIDPP20
 {
 
-class ProfileFormat: public HIDPP::Base::ProfileFormat
+class ProfileFormat: public HIDPP::AbstractProfileFormat
 {
 public:
 	ProfileFormat (const IOnboardProfiles::Description &desc);
@@ -62,7 +62,7 @@ private:
 	static const HIDPP::EnumDesc PowerModes;
 };
 
-std::unique_ptr<HIDPP::Base::ProfileFormat> getProfileFormat (Device *device);
+std::unique_ptr<HIDPP::AbstractProfileFormat> getProfileFormat (Device *device);
 
 }
 

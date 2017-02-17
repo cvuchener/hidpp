@@ -28,16 +28,16 @@
 using namespace HIDPP;
 using namespace HIDPP10;
 
-std::unique_ptr<Base::ProfileFormat> HIDPP10::getProfileFormat (HIDPP10::Device *device)
+std::unique_ptr<AbstractProfileFormat> HIDPP10::getProfileFormat (HIDPP10::Device *device)
 {
 	auto info = getMouseInfo (device->productID ());
 	switch (info->profile_type) {
 	case G9ProfileType:
-		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG9 (*info->sensor));
+		return std::unique_ptr<AbstractProfileFormat> (new ProfileFormatG9 (*info->sensor));
 	case G500ProfileType:
-		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG500 (*info->sensor));
+		return std::unique_ptr<AbstractProfileFormat> (new ProfileFormatG500 (*info->sensor));
 	case G700ProfileType:
-		return std::unique_ptr<Base::ProfileFormat> (new ProfileFormatG700 (*info->sensor));
+		return std::unique_ptr<AbstractProfileFormat> (new ProfileFormatG700 (*info->sensor));
 	default:
 		throw std::runtime_error ("Unsupported device");
 	}

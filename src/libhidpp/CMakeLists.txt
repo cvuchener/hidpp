@@ -15,9 +15,9 @@ set(LIBHIDPP_SOURCES
 	hidpp/Address.cpp
 	hidpp/Profile.cpp
 	hidpp/Macro.cpp
-	base/ProfileFormat.cpp
-	base/MemoryMapping.cpp
-	base/MacroFormat.cpp
+	hidpp/AbstractProfileFormat.cpp
+	hidpp/AbstractMemoryMapping.cpp
+	hidpp/AbstractMacroFormat.cpp
 	hidpp10/Device.cpp
 	hidpp10/Error.cpp
 	hidpp10/WriteError.cpp

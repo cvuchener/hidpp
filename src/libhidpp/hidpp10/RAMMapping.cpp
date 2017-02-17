@@ -25,7 +25,7 @@ using namespace HIDPP;
 using namespace HIDPP10;
 
 RAMMapping::RAMMapping (Device *dev):
-	Base::MemoryMapping (false),
+	AbstractMemoryMapping (false),
 	_imem (dev)
 {
 }

@@ -16,22 +16,19 @@
  *
  */
 
-#ifndef HIDPP_PROFILE_FORMAT_H
-#define HIDPP_PROFILE_FORMAT_H
+#ifndef HIDPP_ABSTRACT_PROFILE_FORMAT_H
+#define HIDPP_ABSTRACT_PROFILE_FORMAT_H
 
 #include <hidpp/Profile.h>
 
 namespace HIDPP
 {
 
-namespace Base
-{
-
-class ProfileFormat
+class AbstractProfileFormat
 {
 public:
-	ProfileFormat (size_t size, unsigned int max_button_count, unsigned int max_mode_count);
-	virtual ~ProfileFormat ();
+	AbstractProfileFormat (size_t size, unsigned int max_button_count, unsigned int max_mode_count);
+	virtual ~AbstractProfileFormat ();
 
 	size_t size () const;
 	unsigned int maxButtonCount () const;
@@ -50,7 +47,6 @@ private:
 	unsigned int _max_mode_count;
 };
 
-}
 }
 
 #endif

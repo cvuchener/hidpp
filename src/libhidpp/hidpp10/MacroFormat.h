@@ -19,14 +19,14 @@
 #ifndef HIDPP10_MACRO_FORMAT_H
 #define HIDPP10_MACRO_FORMAT_H
 
-#include <base/MacroFormat.h>
+#include <hidpp/AbstractMacroFormat.h>
 
 #include <memory>
 
 namespace HIDPP10
 {
 
-class MacroFormat: public HIDPP::Base::MacroFormat
+class MacroFormat: public HIDPP::AbstractMacroFormat
 {
 public:
 	virtual std::size_t getLength (const HIDPP::Macro::Item &item) const;
@@ -51,7 +51,7 @@ private:
 };
 
 class Device;
-std::unique_ptr<HIDPP::Base::MacroFormat> getMacroFormat (Device *device);
+std::unique_ptr<HIDPP::AbstractMacroFormat> getMacroFormat (Device *device);
 
 }
 

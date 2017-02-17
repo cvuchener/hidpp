@@ -104,7 +104,7 @@ enum RGBEffect: uint8_t
 };
 
 ProfileFormat::ProfileFormat (const IOnboardProfiles::Description &desc):
-	Base::ProfileFormat (ProfileLength.at (_desc.profile_format),
+	AbstractProfileFormat (ProfileLength.at (_desc.profile_format),
 			     _desc.button_count, MaxModeCount),
 	_desc (desc),
 	_general_settings (CommonGeneralSettings),
@@ -413,8 +413,8 @@ const EnumDesc ProfileFormat::PowerModes = {
 	{ "NotApplicable", 0xff },
 };
 
-std::unique_ptr<Base::ProfileFormat> HIDPP20::getProfileFormat (HIDPP20::Device *device)
+std::unique_ptr<AbstractProfileFormat> HIDPP20::getProfileFormat (HIDPP20::Device *device)
 {
 	auto desc = IOnboardProfiles (device).getDescription ();
-	return std::unique_ptr<Base::ProfileFormat> (new ProfileFormat (desc));
+	return std::unique_ptr<AbstractProfileFormat> (new ProfileFormat (desc));
 }

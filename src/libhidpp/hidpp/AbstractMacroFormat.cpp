@@ -16,12 +16,11 @@
  *
  */
 
-#include "MacroFormat.h"
+#include "AbstractMacroFormat.h"
 
 using namespace HIDPP;
-using namespace HIDPP::Base;
 
-MacroFormat::UnsupportedInstruction::UnsupportedInstruction (Macro::Item::Instruction instr):
+AbstractMacroFormat::UnsupportedInstruction::UnsupportedInstruction (Macro::Item::Instruction instr):
 	_instr (instr),
 	_msg ("Unsupported Instruction: ")
 {
@@ -32,28 +31,28 @@ MacroFormat::UnsupportedInstruction::UnsupportedInstruction (Macro::Item::Instru
 		_msg += it->second;
 }
 
-const char *MacroFormat::UnsupportedInstruction::what () const noexcept
+const char *AbstractMacroFormat::UnsupportedInstruction::what () const noexcept
 {
 	return _msg.c_str ();
 }
 
-Macro::Item::Instruction MacroFormat::UnsupportedInstruction::instruction () const
+Macro::Item::Instruction AbstractMacroFormat::UnsupportedInstruction::instruction () const
 {
 	return _instr;
 }
 
-std::size_t MacroFormat::getJumpLength () const
+std::size_t AbstractMacroFormat::getJumpLength () const
 {
 	return getLength (Macro::Item::Jump);
 }
 
-std::vector<uint8_t>::iterator MacroFormat::writeNoOp (std::vector<uint8_t>::iterator it) const
+std::vector<uint8_t>::iterator AbstractMacroFormat::writeNoOp (std::vector<uint8_t>::iterator it) const
 {
 	std::vector<uint8_t>::iterator addr_it;
 	return writeItem (it, Macro::Item::NoOp, addr_it);
 }
 
-std::vector<uint8_t>::iterator MacroFormat::writeJump (std::vector<uint8_t>::iterator it, const Address &addr) const
+std::vector<uint8_t>::iterator AbstractMacroFormat::writeJump (std::vector<uint8_t>::iterator it, const Address &addr) const
 {
 	std::vector<uint8_t>::iterator addr_it;
 	auto ret = writeItem (it, Macro::Item::Jump, addr_it);

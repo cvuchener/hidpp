@@ -28,10 +28,8 @@
 namespace HIDPP
 {
 
-namespace Base {
-class MacroFormat;
-class MemoryMapping;
-}
+class AbstractMacroFormat;
+class AbstractMemoryMapping;
 
 class Macro
 {
@@ -122,7 +120,7 @@ public:
 	};
 
 	Macro ();
-	Macro (const Base::MacroFormat &format, Base::MemoryMapping &mem, Address address);
+	Macro (const AbstractMacroFormat &format, AbstractMemoryMapping &mem, Address address);
 
 	explicit Macro (const Macro &);
 	Macro (Macro &&) = default;
@@ -138,7 +136,7 @@ public:
 	 *
 	 * \returns the first address after the macro.
 	 */
-	Address write (const Base::MacroFormat &format, Base::MemoryMapping &mem, Address &start) const;
+	Address write (const AbstractMacroFormat &format, AbstractMemoryMapping &mem, Address &start) const;
 
 	/**
 	 * Remove no-op and useless unconditional jumps.

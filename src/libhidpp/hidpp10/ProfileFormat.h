@@ -19,7 +19,7 @@
 #ifndef HIDPP10_PROFILE_FORMAT_H
 #define HIDPP10_PROFILE_FORMAT_H
 
-#include <base/ProfileFormat.h>
+#include <hidpp/AbstractProfileFormat.h>
 
 #include <memory>
 
@@ -35,7 +35,7 @@ enum ProfileType {
 	G700ProfileType,
 };
 
-std::unique_ptr<HIDPP::Base::ProfileFormat> getProfileFormat (Device *device);
+std::unique_ptr<HIDPP::AbstractProfileFormat> getProfileFormat (Device *device);
 
 }
 

@@ -18,8 +18,8 @@
 
 #include "Macro.h"
 
-#include <base/MacroFormat.h>
-#include <base/MemoryMapping.h>
+#include <hidpp/AbstractMacroFormat.h>
+#include <hidpp/AbstractMemoryMapping.h>
 
 #include <misc/Log.h>
 
@@ -30,7 +30,6 @@
 #include <iterator>
 
 using namespace HIDPP;
-using namespace HIDPP::Base;
 
 const std::map<Macro::Item::Instruction, std::string> Macro::Item::InstructionStrings = {
 	{ NoOp, "NoOp" },
@@ -218,7 +217,7 @@ Macro::Macro ()
 {
 }
 
-Macro::Macro (const MacroFormat &format, MemoryMapping &mem, Address address)
+Macro::Macro (const AbstractMacroFormat &format, AbstractMemoryMapping &mem, Address address)
 {
 	std::map<Address, iterator> parsed_items;
 	std::vector<std::pair <Item *, Address>> incomplete_ref;
@@ -293,7 +292,7 @@ Macro::Macro (const Macro &other):
 	}
 }
 
-Address Macro::write (const MacroFormat &format, MemoryMapping &mem, Address &start) const
+Address Macro::write (const AbstractMacroFormat &format, AbstractMemoryMapping &mem, Address &start) const
 {
 	typedef std::vector<uint8_t>::iterator iterator;
 	std::map<const Item *, Address> jump_dests; // Associate address with jump destination items

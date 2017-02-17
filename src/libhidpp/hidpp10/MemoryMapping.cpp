@@ -25,7 +25,7 @@ using namespace HIDPP;
 using namespace HIDPP10;
 
 MemoryMapping::MemoryMapping (Device *dev, bool write_crc):
-	Base::MemoryMapping (write_crc),
+	AbstractMemoryMapping (write_crc),
 	_imem (dev),
 	_iprofile (dev)
 {

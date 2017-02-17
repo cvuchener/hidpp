@@ -88,10 +88,10 @@ int main (int argc, char *argv[])
 	}
 
 	std::unique_ptr<HIDPP::Device> device;
-	std::unique_ptr<HIDPP::Base::ProfileDirectoryFormat> profdir_format;
-	std::unique_ptr<HIDPP::Base::ProfileFormat> profile_format;
-	std::unique_ptr<HIDPP::Base::MemoryMapping> memory;
-	std::unique_ptr<HIDPP::Base::MacroFormat> macro_format;
+	std::unique_ptr<HIDPP::AbstractProfileDirectoryFormat> profdir_format;
+	std::unique_ptr<HIDPP::AbstractProfileFormat> profile_format;
+	std::unique_ptr<HIDPP::AbstractMemoryMapping> memory;
+	std::unique_ptr<HIDPP::AbstractMacroFormat> macro_format;
 	HIDPP::Address dir_address;
 
 	/*
