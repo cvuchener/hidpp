@@ -24,15 +24,31 @@
 namespace HIDPP
 {
 
+/**
+ * Abstract class for profile directory formats.
+ */
 class AbstractProfileDirectoryFormat
 {
 public:
 	virtual ~AbstractProfileDirectoryFormat () = default;
 
+	/**
+	 * Access the complete list of settings and their names used
+	 * by this format.
+	 */
 	virtual const std::map<std::string, SettingDesc> &settings () const = 0;
 
+	/**
+	 * Read the profile directory beginning at \p begin.
+	 *
+	 * \returns The parsed profile directory.
+	 */
 	virtual ProfileDirectory read (std::vector<uint8_t>::const_iterator begin) const = 0;
-	virtual void write (const ProfileDirectory &profiles_directory, std::vector<uint8_t>::iterator begin) const = 0;
+
+	/**
+	 * Write the profile directory \p profile_directory at \p begin.
+	 */
+	virtual void write (const ProfileDirectory &profile_directory, std::vector<uint8_t>::iterator begin) const = 0;
 };
 
 }

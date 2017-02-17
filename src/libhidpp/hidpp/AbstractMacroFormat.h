@@ -31,11 +31,16 @@ namespace HIDPP
 /**
  * Abstract class from macro formats.
  *
- * NoOp is used for padding and is expected to be exactly one byte long
+ * At least getLength(), writeAddress(), writeItem()
+ * and parseItem() must be implemented by the subclass.
  */
 class AbstractMacroFormat
 {
 public:
+	/**
+	 * This exception is thrown when the macro format cannot
+	 * encode the requested instruction.
+	 */
 	class UnsupportedInstruction: public std::exception
 	{
 	public:
@@ -50,21 +55,60 @@ public:
 		std::string _msg;
 	};
 
+	/**
+	 * Get the length of the encoded instruction.
+	 */
 	virtual std::size_t getLength (const Macro::Item &item) const = 0;
 
+	/**
+	 * Get the length for a jump instruction.
+	 */
 	virtual std::size_t getJumpLength () const;
 
+	/**
+	 * Write the address at the given location. The location
+	 * must be the iterator give as \p jump_addr_it by writeItem().
+	 */
 	virtual void writeAddress (std::vector<uint8_t>::iterator it,
 				   const Address &addr) const = 0;
 
+	/**
+	 * Write the macro item \p item at \p it.
+	 *
+	 * If the item is a jump the address must be later written
+	 * at the position \p jump_addr_it using writeAddress().
+	 *
+	 * \returns the position after the written item.
+	 */
 	virtual std::vector<uint8_t>::iterator
 	writeItem (std::vector<uint8_t>::iterator it,
 		   const Macro::Item &item,
 		   std::vector<uint8_t>::iterator &jump_addr_it) const = 0;
 
+	/**
+	 * Write a NoOp instruction at \p it.
+	 *
+	 * NoOp is used for padding and is expected to be exactly one byte long.
+	 *
+	 * \returns the position after the written item.
+	 */
 	std::vector<uint8_t>::iterator writeNoOp (std::vector<uint8_t>::iterator it) const;
+	/**
+	 * Write a jump to \p addr at \p it.
+	 *
+	 * \returns the position after the written item.
+	 */
 	std::vector<uint8_t>::iterator writeJump (std::vector<uint8_t>::iterator it, const Address &addr) const;
 
+	/**
+	 * Parse the item at \p it.
+	 *
+	 * If the instruction is a jump, the destination of the
+	 * item is not set. Instead the destination item is
+	 * written in \p jump_addr.
+	 *
+	 * \returns the position after the parsed item.
+	 */
 	virtual Macro::Item parseItem (std::vector<uint8_t>::const_iterator &it, Address &jump_addr) const = 0;
 };
 

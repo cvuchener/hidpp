@@ -24,21 +24,57 @@
 namespace HIDPP
 {
 
+/**
+ * Abstract class for profile formats.
+ */
 class AbstractProfileFormat
 {
 public:
+	/**
+	 * Constructor
+	 *
+	 * \param size	Size of the profile when stored in memory.
+	 * \param max_button_count	The maximum button count that this profile format can store.
+	 * \param max_mode_count	The maximum mode count that this profile format can store.
+	 */
 	AbstractProfileFormat (size_t size, unsigned int max_button_count, unsigned int max_mode_count);
 	virtual ~AbstractProfileFormat ();
 
+	/**
+	 * Size of the profile when stored in memory
+	 */
 	size_t size () const;
+	/**
+	 * The maximum button count that this profile format can store.
+	 */
 	unsigned int maxButtonCount () const;
+	/**
+	 * The maximum mode count that this profile format can store.
+	 */
 	unsigned int maxModeCount () const;
 
+	/**
+	 * The list of settings and their names used by the whole profile.
+	 */
 	virtual const std::map<std::string, SettingDesc> &generalSettings () const = 0;
+	/**
+	 * The list of settings and their names used by each mode.
+	 */
 	virtual const std::map<std::string, SettingDesc> &modeSettings () const = 0;
+	/**
+	 * The list of special actions that can be mapped to buttons
+	 */
 	virtual const EnumDesc &specialActions () const = 0;
 
+	/**
+	 * Read the profile beginning at \p begin.
+	 *
+	 * \returns the parsed profile.
+	 */
 	virtual Profile read (std::vector<uint8_t>::const_iterator begin) const = 0;
+	/**
+	 * Write the profile \p profile at \p begin.
+	 */
 	virtual void write (const Profile &profile, std::vector<uint8_t>::iterator begin) const = 0;
 
 private:

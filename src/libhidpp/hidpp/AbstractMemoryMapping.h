@@ -27,6 +27,14 @@
 namespace HIDPP
 {
 
+/**
+ * Abstract class for accessing paged memory.
+ *
+ * Subclass must implement readPage and writePage
+ * for memory access, and getReadOnlyIterator,
+ * getWritableIterator and computeOffset to convert
+ * between address offsets and iterators.
+ */
 class AbstractMemoryMapping
 {
 public:
@@ -46,7 +54,19 @@ public:
 	 */
 	void sync ();
 
+	/**
+	 * Get a read-only iterator to the position corresponding
+	 * to the address \p address.
+	 *
+	 * Implementation must retrieve the page using getReadOnlyPage.
+	 */
 	virtual std::vector<uint8_t>::const_iterator getReadOnlyIterator (const Address &address) = 0;
+	/**
+	 * Get a read-only iterator to the position corresponding
+	 *
+	 * Implementation must retrieve the page using getWritablePage.
+	 * to the address \p address.
+	 */
 	virtual std::vector<uint8_t>::iterator getWritableIterator (const Address &address) = 0;
 
 	/**
@@ -59,7 +79,13 @@ public:
 	virtual bool computeOffset (std::vector<uint8_t>::const_iterator it, Address &address) = 0;
 
 protected:
+	/**
+	 * Read the page at \p address and fill data.
+	 */
 	virtual void readPage (const Address &address, std::vector<uint8_t> &data) = 0;
+	/**
+	 * Write the data in \p data in page at \p address.
+	 */
 	virtual void writePage (const Address &address, const std::vector<uint8_t> &data) = 0;
 
 private:
