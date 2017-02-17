@@ -19,12 +19,12 @@
 #ifndef MACRO_TEXT_H
 #define MACRO_TEXT_H
 
-#include <hidpp10/Macro.h>
+#include <hidpp/Macro.h>
 #include <string>
 
-std::string macroToText (HIDPP10::Macro::const_iterator begin,
-			 HIDPP10::Macro::const_iterator end);
+std::string macroToText (HIDPP::Macro::const_iterator begin,
+			 HIDPP::Macro::const_iterator end);
 
-HIDPP10::Macro textToMacro (const std::string &text);
+HIDPP::Macro textToMacro (const std::string &text);
 #endif
 

@@ -103,8 +103,9 @@ int main (int argc, char *argv[])
 		writeBE (data, page_content_size, crc);
 	}
 
-	for (unsigned int i = 0; i < data.size (); i += 16)
-		iop.memoryWrite (std::vector<uint8_t> (data.begin () + i, data.begin () + i + 16));
+	constexpr size_t LineSize = HIDPP20::IOnboardProfiles::LineSize;
+	for (unsigned int i = 0; i < data.size (); i += LineSize)
+		iop.memoryWrite (data.begin () + i, data.begin () + i + LineSize);
 
 	try {
 		iop.memoryWriteEnd ();

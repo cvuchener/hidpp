@@ -23,7 +23,7 @@
 
 #include <hidpp10/Sensor.h>
 #include <hidpp10/IResolution.h>
-#include <hidpp10/Profile.h>
+#include <hidpp10/ProfileFormat.h>
 
 namespace HIDPP10
 {
@@ -45,7 +45,7 @@ namespace HIDPP10
 	};
 
 	inline const MouseInfo *getMouseInfo (uint16_t product_id)
-	{	
+	{
 		return dynamic_cast<const MouseInfo *> (HIDPP::getDeviceInfo (product_id));
 	}
 }

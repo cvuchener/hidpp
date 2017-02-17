@@ -47,7 +47,7 @@ public:
 
 	void loadFactoryDefault ();
 	void loadProfileFromIndex (unsigned int index);
-	void loadProfileFromAddress (Address address);
+	void loadProfileFromAddress (HIDPP::Address address);
 
 	void reloadActiveProfile ();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,22 +16,12 @@
  *
  */
 
-#ifndef HIDPP10_ADDRESS_H
-#define HIDPP10_ADDRESS_H
+#include "SettingLookup.h"
 
-#include <cstdint>
+using namespace HIDPP;
 
-namespace HIDPP10
+SettingLookup::SettingLookup (const std::map<std::string, Setting> &values, const std::map<std::string, SettingDesc> &descs):
+	_values (values),
+	_descs (descs)
 {
-
-struct Address {
-	uint8_t page;
-	uint8_t offset;
-
-	bool operator< (const Address &other) const;
-};
-
 }
-
-#endif
-

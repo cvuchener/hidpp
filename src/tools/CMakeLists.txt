@@ -45,16 +45,16 @@ endforeach()
 
 if(TINYXML2_FOUND)
 	add_library(profile OBJECT
-		profile/ProfileXML.cpp
-		profile/MacroText.cpp)
+		profile/MacroText.cpp
+		profile/ProfileXML.cpp)
 	
-	add_executable(hidpp10-persistent-profiles
-		hidpp10-persistent-profiles.cpp
+	add_executable(hidpp-persistent-profiles
+		hidpp-persistent-profiles.cpp
 		$<TARGET_OBJECTS:profile>
 		$<TARGET_OBJECTS:common>)
-	target_include_directories(hidpp10-persistent-profiles
+	target_include_directories(hidpp-persistent-profiles
 		PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
-	target_link_libraries(hidpp10-persistent-profiles hidpp ${TINYXML2_LIBRARIES})
+	target_link_libraries(hidpp-persistent-profiles hidpp ${TINYXML2_LIBRARIES})
 	
 	add_executable(hidpp10-load-temp-profile
 		hidpp10-load-temp-profile.cpp

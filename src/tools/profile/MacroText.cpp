@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2015-2017 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,22 +21,33 @@
 #include <sstream>
 #include <map>
 #include <regex>
+#include <algorithm>
+#include <cassert>
 
 #include <misc/Log.h>
 #include <misc/UsageStrings.h>
 
-using HIDPP10::Macro;
+using HIDPP::Macro;
+
+static const std::string WhiteSpaces = " \t\r\n";
+
+static
+std::string formatParam (std::string param)
+{
+	if (param.empty () || param.find_first_of (WhiteSpaces+";") != std::string::npos)
+		return std::string ("\"") + param + "\"";
+	return param;
+}
 
 std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 {
-	Macro::const_iterator current;
-
 	unsigned int next_label = 0;
 	std::map<const Macro::Item *, std::string> labels;
 
-	for (current = begin; current != end; ++current) {
-		if (current->isJump ()) {
-			Macro::const_iterator dest = current->jumpDestination ();
+	for (auto it = begin; it != end; ++it) {
+		const Macro::Item &item = *it;
+		if (item.isJump ()) {
+			Macro::const_iterator dest = item.jumpDestination ();
 			if (labels.find (&(*dest)) != labels.end ())
 				continue;
 			std::stringstream ss;
@@ -47,215 +58,216 @@ std::string macroToText (Macro::const_iterator begin, Macro::const_iterator end)
 
 	std::stringstream ss;
 
-	for (current = begin; current != end; ++current) {
-		auto it = labels.find (&(*current));
-		if (it != labels.end ()) {
-			ss << it->second << ":" << std::endl;
+	for (auto it = begin; it != end; ++it) {
+		const Macro::Item &item = *it;
+		auto label = labels.find (&item);
+		if (label != labels.end ()) {
+			ss << label->second << ":" << std::endl;
 		}
 
-		if (current->isShortDelay ()) {
-			ss << "ShortDelay " << current->delay () << ";" << std::endl;
-			continue;
-		}
+		ss << Macro::Item::InstructionStrings.at (item.instruction ());
 
-		switch (current->opCode ()) {
-		case Macro::Item::NoOp:
-			ss << "NoOp;" << std::endl;
-			break;
-
-		case Macro::Item::WaitRelease:
-			ss << "WaitRelease;" << std::endl;
-			break;
-
-		case Macro::Item::RepeatUntilRelease:
-			ss << "RepeatUntilRelease;" << std::endl;
-			break;
-
-		case Macro::Item::RepeatForever:
-			ss << "Repeat;" << std::endl;
-			break;
-
+		switch (item.instruction ()) {
 		case Macro::Item::KeyPress:
-			ss << "KeyPress " << keyString (current->keyCode ()) << ";" << std::endl;
-			break;
-
 		case Macro::Item::KeyRelease:
-			ss << "KeyRelease " << keyString (current->keyCode ()) << ";" << std::endl;
+			ss << " " << formatParam (keyString (item.keyCode ()));
 			break;
 
-		case Macro::Item::ModifierPress:
-			ss << "ModifierPress " << modifierString (current->modifiers ()) << ";" << std::endl;
+		case Macro::Item::ModifiersPress:
+		case Macro::Item::ModifiersRelease:
+			ss << " " << formatParam (modifierString (item.modifiers ()));
 			break;
 
-		case Macro::Item::ModifierRelease:
-			ss << "ModifierRelease " << modifierString (current->modifiers ()) << ";" << std::endl;
+		case Macro::Item::ModifiersKeyPress:
+		case Macro::Item::ModifiersKeyRelease:
+			ss << " " << formatParam (modifierString (item.modifiers ()))
+			   << " " << formatParam (keyString (item.keyCode ()));
 			break;
 
 		case Macro::Item::MouseWheel:
-			ss << "MouseWheel " << (int) current->wheel () << ";" << std::endl;
+		case Macro::Item::MouseHWheel:
+			ss << " " << item.wheel ();
 			break;
 
 		case Macro::Item::MouseButtonPress:
-			ss << "MouseButtonPress " << buttonString (current->buttons ()) << ";" << std::endl;
-			break;
-
 		case Macro::Item::MouseButtonRelease:
-			ss << "MouseButtonRelease " << buttonString (current->buttons ()) << ";" << std::endl;
+			ss << " " << formatParam (buttonString (item.buttons ()));
 			break;
 
 		case Macro::Item::ConsumerControl:
-			ss << "ConsumerControl " << consumerControlString (current->consumerControl ()) << ";" << std::endl;
+		case Macro::Item::ConsumerControlPress:
+		case Macro::Item::ConsumerControlRelease:
+			ss << " " << formatParam (consumerControlString (item.consumerControl ()));
 			break;
 
 		case Macro::Item::Delay:
-			ss << "Delay " << current->delay () << ";" << std::endl;
+		case Macro::Item::ShortDelay:
+			ss << " " << item.delay ();
 			break;
 
 		case Macro::Item::Jump:
-			ss << "Jump " << labels[&(*current->jumpDestination ())] << ";" << std::endl;
-			break;
-
 		case Macro::Item::JumpIfPressed:
-			ss << "JumpIfPressed " << labels[&(*current->jumpDestination ())] << ";" << std::endl;
+			ss << " " << labels[&(*item.jumpDestination ())];
 			break;
 
 		case Macro::Item::MousePointer:
-			ss << "MousePointer " << current->mouseX () << " " << current->mouseY () << ";" << std::endl;
+			ss << " " << item.mouseX () << " " << item.mouseY ();
 			break;
 
 		case Macro::Item::JumpIfReleased:
-			ss << "JumpIfReleased " << current->delay () << " " << labels[&(*current->jumpDestination ())] << ";" << std::endl;
+			ss << " " << item.delay ()
+			   << " " << labels[&(*item.jumpDestination ())];
 			break;
 
-		case Macro::Item::End:
-			ss << "End;" << std::endl;
+		default:
 			break;
 		}
+		ss << ";" << std::endl;
 	}
 
 	return ss.str ();
 }
 
+static inline
+std::string::const_iterator
+skipWhiteSpaces (std::string::const_iterator begin, std::string::const_iterator end)
+{
+	static const std::regex WhiteSpaceRegex ("\\s*");
+	std::smatch results;
+	assert (std::regex_search (begin, end,
+				   results, WhiteSpaceRegex,
+				   std::regex_constants::match_continuous));
+	return results[0].second;
+}
+
 Macro textToMacro (const std::string &text)
 {
-	static const std::regex InstructionRegex ("(?:\\s*(\\w+):)?\\s*(\\w+)(?:\\s+([^;]+))?\\s*(?:;|$)");
-	static const std::regex ParamRegex ("\\S+");
+	static const std::regex LabeledInstructionRegex ("(?:(\\w+):)?\\s*(\\w+)");
+	static const std::regex ParamRegex ("(;)|\"([^\"]*)\"|([^[:space:];]+)");
 
 	std::map<std::string, Macro::iterator> labels;
 	std::vector<std::pair<Macro::Item *, std::string>> jumps;
 
 	Macro macro;
 
-	std::string::const_iterator current = text.begin ();
+	auto current = skipWhiteSpaces (text.begin (), text.end ());
 	std::smatch results;
-	while (std::regex_search (current, text.end (),
-				  results, InstructionRegex,
-				  std::regex_constants::match_continuous)) {
+	while (current != text.end ()) {
+		if (!std::regex_search (current, text.end (),
+					results, LabeledInstructionRegex,
+					std::regex_constants::match_continuous)) {
+			std::string invalid_text (current, text.end ());
+			static constexpr std::size_t MaxTextLength = 20;
+			if (invalid_text.size () > MaxTextLength)
+				invalid_text.resize (MaxTextLength);
+			Log::error () << "Syntax error when parsing macro instruction: \"" << invalid_text << "\"" << std::endl;
+			return Macro ();
+		}
 		std::string label = results.str (1);
 		std::string instruction = results.str (2);
+		current = skipWhiteSpaces (results[0].second, text.end ());
+
 		std::vector<std::string> params;
-
-		std::smatch param_res;
-		std::string::const_iterator current_param = results[3].first;
-		while (std::regex_search (current_param, results[3].second, param_res, ParamRegex)) {
-			params.push_back (param_res.str (0));
-			current_param = param_res[0].second;
+		while (current != text.end ()) {
+			assert (std::regex_search (current, text.end (), results, ParamRegex, std::regex_constants::match_continuous));
+			current = skipWhiteSpaces (results[0].second, text.end ());
+			if (results[1].matched) // semi-colon
+				break;
+			for (unsigned int i = 2; i <= 3; ++i)
+				if (results[i].matched) {
+					params.push_back (results[i]);
+					break;
+				}
 		}
 
-		bool press;
-		if (instruction == "NoOp") {
-			macro.emplace_back (Macro::Item::NoOp);
+		Macro::Item *item = nullptr;
+		for (const auto &p: Macro::Item::InstructionStrings) {
+			if (instruction == p.second) {
+				macro.emplace_back (p.first);
+				item = &macro.back ();
+				break;
+			}
 		}
-		else if (instruction == "WaitRelease") {
-			macro.emplace_back (Macro::Item::WaitRelease);
+		if (!item) {
+			Log::error () << "Unknown instruction " << instruction << std::endl;
+			return Macro ();
 		}
-		else if (instruction == "RepeatUntilRelease") {
-			macro.emplace_back (Macro::Item::RepeatUntilRelease);
-		}
-		else if (instruction == "Repeat") {
-			macro.emplace_back (Macro::Item::RepeatForever);
-		}
-		else if ((press = (instruction == "KeyPress")) || instruction == "KeyRelease") {
-			if (press)
-				macro.emplace_back (Macro::Item::KeyPress);
-			else
-				macro.emplace_back (Macro::Item::KeyRelease);
+		switch (item->instruction ()) {
+		case Macro::Item::KeyPress:
+		case Macro::Item::KeyRelease: {
 			unsigned int code = keyUsageCode (params[0]);
 			if (code > 255)
 				Log::warning () << "Key code " << code << " is too big." << std::endl;
-			macro.back ().setKeyCode (static_cast<uint8_t> (code));
+			item->setKeyCode (static_cast<uint8_t> (code));
+			break;
 		}
-		else if ((press = (instruction == "ModifierPress")) || instruction == "ModifierRelease") {
-			if (press)
-				macro.emplace_back (Macro::Item::ModifierPress);
-			else
-				macro.emplace_back (Macro::Item::ModifierRelease);
+		case Macro::Item::ModifiersPress:
+		case Macro::Item::ModifiersRelease: {
 			uint8_t mask = modifierMask (params[0]);
-			macro.back ().setModifiers (mask);
+			item->setModifiers (mask);
+			break;
 		}
-		else if (instruction == "MouseWheel") {
-			macro.emplace_back (Macro::Item::MouseWheel);
+		case Macro::Item::ModifiersKeyPress:
+		case Macro::Item::ModifiersKeyRelease: {
+			uint8_t mask = modifierMask (params[0]);
+			item->setModifiers (mask);
+			unsigned int code = keyUsageCode (params[1]);
+			if (code > 255)
+				Log::warning () << "Key code " << code << " is too big." << std::endl;
+			item->setKeyCode (static_cast<uint8_t> (code));
+			break;
+		}
+		case Macro::Item::MouseWheel:
+		case Macro::Item::MouseHWheel: {
 			int wheel = std::stoi (params[0]);
-			macro.back ().setWheel (wheel);
+			item->setWheel (wheel);
+			break;
 		}
-		else if ((press = (instruction == "MouseButtonPress")) || instruction == "MouseButtonRelease") {
-			if (press)
-				macro.emplace_back (Macro::Item::MouseButtonPress);
-			else
-				macro.emplace_back (Macro::Item::MouseButtonRelease);
+		case Macro::Item::MouseButtonPress:
+		case Macro::Item::MouseButtonRelease: {
 			unsigned int mask = buttonMask (params[0]);
 			if (mask > 65535)
 				Log::warning () << "Button number too big." << std::endl;
-			macro.back ().setButtons (mask);
+			item->setButtons (mask);
+			break;
 		}
-		else if (instruction == "ConsumerControl") {
-			macro.emplace_back (Macro::Item::ConsumerControl);
+		case Macro::Item::ConsumerControl:
+		case Macro::Item::ConsumerControlPress:
+		case Macro::Item::ConsumerControlRelease: {
 			unsigned int code = consumerControlCode (params[0]);
-			macro.back ().setConsumerControl (code);
+			item->setConsumerControl (code);
+			break;
 		}
-		else if (instruction == "Delay") {
-			macro.emplace_back (Macro::Item::Delay);
+		case Macro::Item::Delay:
+		case Macro::Item::ShortDelay: {
 			unsigned int delay = std::stoul (params[0]);
-			macro.back ().setDelay (delay);
+			item->setDelay (delay);
+			break;
 		}
-		else if (instruction == "Jump") {
-			macro.emplace_back (Macro::Item::Jump);
-			jumps.emplace_back (&macro.back (), params[0]);
-		}
-		else if (instruction == "JumpIfPressed") {
-			macro.emplace_back (Macro::Item::JumpIfPressed);
-			jumps.emplace_back (&macro.back (), params[0]);
-		}
-		else if (instruction == "MousePointer") {
-			macro.emplace_back (Macro::Item::MousePointer);
+		case Macro::Item::Jump:
+		case Macro::Item::JumpIfPressed:
+			jumps.emplace_back (item, params[0]);
+			break;
+		case Macro::Item::MousePointer: {
 			int x = std::stoi (params[0]);
 			int y = std::stoi (params[1]);
-			macro.back ().setMouseX (x);
-			macro.back ().setMouseY (y);
+			item->setMouseX (x);
+			item->setMouseY (y);
+			break;
 		}
-		else if (instruction == "JumpIfReleased") {
-			macro.emplace_back (Macro::Item::JumpIfReleased);
+		case Macro::Item::JumpIfReleased: {
 			unsigned int delay = std::stoul (params[0]);
-			macro.back ().setDelay (delay);
-			jumps.emplace_back (&macro.back (), params[1]);
+			item->setDelay (delay);
+			jumps.emplace_back (item, params[1]);
+			break;
 		}
-		else if (instruction == "End") {
-			macro.emplace_back (Macro::Item::End);
-		}
-		else if (instruction == "ShortDelay") {
-			unsigned int delay = std::stoul (params[0]);
-			macro.emplace_back (Macro::Item::getShortDelayCode (delay));
-		}
-		else {
-			Log::error () << "Unknown instruction " << instruction << std::endl;
-			return Macro ();
+		default:
+			break;
 		}
 
 		if (!label.empty ()) {
 			labels.emplace (label, std::prev (macro.end ()));
 		}
-
-		current = results[0].second;
 	}
 
 	for (auto pair: jumps) {

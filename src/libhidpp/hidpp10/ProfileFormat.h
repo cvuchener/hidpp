@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,27 @@
  *
  */
 
-#include <hidpp10/Address.h>
+#ifndef HIDPP10_PROFILE_FORMAT_H
+#define HIDPP10_PROFILE_FORMAT_H
 
-using namespace HIDPP10;
+#include <hidpp/AbstractProfileFormat.h>
 
-bool Address::operator< (const Address &other) const
+#include <memory>
+
+namespace HIDPP10
 {
-	return page < other.page ||
-		(page == other.page && offset < other.offset);
+
+class Device;
+
+enum ProfileType {
+	NoProfile,
+	G9ProfileType,
+	G500ProfileType,
+	G700ProfileType,
+};
+
+std::unique_ptr<HIDPP::AbstractProfileFormat> getProfileFormat (Device *device);
+
 }
 
+#endif

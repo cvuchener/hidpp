@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,34 +16,13 @@
  *
  */
 
-#ifndef HIDPP10_PROFILE_DIRECTORY_H
-#define HIDPP10_PROFILE_DIRECTORY_H
+#include "Address.h"
 
-#include <cstdint>
-#include <vector>
-#include <hidpp10/Address.h>
+using namespace HIDPP;
 
-namespace HIDPP10
+bool Address::operator< (const Address &other) const
 {
-
-struct ProfileEntry
-{
-	Address address;
-	uint8_t leds;
-};
-
-class MemoryMapping;
-
-class ProfileDirectory: public std::vector<ProfileEntry>
-{
-public:
-	ProfileDirectory ();
-	ProfileDirectory (MemoryMapping *mem);
-
-	void write (MemoryMapping *mem) const;
-};
-
+	return mem_type < other.mem_type ||
+		(mem_type == other.mem_type && (page < other.page ||
+		(page == other.page && offset < other.offset)));
 }
-
-#endif
-

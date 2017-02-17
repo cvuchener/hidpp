@@ -29,6 +29,9 @@ class Sensor
 public:
 	virtual unsigned int fromDPI (unsigned int dpi) const = 0;
 	virtual unsigned int toDPI (unsigned int internal_value) const = 0;
+
+	virtual unsigned int minimumResolution () const = 0;
+	virtual unsigned int maximumResolution () const = 0;
 };
 
 class ListSensor: public Sensor
@@ -36,6 +39,9 @@ class ListSensor: public Sensor
 public:
 	virtual unsigned int fromDPI (unsigned int dpi) const;
 	virtual unsigned int toDPI (unsigned int internal_value) const;
+
+	virtual unsigned int minimumResolution () const;
+	virtual unsigned int maximumResolution () const;
 
 	typedef std::vector<unsigned int> ResolutionList;
 	typedef ResolutionList::const_iterator const_iterator;
@@ -60,8 +66,9 @@ public:
 	virtual unsigned int fromDPI (unsigned int dpi) const;
 	virtual unsigned int toDPI (unsigned int internal_value) const;
 
-	unsigned int minimumResolution () const;
-	unsigned int maximumResolution () const;
+	virtual unsigned int minimumResolution () const;
+	virtual unsigned int maximumResolution () const;
+
 	unsigned int resolutionStepHint () const;
 
 	static const RangeSensor

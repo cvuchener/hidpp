@@ -19,6 +19,7 @@
 #include <hidpp10/Sensor.h>
 
 #include <stdexcept>
+#include <algorithm>
 
 using namespace HIDPP10;
 
@@ -52,7 +53,7 @@ unsigned int ListSensor::fromDPI (unsigned int dpi) const
 			unsigned int mid_dpi = _resolutions[mid];
 			if (dpi < mid_dpi)
 				high = mid_dpi;
-			else	
+			else
 				low = mid_dpi;
 		}
 		if (_resolutions[high]-dpi < dpi-_resolutions[low])
@@ -72,6 +73,16 @@ unsigned int ListSensor::toDPI (unsigned int internal_value) const
 	if (!(internal_value & 0x80))
 		throw std::runtime_error ("Invalid resolution value");
 	return _resolutions[internal_value & 0x7F];
+}
+
+unsigned int ListSensor::minimumResolution () const
+{
+	return *std::min_element (_resolutions.begin (), _resolutions.end ());
+}
+
+unsigned int ListSensor::maximumResolution () const
+{
+	return *std::max_element (_resolutions.begin (), _resolutions.end ());
 }
 
 ListSensor::const_iterator ListSensor::begin () const
@@ -101,7 +112,7 @@ unsigned int RangeSensor::fromDPI (unsigned int dpi) const
 		dpi = _min;
 	else if (dpi > _max)
 		dpi = _max;
-	
+
 	return (dpi * _ratio_dividend + _ratio_divisor/2) / _ratio_divisor;
 }
 
@@ -109,7 +120,7 @@ unsigned int RangeSensor::toDPI (unsigned int internal_value) const
 {
 	if (internal_value == 0)
 		return 0;
-	
+
 	unsigned int dpi = (internal_value * _ratio_divisor + _ratio_dividend/2) /
 			   _ratio_dividend;
 

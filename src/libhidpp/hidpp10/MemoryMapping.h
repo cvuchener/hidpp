@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,45 +19,31 @@
 #ifndef HIDPP10_MEMORY_MAPPING_H
 #define HIDPP10_MEMORY_MAPPING_H
 
+#include <hidpp/AbstractMemoryMapping.h>
 #include <hidpp10/IMemory.h>
-#include <vector>
+#include <hidpp10/IProfile.h>
 
 namespace HIDPP10
 {
 
-class Device;
-
-class MemoryMapping
+class MemoryMapping: public HIDPP::AbstractMemoryMapping
 {
 public:
-	MemoryMapping (Device *dev);
+	MemoryMapping (Device *dev, bool write_crc = true);
 
-	const std::vector<uint8_t> &getReadOnlyPage (unsigned int page);
-	/**
-	 * Get the page \p page and mark it as "modified".
-	 */
-	std::vector<uint8_t> &getWritablePage (unsigned int page);
+	virtual std::vector<uint8_t>::const_iterator getReadOnlyIterator (const HIDPP::Address &address);
+	virtual std::vector<uint8_t>::iterator getWritableIterator (const HIDPP::Address &address);
+	virtual bool computeOffset (std::vector<uint8_t>::const_iterator it, HIDPP::Address &address);
 
-	/**
-	 * Write all modified pages to the device memory except for page 0
-	 * (page 0 cannot be written as a whole page).
-	 */
-	void sync ();
+protected:
+	virtual void readPage (const HIDPP::Address &address, std::vector<uint8_t> &data);
+	virtual void writePage (const HIDPP::Address &address, const std::vector<uint8_t> &data);
 
 private:
-	void getPage (unsigned int page);
-
 	IMemory _imem;
-	enum PageState
-	{
-		Absent,
-		Synced,
-		Modified,
-	};
-	std::vector<std::pair<PageState, std::vector<uint8_t>>> _pages;
+	IProfile _iprofile;
 };
 
 }
 
 #endif
-

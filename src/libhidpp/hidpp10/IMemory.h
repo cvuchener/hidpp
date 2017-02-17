@@ -22,7 +22,7 @@
 #include <vector>
 #include <cstdint>
 
-#include <hidpp10/Address.h>
+#include <hidpp/Address.h>
 
 namespace HIDPP10
 {
@@ -39,16 +39,16 @@ public:
 
 	IMemory (Device *dev);
 
-	int readSome (Address address, uint8_t *buffer, std::size_t maxlen);
-	void readMem (Address address, std::vector<uint8_t> &data);
+	int readSome (HIDPP::Address address, uint8_t *buffer, std::size_t maxlen);
+	void readMem (HIDPP::Address address, std::vector<uint8_t> &data);
 
 
-	void writeMem (Address address, const std::vector<uint8_t> &data);
+	void writeMem (HIDPP::Address address, const std::vector<uint8_t> &data);
 	void writePage (uint8_t page, const std::vector<uint8_t> &data);
 
 	void resetSequenceNumber ();
 	void fillPage (uint8_t page);
-	
+
 private:
 	Device *_dev;
 };

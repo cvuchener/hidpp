@@ -23,6 +23,7 @@
 
 #include <misc/Endian.h>
 
+using namespace HIDPP;
 using namespace HIDPP10;
 
 IMemory::IMemory (Device *dev):
@@ -32,12 +33,12 @@ IMemory::IMemory (Device *dev):
 
 int IMemory::readSome (Address address, uint8_t *buffer, std::size_t maxlen)
 {
-	std::vector<uint8_t> params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (ShortParamLength);
 	params[0] = address.page;
 	params[1] = address.offset;
-	std::vector<uint8_t> results (HIDPP::LongParamLength);
+	std::vector<uint8_t> results (LongParamLength);
 	_dev->getRegister (MemoryRead, &params, results);
-	std::size_t len = std::min (HIDPP::LongParamLength, maxlen);
+	std::size_t len = std::min (LongParamLength, maxlen);
 	std::copy (results.begin (), results.begin () + len, buffer);
 	return len;
 }
@@ -56,7 +57,7 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 {
 	static constexpr std::size_t HeaderLength = 9;
 	static constexpr std::size_t FirstPacketDataLength =
-			HIDPP::LongParamLength - HeaderLength;
+			LongParamLength - HeaderLength;
 
 	/*
 	 * Init sequence number
@@ -71,7 +72,7 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 	uint8_t seq_num = 0;
 	while (sent < data.size ()) {
 		uint8_t sub_id;
-		std::vector<uint8_t> params (HIDPP::LongParamLength);
+		std::vector<uint8_t> params (LongParamLength);
 		if (first) {
 			sub_id = SendDataBeginAck;
 			/* First packet header */
@@ -95,7 +96,7 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 		}
 		else {
 			sub_id = SendDataContinueAck;
-			if (data.size () < HIDPP::LongParamLength) {
+			if (data.size () < LongParamLength) {
 				std::copy (data.begin () + sent,
 					   data.end (),
 					   params.begin ());
@@ -103,9 +104,9 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 			}
 			else {
 				std::copy (data.begin () + sent,
-					   data.begin () + sent + HIDPP::LongParamLength,
+					   data.begin () + sent + LongParamLength,
 					   params.begin ());
-				sent += HIDPP::LongParamLength;
+				sent += LongParamLength;
 			}
 		}
 		_dev->sendDataPacket (sub_id, seq_num, params, true);
@@ -117,21 +118,21 @@ void IMemory::writePage (uint8_t page, const std::vector<uint8_t> &data)
 {
 	if (data.size () > 512)
 		throw std::logic_error ("page too big");
-	
+
 	fillPage (page);
-	writeMem ({page, 0}, data);
+	writeMem ({0, page, 0}, data);
 }
 
 void IMemory::resetSequenceNumber ()
 {
-	std::vector<uint8_t> params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (ShortParamLength);
 	params[0] = 1;
 	_dev->setRegister (ResetSeqNum, params, nullptr);
 }
 
 void IMemory::fillPage (uint8_t page)
 {
-	std::vector<uint8_t> params (HIDPP::LongParamLength);
+	std::vector<uint8_t> params (LongParamLength);
 	params[0] = Fill;
 	params[6] = page;
 	_dev->setRegister (MemoryOperation, params, nullptr);

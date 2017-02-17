@@ -27,10 +27,11 @@ extern "C" {
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>
 #include <hidpp10/defs.h>
-#include <hidpp10/IMemory.h>
 #include <hidpp10/IProfile.h>
-#include <hidpp10/Profile.h>
-#include <hidpp10/Macro.h>
+#include <hidpp10/RAMMapping.h>
+#include <hidpp10/ProfileFormat.h>
+#include <hidpp10/ProfileDirectoryFormat.h>
+#include <hidpp10/MacroFormat.h>
 
 #include "common/common.h"
 #include "common/Option.h"
@@ -40,6 +41,10 @@ extern "C" {
 
 using namespace HIDPP10;
 using namespace tinyxml2;
+using HIDPP::Address;
+using HIDPP::Profile;
+using HIDPP::ProfileDirectory;
+using HIDPP::Macro;
 
 int main (int argc, char *argv[])
 {
@@ -65,25 +70,11 @@ int main (int argc, char *argv[])
 	const char *path = argv[first_arg];
 
 	Device dev (path, device_index);
-	const MouseInfo *info = getMouseInfo (dev.productID ());
-	IMemory imemory (&dev);
 	IProfile iprofile (&dev);
-
-	std::function<Profile * ()> new_profile;
-	XMLToProfile xml_to_profile;
-
-	switch (info->profile_type) {
-	case G500ProfileType:
-		new_profile = [&info] () {
-			return new G500Profile (info->sensor);
-		};
-		xml_to_profile = XMLToG500Profile;
-		break;
-
-	default:
-		fprintf (stderr, "Profile format not supported\n");
-		return EXIT_FAILURE;
-	}
+	auto profile_format = getProfileFormat (&dev);
+	auto profdir_format = getProfileDirectoryFormat (&dev);
+	auto macro_format = getMacroFormat (&dev);
+	RAMMapping memory (&dev);
 
 	// Read XML input
 	std::string xml;
@@ -109,30 +100,33 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	Profile *profile= new_profile ();
-	std::vector<Macro> macros (profile->buttonCount ());
+	Profile profile;
+	ProfileDirectory::Entry entry; // Not actually written for temporary profiles
+	std::vector<Macro> macros;
 
-	xml_to_profile (doc.RootElement (), profile, macros);
+	ProfileXML profxml (profile_format.get (), profdir_format.get ());
+	profxml.read (doc.RootElement (), profile, entry, macros);
 
-	std::vector<uint8_t> data (RAMSize);
-	unsigned int profile_len = profile->profileLength ();
-	std::vector<uint8_t>::iterator next_pos = data.begin () + profile_len + profile_len%2;
-	for (unsigned int i = 0; i < profile->buttonCount (); ++i) {
-		Profile::Button &button = profile->button (i);
-		if (button.type () == Profile::Button::Macro) {
-			Address addr = {
-				0,
-				static_cast<uint8_t> ((next_pos - data.begin ()) / 2)
-			};
-			button.setMacro (addr);
-			next_pos = macros[i].write (next_pos, addr);
+	try {
+		HIDPP::Address macro_address { 0, 0, (profile_format->size ()+1)/2 };
+		for (unsigned int i = 0; i < profile.buttons.size (); ++i) {
+			auto &button = profile.buttons[i];
+			if (button.type () == HIDPP::Profile::Button::Type::Macro) {
+				auto &macro = macros[i];
+				auto next_address = macro.write (*macro_format, memory, macro_address);
+				button.setMacro (macro_address);
+				macro_address = next_address;
+			}
 		}
 	}
-	profile->write (data.begin ());
-	delete profile;
+	catch (std::out_of_range &e) {
+		fprintf (stderr, "Cannot write macros: too long for RAM.\n");
+		return EXIT_FAILURE;
+	}
+	Address profile_addr { 0, 0, 0 };
+	profile_format->write (profile, memory.getWritableIterator (profile_addr));
 
-	Address profile_addr = {0, 0};
-	imemory.writeMem (profile_addr, data);
+	memory.sync ();
 	iprofile.loadProfileFromAddress (profile_addr);
 
 	return EXIT_SUCCESS;

@@ -21,6 +21,7 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/defs.h>
 
+using namespace HIDPP;
 using namespace HIDPP10;
 
 IProfile::IProfile (Device *dev):
@@ -30,7 +31,7 @@ IProfile::IProfile (Device *dev):
 
 int IProfile::activeProfile ()
 {
-	std::vector<uint8_t> results (HIDPP::ShortParamLength);
+	std::vector<uint8_t> results (ShortParamLength);
 	_dev->getRegister (CurrentProfile, nullptr, results);
 	if (results[0] == FactoryDefault)
 		return -1;
@@ -41,14 +42,14 @@ int IProfile::activeProfile ()
 
 void IProfile::loadFactoryDefault ()
 {
-	std::vector<uint8_t> params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (ShortParamLength);
 	params[0] = FactoryDefault;
 	_dev->setRegister (CurrentProfile, params, nullptr);
 }
 
 void IProfile::loadProfileFromIndex (unsigned int index)
 {
-	std::vector<uint8_t> params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (ShortParamLength);
 	params[0] = ProfileIndex;
 	params[1] = index;
 	_dev->setRegister (CurrentProfile, params, nullptr);
@@ -56,7 +57,7 @@ void IProfile::loadProfileFromIndex (unsigned int index)
 
 void IProfile::loadProfileFromAddress (Address address)
 {
-	std::vector<uint8_t> params (HIDPP::ShortParamLength);
+	std::vector<uint8_t> params (ShortParamLength);
 	params[0] = ProfileAddress;
 	params[1] = address.page;
 	params[2] = address.offset;
@@ -65,7 +66,7 @@ void IProfile::loadProfileFromAddress (Address address)
 
 void IProfile::reloadActiveProfile ()
 {
-	std::vector<uint8_t> current_value (HIDPP::ShortParamLength);
+	std::vector<uint8_t> current_value (ShortParamLength);
 	_dev->getRegister (CurrentProfile, nullptr, current_value);
 	_dev->setRegister (CurrentProfile, current_value, nullptr);
 }

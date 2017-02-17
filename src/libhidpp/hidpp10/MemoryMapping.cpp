@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Clément Vuchener
+ * Copyright 2016 Clément Vuchener
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,61 +16,50 @@
  *
  */
 
-#include <hidpp10/MemoryMapping.h>
+#include "MemoryMapping.h"
 
-#include <hidpp10/IMemory.h>
 #include <hidpp10/defs.h>
-#include <misc/CRC.h>
 #include <misc/Log.h>
-#include <misc/Endian.h>
 
+using namespace HIDPP;
 using namespace HIDPP10;
 
-MemoryMapping::MemoryMapping (Device *dev):
-	_imem (dev)
+MemoryMapping::MemoryMapping (Device *dev, bool write_crc):
+	AbstractMemoryMapping (write_crc),
+	_imem (dev),
+	_iprofile (dev)
 {
 }
 
-const std::vector<uint8_t> &MemoryMapping::getReadOnlyPage (unsigned int page)
+std::vector<uint8_t>::const_iterator MemoryMapping::getReadOnlyIterator (const Address &address)
 {
-	getPage (page);
-	return _pages[page].second;
+	auto &page = getReadOnlyPage (address);
+	return page.begin () + address.offset*2;
 }
 
-std::vector<uint8_t> &MemoryMapping::getWritablePage (unsigned int page)
+std::vector<uint8_t>::iterator MemoryMapping::getWritableIterator (const Address &address)
 {
-	getPage (page);
-	_pages[page].first = Modified;
-	return _pages[page].second;
+	auto &page = getWritablePage (address);
+	return page.begin () + address.offset*2;
 }
 
-void MemoryMapping::sync ()
+bool MemoryMapping::computeOffset (std::vector<uint8_t>::const_iterator it, Address &address)
 {
-	// Persistent memory start at page 1
-	for (unsigned int i = 1; i < _pages.size (); ++i) {
-		if (_pages[i].first == Modified) {
-			uint16_t crc = CRC::CCITT (_pages[i].second.begin (),
-						   _pages[i].second.end () - sizeof (crc));
-			Log::debug ().printf ("Page %d CRC is %04hx.\n", i, crc);
-			writeBE (_pages[i].second, PageSize - sizeof (crc), crc);
-			_imem.writePage (i, _pages[i].second);
-			_pages[i].first = Synced;
-		}
-	}
+	auto &page = getReadOnlyPage (address);
+	int dist = distance (page.begin (), it);
+	if (dist % 2 == 1)
+		return false;
+	address.offset = dist/2;
+	return true;
 }
 
-void MemoryMapping::getPage (unsigned int page)
+void MemoryMapping::readPage (const Address &address, std::vector<uint8_t> &data)
 {
-	if (page >= _pages.size ())
-		_pages.resize (page+1, { Absent, std::vector<uint8_t> () });
-	if (_pages[page].first == Absent) {
-		_pages[page].second.resize (PageSize);
-		_imem.readMem ({static_cast<uint8_t> (page), 0}, _pages[page].second);
-		uint16_t crc = CRC::CCITT (_pages[page].second.begin (),
-					   _pages[page].second.end () - sizeof (crc));
-		if (crc != readBE<uint16_t> (_pages[page].second, PageSize - sizeof (crc)))
-			Log::warning () << "Invalid CRC for page " << page << std::endl;
-		_pages[page].first = Synced;
-	}
+	data.resize (PageSize);
+	_imem.readMem (address, data);
 }
 
+void MemoryMapping::writePage (const Address &address, const std::vector<uint8_t> &data)
+{
+	_imem.writePage (address.page, data);
+}

@@ -19,14 +19,25 @@
 #include "ProfileXML.h"
 
 #include "MacroText.h"
+
 #include <misc/UsageStrings.h>
 #include <misc/Log.h>
 #include <sstream>
 
-using namespace HIDPP10;
+using namespace HIDPP;
 using namespace tinyxml2;
 
-static void InsertCData (XMLElement *el, const std::string &str)
+ProfileXML::ProfileXML (const AbstractProfileFormat *profile_format,
+			const AbstractProfileDirectoryFormat *profdir_format):
+	_profile_settings (profile_format->generalSettings ()),
+	_mode_settings (profile_format->modeSettings ()),
+	_entry_settings (profdir_format->settings ()),
+	_special_actions (profile_format->specialActions ())
+{
+}
+
+static
+void InsertCData (XMLElement *el, const std::string &str)
 {
 	XMLDocument *doc = el->GetDocument ();
 	XMLText *txt = doc->NewText (str.c_str ());
@@ -34,304 +45,291 @@ static void InsertCData (XMLElement *el, const std::string &str)
 	el->InsertEndChild (txt);
 }
 
-void ButtonsToXML (const Profile *profile, const std::vector<Macro> &macros, XMLNode *node)
+// TODO: add macro vector
+static
+void insertButton (const Profile::Button &button, const Macro &macro, XMLNode *parent, const EnumDesc &special_actions)
 {
-	XMLDocument *doc = node->GetDocument ();
-	for (unsigned int i = 0; i < profile->buttonCount (); ++i) {
-		const Profile::Button &button = profile->button (i);
-		XMLElement *el;
-		switch (button.type ()) {
-		case Profile::Button::Macro: {
-			el = doc->NewElement ("macro");
-			Macro::const_iterator pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end;
-			unsigned int loop_delay;
-			if (macros[i].isSimple ()) {
-				std::string str = std::string ("\n") +
-						  macroToText (macros[i].begin (),
-							       std::prev (macros[i].end ()));
-				InsertCData (el, str);
-				el->SetAttribute ("type", "simple");
-			}
-			else if (macros[i].isLoop (pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end, loop_delay)) {
-				std::string pre_str = std::string ("\n") + macroToText (pre_begin, pre_end);
-				std::string loop_str = std::string ("\n") + macroToText (loop_begin, loop_end);
-				std::string post_str = std::string ("\n") + macroToText (post_begin, post_end);
-
-				XMLElement *pre = doc->NewElement ("pre");
-				InsertCData (pre, pre_str);
-				el->InsertEndChild (pre);
-
-				XMLElement *loop = doc->NewElement ("loop");
-				InsertCData (loop, loop_str);
-				el->InsertEndChild (loop);
-
-				XMLElement *post = doc->NewElement ("post");
-				InsertCData (post, post_str);
-				el->InsertEndChild (post);
-
-				el->SetAttribute ("type", "loop");
-				el->SetAttribute ("loop-delay", loop_delay);
-			}
-			else {
-				std::string str = std::string ("\n") +
-						  macroToText (macros[i].begin (),
-							       macros[i].end ());
-				XMLText *txt = doc->NewText (str.c_str ());
-				txt->SetCData (true);
-				el->InsertEndChild (txt);
-				el->SetAttribute ("type", "advanced");
-			}
-			break;
+	XMLDocument *doc = parent->GetDocument ();
+	XMLElement *el;
+	switch (button.type ()) {
+	case Profile::Button::Type::Macro: {
+		el = doc->NewElement ("macro");
+		Macro::const_iterator pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end;
+		unsigned int loop_delay;
+		if (macro.isSimple ()) {
+			std::string str = std::string ("\n") + macroToText (macro.begin (), std::prev (macro.end ()));
+			InsertCData (el, str);
+			el->SetAttribute ("type", "simple");
 		}
+		else if (macro.isLoop (pre_begin, pre_end, loop_begin, loop_end, post_begin, post_end, loop_delay)) {
+			std::string pre_str = std::string ("\n") + macroToText (pre_begin, pre_end);
+			std::string loop_str = std::string ("\n") + macroToText (loop_begin, loop_end);
+			std::string post_str = std::string ("\n") + macroToText (post_begin, post_end);
 
-		case Profile::Button::MouseButton: {
-			el = doc->NewElement ("mouse-button");
-			unsigned int button_mask = button.mouseButton ();
-			el->SetText (buttonString (button_mask).c_str ());
-			break;
-		}
+			XMLElement *pre = doc->NewElement ("pre");
+			InsertCData (pre, pre_str);
+			el->InsertEndChild (pre);
 
-		case Profile::Button::Key: {
-			el = doc->NewElement ("key");
-			uint8_t modifier_mask = button.modifierKeys ();
-			if (modifier_mask != 0) {
-				el->SetAttribute ("modifiers", modifierString (modifier_mask).c_str ());
-			}
-			uint8_t key = button.key ();
-			el->SetText (keyString (key).c_str ());
-			break;
-		}
+			XMLElement *loop = doc->NewElement ("loop");
+			InsertCData (loop, loop_str);
+			el->InsertEndChild (loop);
 
-		case Profile::Button::Special: {
-			el = doc->NewElement ("special");
-			Profile::Button::SpecialFunction special = button.special ();
-			el->SetText (Profile::Button::specialFunctionToString (special).c_str ());
-			break;
-		}
+			XMLElement *post = doc->NewElement ("post");
+			InsertCData (post, post_str);
+			el->InsertEndChild (post);
 
-		case Profile::Button::ConsumerControl: {
-			el = doc->NewElement ("consumer-control");
-			uint8_t cc = button.consumerControl ();
-			el->SetText (consumerControlString (cc).c_str ());
-			break;
+			el->SetAttribute ("type", "loop");
+			el->SetAttribute ("loop-delay", loop_delay);
 		}
-
-		case Profile::Button::Disabled:
-			el = doc->NewElement ("disabled");
-			break;
+		else {
+			std::string str = std::string ("\n") + macroToText (macro.begin (), macro.end ());
+			XMLText *txt = doc->NewText (str.c_str ());
+			txt->SetCData (true);
+			el->InsertEndChild (txt);
+			el->SetAttribute ("type", "advanced");
 		}
-		node->InsertEndChild (el);
+		break;
 	}
+
+	case Profile::Button::Type::MouseButtons: {
+		el = doc->NewElement ("mouse-button");
+		unsigned int button_mask = button.mouseButtons ();
+		el->SetText (buttonString (button_mask).c_str ());
+		break;
+	}
+
+	case Profile::Button::Type::Key: {
+		el = doc->NewElement ("key");
+		uint8_t modifier_mask = button.modifierKeys ();
+		if (modifier_mask != 0) {
+			el->SetAttribute ("modifiers", modifierString (modifier_mask).c_str ());
+		}
+		uint8_t key = button.key ();
+		el->SetText (keyString (key).c_str ());
+		break;
+	}
+
+	case Profile::Button::Type::Special: {
+		el = doc->NewElement ("special");
+		unsigned int special = button.special ();
+		el->SetText (special_actions.toString (special).c_str ());
+		break;
+	}
+
+	case Profile::Button::Type::ConsumerControl: {
+		el = doc->NewElement ("consumer-control");
+		uint8_t cc = button.consumerControl ();
+		el->SetText (consumerControlString (cc).c_str ());
+		break;
+	}
+
+	case Profile::Button::Type::Disabled:
+		el = doc->NewElement ("disabled");
+		break;
+	}
+	parent->InsertEndChild (el);
 }
 
-void G500ProfileToXML (const Profile *p, const std::vector<Macro> &macros, XMLNode *node)
+static
+void insertSetting (const std::string &name, const Setting &value, XMLNode *parent)
 {
-	const G500Profile *profile = dynamic_cast<const G500Profile *> (p);
-	if (!profile)
-		return;
+	XMLDocument *doc = parent->GetDocument ();
+	XMLElement *element = doc->NewElement (name.c_str ());
+	if (value.type () == Setting::Type::ComposedSetting) {
+		for (const auto &p: value.get<ComposedSetting> ())
+			insertSetting (p.first, p.second, element);
+	}
+	else {
+		element->SetText (value.toString ().c_str ());
+	}
+	parent->InsertEndChild (element);
+}
 
+void ProfileXML::write (const Profile &profile, const ProfileDirectory::Entry &entry, const std::vector<Macro> &macros, XMLNode *node)
+{
 	XMLDocument *doc = node->GetDocument ();
 
-	XMLElement *resolutions = doc->NewElement ("resolutions");
-	for (unsigned int i = 0; i < profile->modeCount (); ++i) {
-		G500Profile::ResolutionMode mode = profile->resolutionMode (i);
-		XMLElement *resolution = doc->NewElement ("resolution");
-		resolution->SetAttribute ("x", mode.x_res);
-		resolution->SetAttribute ("y", mode.y_res);
-		std::string leds;
-		for (bool led: mode.leds)
-			leds += (led ? "1" : "0");
-		resolution->SetAttribute ("leds", leds.c_str ());
-		resolutions->InsertEndChild (resolution);
+	for (const auto &p: entry.settings)
+		insertSetting (p.first, p.second, node);
+
+	XMLElement *modes = doc->NewElement ("modes");
+	for (const auto &mode: profile.modes) {
+		XMLElement *mode_el = doc->NewElement ("mode");
+		for (const auto &p: mode)
+			insertSetting (p.first, p.second, mode_el);
+		modes->InsertEndChild (mode_el);
 	}
-	resolutions->SetAttribute ("default", profile->defaultMode ());
-	node->InsertEndChild (resolutions);
+	node->InsertEndChild (modes);
 
-	XMLElement *polling = doc->NewElement ("polling-interval");
-	polling->SetText (profile->pollInterval ());
-	node->InsertEndChild (polling);
-
-	XMLElement *angle_snap = doc->NewElement ("angle-snap");
-	angle_snap->SetText (profile->angleSnap ());
-	node->InsertEndChild (angle_snap);
-
-	XMLElement *lift = doc->NewElement ("lift");
-	lift->SetText (profile->liftThreshold ());
-	node->InsertEndChild (lift);
-
-	XMLElement *color = doc->NewElement ("color");
-	Profile::Color c = profile->color ();
-	char color_str[7];
-	sprintf (color_str, "%02hhx%02hhx%02hhx", c.r, c.g, c.b);
-	color->SetText (color_str);
-	node->InsertEndChild (color);
+	for (const auto &p: profile.settings)
+		insertSetting (p.first, p.second, node);
 
 	XMLElement *buttons = doc->NewElement ("buttons");
-	ButtonsToXML (profile, macros, buttons);
+	for (unsigned int i = 0; i < profile.buttons.size (); ++i) {
+		const auto &button = profile.buttons[i];
+		const auto &macro = macros[i];
+		insertButton (button, macro, buttons, _special_actions);
+	}
 	node->InsertEndChild (buttons);
 }
 
-void XMLToButtons (const XMLNode *node, Profile *profile, std::vector<Macro> &macros)
+static
+void readButton (const XMLElement *element, Profile::Button &button, Macro &macro, const EnumDesc &special_actions)
 {
-	unsigned int i = 0;
-	const XMLElement *element = node->FirstChildElement ();
-	while (element) {
-		if (i > profile->buttonCount ()) {
-			Log::warning () << "Too many buttons, last ones are ignored." << std::endl;
-			break;
-		}
-		Profile::Button &button = profile->button (i);
 
-		std::string name = element->Name ();
-		if (name == "macro") {
-			button.setMacro (Address ());
-			std::string type;
-			if (element->Attribute ("type"))
-				type = element->Attribute ("type");
-			if (type.empty () || type == "simple") {
-				Macro simple = textToMacro (element->GetText ());
-				macros[i] = Macro::buildSimple (simple.begin (), simple.end ());
+	std::string name = element->Name ();
+	if (name == "macro") {
+		button.setMacro (Address ());
+		std::string type;
+		if (element->Attribute ("type"))
+			type = element->Attribute ("type");
+		if (type.empty () || type == "simple") {
+			Macro simple = textToMacro (element->GetText ());
+			macro = Macro::buildSimple (simple.begin (), simple.end ());
+		}
+		else if (type == "loop") {
+			unsigned int loop_delay;
+			switch (element->QueryUnsignedAttribute ("loop-delay", &loop_delay)) {
+			case XML_NO_ERROR:
+				break;
+			case XML_WRONG_ATTRIBUTE_TYPE:
+				Log::error () << "Invalid loop delay value." << std::endl;
+				// Fall-through default value
+			case XML_NO_ATTRIBUTE:
+				loop_delay = 0;
+				break;
+			default:
+				throw std::logic_error ("Unexpected tinyxml2 error");
 			}
-			else if (type == "loop") {
-				unsigned int loop_delay;
-				switch (element->QueryUnsignedAttribute ("loop-delay", &loop_delay)) {
-				case XML_NO_ERROR:
-					break;
-				case XML_WRONG_ATTRIBUTE_TYPE:
-					Log::error () << "Invalid loop delay value." << std::endl;
-					// Fall-through default value
-				case XML_NO_ATTRIBUTE:
-					loop_delay = 0;
-					break;
-				default:
-					throw std::logic_error ("Unexpected tinyxml2 error");
-				}
 
-				Macro pre, loop, post;
-				const XMLElement *pre_el = element->FirstChildElement ("pre");
-				if (pre_el) {
-					pre = textToMacro (pre_el->GetText ());
-				}
-				const XMLElement *loop_el = element->FirstChildElement ("loop");
-				if (loop_el) {
-					loop = textToMacro (loop_el->GetText ());
-				}
-				const XMLElement *post_el = element->FirstChildElement ("post");
-				if (post_el) {
-					post = textToMacro (post_el->GetText ());
-				}
-				macros[i] = Macro::buildLoop (pre.begin (), pre.end (),
-							      loop.begin (), loop.end (),
-							      post.begin (), post.end (),
-							      loop_delay);
+			Macro pre, loop, post;
+			const XMLElement *pre_el = element->FirstChildElement ("pre");
+			if (pre_el) {
+				pre = textToMacro (pre_el->GetText ());
+			}
+			const XMLElement *loop_el = element->FirstChildElement ("loop");
+			if (loop_el) {
+				loop = textToMacro (loop_el->GetText ());
+			}
+			const XMLElement *post_el = element->FirstChildElement ("post");
+			if (post_el) {
+				post = textToMacro (post_el->GetText ());
+			}
+			macro = Macro::buildLoop (pre.begin (), pre.end (),
+						  loop.begin (), loop.end (),
+						  post.begin (), post.end (),
+						  loop_delay);
 
-			}
-			else if (type == "advanced") {
-				macros[i] = textToMacro (element->GetText ());
-			}
 		}
-		else if (name == "mouse-button") {
-			std::string str = element->GetText ();
-			button.setMouseButton (buttonMask (str));
+		else if (type == "advanced") {
+			macro = textToMacro (element->GetText ());
 		}
-		else if (name == "key") {
-			unsigned int modifiers = 0;
-			if (const char *attr = element->Attribute ("modifiers")) {
-				modifiers = modifierMask (attr);
-			}
-			unsigned int key_code = keyUsageCode (element->GetText ());
-			button.setKey (modifiers, key_code);
+	}
+	else if (name == "mouse-button") {
+		std::string str = element->GetText ();
+		button.setMouseButtons (buttonMask (str));
+	}
+	else if (name == "key") {
+		unsigned int modifiers = 0;
+		if (const char *attr = element->Attribute ("modifiers")) {
+			modifiers = modifierMask (attr);
 		}
-		else if (name == "special") {
-			Profile::Button::SpecialFunction special =
-				Profile::Button::specialFunctionFromString (element->GetText ());
-			button.setSpecial (special);
-		}
-		else if (name == "consumer-control") {
-			unsigned int cc = consumerControlCode (element->GetText ());
-			button.setConsumerControl (cc);
-		}
-		else if (name == "disabled") {
-			button.disable ();
-		}
-		else {
-			Log::warning () << "Ignoring button with invalid tag name " << element->Name () << std::endl;
-		}
-		element = element->NextSiblingElement ();
-		++i;
+		unsigned int key_code = keyUsageCode (element->GetText ());
+		button.setKey (modifiers, key_code);
+	}
+	else if (name == "special") {
+		unsigned int special = special_actions.fromString (element->GetText ());
+		button.setSpecial (special);
+	}
+	else if (name == "consumer-control") {
+		unsigned int cc = consumerControlCode (element->GetText ());
+		button.setConsumerControl (cc);
+	}
+	else if (name == "disabled") {
+		button.disable ();
+	}
+	else {
+		Log::warning () << "Disabling button with invalid tag name " << element->Name () << std::endl;
+		button.disable ();
 	}
 }
 
-void XMLToG500Profile (const XMLNode *node, Profile *p, std::vector<Macro> &macros)
+static
+Setting readSetting (const XMLElement *element, const SettingDesc &desc)
 {
-	G500Profile *profile = dynamic_cast<G500Profile *> (p);
-	if (!profile)
-		return;
+	if (desc.isComposed ()) {
+		ComposedSetting settings;
 
+		const XMLElement *child = element->FirstChildElement ();
+		while (child) {
+			std::string name = child->Name ();
+			auto it = desc.find (name);
+			if (it == desc.end ()) {
+				Log::warning () << "Ignoring invalid sub-setting: "
+						<< name << std::endl;
+			}
+			else {
+				settings.emplace (name, readSetting (child, it->second));
+			}
+			child = child->NextSiblingElement ();
+		}
+		return settings;
+	}
+	else {
+		return desc.convertFromString (element->GetText ());
+	}
+}
+
+void ProfileXML::read (const XMLNode *node, Profile &profile, ProfileDirectory::Entry &entry, std::vector<Macro> &macros)
+{
 	const XMLElement *element = node->FirstChildElement ();
 	while (element) {
 		std::string name = element->Name ();
-		if (name == "resolutions") {
-			std::vector<G500Profile::ResolutionMode> modes;
-			const XMLElement *res_el = element->FirstChildElement ("resolution");
-			while (res_el) {
-				G500Profile::ResolutionMode mode;
-				if (XML_NO_ERROR != res_el->QueryUnsignedAttribute ("x", &mode.x_res))
-					Log::error () << "Invalid x resolution attribute." << std::endl;
-				if (XML_NO_ERROR != res_el->QueryUnsignedAttribute ("y", &mode.y_res))
-					Log::error () << "Invalid x resolution attribute." << std::endl;
-				std::string leds = res_el->Attribute ("leds");
-				for (unsigned int i = 0; i < leds.size (); ++i) {
-					if (leds[i] == '0')
-						mode.leds.push_back (false);
-					else if (leds[i] == '1')
-						mode.leds.push_back (true);
-					else
-						Log::error () << "Invalid LED value" << std::endl;
+		if (name == "modes") {
+			const XMLElement *mode_el = element->FirstChildElement ("mode");
+			while (mode_el) {
+				profile.modes.emplace_back ();
+				auto &current_mode = profile.modes.back ();
+
+				const XMLElement *setting = mode_el->FirstChildElement ();
+				while (setting) {
+					std::string sname = setting->Name ();
+					auto it = _mode_settings.find (sname);
+					if (it == _mode_settings.end ()) {
+						Log::warning () << "Ignoring invalid mode setting: "
+								<< sname << std::endl;
+					}
+					else {
+						current_mode.emplace (sname, readSetting (setting, it->second));
+					}
+					setting = setting->NextSiblingElement ();
 				}
-				modes.push_back (mode);
-
-				res_el = res_el->NextSiblingElement ("resolution");
+				mode_el = mode_el->NextSiblingElement ("mode");
 			}
-
-			profile->setModeCount (modes.size ());
-			for (unsigned int i = 0; i < modes.size (); ++i)
-				profile->setResolutionMode (i, modes[i]);
-
-			unsigned int default_mode;
-			if (XML_NO_ERROR != element->QueryUnsignedAttribute ("default", &default_mode))
-					Log::error () << "Invalid default resolution mode attribute." << std::endl;
-			profile->setDefaultMode (default_mode);
-		}
-		else if (name == "polling-interval") {
-			unsigned int interval;
-			if (XML_NO_ERROR != element->QueryUnsignedText (&interval))
-				Log::error () << "Invalid polling interval." << std::endl;
-			profile->setPollInterval (interval);
-		}
-		else if (name == "angle-snap") {
-			bool angle_snap;
-			if (XML_NO_ERROR != element->QueryBoolText (&angle_snap))
-				Log::error () << "Invalid angle snap." << std::endl;
-			profile->setAngleSnap (angle_snap);
-		}
-		else if (name == "lift") {
-			int lift;
-			if (XML_NO_ERROR != element->QueryIntText (&lift))
-				Log::error () << "Invalid lift threshold." << std::endl;
-			profile->setLiftThreshold (lift);
-		}
-		else if (name == "color") {
-			Profile::Color color;
-			if (3 != sscanf (element->GetText (), "%02hhx%02hhx%02hhx", &color.r, &color.g, &color.b))
-				Log::error () << "Invalid color value." << std::endl;
-			profile->setColor (color);
 		}
 		else if (name == "buttons") {
-			XMLToButtons (element, profile, macros);
+			const XMLElement *button = element->FirstChildElement ();
+			profile.buttons.clear ();
+			macros.clear ();
+			while (button) {
+				profile.buttons.emplace_back ();
+				macros.emplace_back ();
+				readButton (button, profile.buttons.back (), macros.back (),  _special_actions);
+				button = button->NextSiblingElement ();
+			}
 		}
 		else {
-			Log::warning () << "Ignored element " << element->Name () << std::endl;
+			auto it = _entry_settings.find (name);
+			if (it != _entry_settings.end ()) {
+				entry.settings.emplace (name, readSetting (element, it->second));
+			}
+			else if ((it = _profile_settings.find (name)) != _profile_settings.end ()) {
+				profile.settings.emplace (name, readSetting (element, it->second));
+			}
+			else {
+				Log::warning () << "Ignoring invalid setting: "
+						<< name << std::endl;
+			}
 		}
 		element = element->NextSiblingElement ();
 	}
