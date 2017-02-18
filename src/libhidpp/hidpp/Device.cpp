@@ -191,8 +191,9 @@ void Device::getProtocolVersion (unsigned int &major, unsigned int &minor)
 		if (response.featureIndex () == HIDPP20::IRoot::index &&
 		    response.function () == HIDPP20::IRoot::Ping &&
 		    response.softwareID () == software_id) {
-			major = response.params ()[0];
-			minor = response.params ()[1];
+			auto params = response.parameterBegin ();
+			major = params[0];
+			minor = params[1];
 			return;
 		}
 		Log::debug () << __FUNCTION__ << ": "

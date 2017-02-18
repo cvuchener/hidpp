@@ -92,7 +92,7 @@ public:
 		ROM = 1,
 	};
 	static constexpr unsigned int LineSize = 16;
-	std::array<uint8_t, IOnboardProfiles::LineSize> memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset);
+	std::vector<uint8_t> memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset);
 	void memoryAddrWrite (unsigned int page, unsigned int offset, unsigned int length);
 	void memoryWrite (std::vector<uint8_t>::const_iterator begin, std::vector<uint8_t>::const_iterator end);
 	void memoryWriteEnd ();

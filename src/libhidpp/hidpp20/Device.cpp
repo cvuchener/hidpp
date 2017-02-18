@@ -32,20 +32,24 @@ Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 
 std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 					   unsigned int function,
-					   const std::vector<uint8_t> &params)
+					   std::vector<uint8_t>::const_iterator param_begin,
+					   std::vector<uint8_t>::const_iterator param_end)
 {
 	Log::debug ().printf ("Calling feature 0x%02hhx/function %u\n",
 			      feature_index, function);
-	Log::debug ().printBytes ("Parameters:", params.begin (), params.end ());
-	std::vector<uint8_t> in (params);
-	if (in.size () <= HIDPP::ShortParamLength)
-		in.resize (HIDPP::ShortParamLength, 0);
-	else if (in.size () <= HIDPP::LongParamLength)
-		in.resize (HIDPP::LongParamLength, 0);
+	Log::debug ().printBytes ("Parameters:", param_begin, param_end);
+
+	std::size_t len = std::distance (param_begin, param_end);
+	HIDPP::Report::Type type;
+	if (len <= HIDPP::ShortParamLength)
+		type = HIDPP::Report::Short;
+	else if (len <= HIDPP::LongParamLength)
+		type = HIDPP::Report::Long;
 	else {
 		throw std::logic_error ("Parameters too long");
 	}
-	HIDPP::Report request (deviceIndex (), feature_index, function, softwareID, in);
+	HIDPP::Report request (type, deviceIndex (), feature_index, function, softwareID);
+	std::copy (param_begin, param_end, request.parameterBegin ());
 	sendReport (request);
 	while (true) {
 		HIDPP::Report response = getReport ();
@@ -78,8 +82,8 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 		if (response.featureIndex () == feature_index &&
 		    response.function () == function &&
 		    response.softwareID () == softwareID) {
-			Log::debug ().printBytes ("Results:", response.params ().begin (), response.params ().end ());
-			return response.params ();
+			Log::debug ().printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
+			return std::vector<uint8_t> (response.parameterBegin (), response.parameterEnd ());
 		}
 		Log::debug () << __FUNCTION__ << ": "
 			<< "Ignored report with wrong feature/function/softwareID"

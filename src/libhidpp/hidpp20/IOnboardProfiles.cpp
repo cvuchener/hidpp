@@ -41,8 +41,8 @@ uint8_t IOnboardProfiles::index () const
 
 IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 {
-	std::vector<uint8_t> params, results;
-	results = _dev->callFunction (_index, GetDescription, params);
+	std::vector<uint8_t> results;
+	results = _dev->callFunction (_index, GetDescription);
 	return Description {
 		static_cast<MemoryModel> (results[0]),
 		static_cast<ProfileFormat> (results[1]),
@@ -56,8 +56,8 @@ IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 
 IOnboardProfiles::Mode IOnboardProfiles::getMode ()
 {
-	std::vector<uint8_t> params, results;
-	results = _dev->callFunction (_index, GetMode, params);
+	std::vector<uint8_t> results;
+	results = _dev->callFunction (_index, GetMode);
 	return static_cast<Mode> (results[0]);
 }
 
@@ -70,8 +70,8 @@ void IOnboardProfiles::setMode (Mode mode)
 
 int IOnboardProfiles::getCurrentProfile ()
 {
-	std::vector<uint8_t> params, results;
-	results = _dev->callFunction (_index, GetCurrentProfile, params);
+	std::vector<uint8_t> results;
+	results = _dev->callFunction (_index, GetCurrentProfile);
 	return results[0];
 }
 
@@ -82,16 +82,13 @@ void IOnboardProfiles::setCurrentProfile (int index)
 	_dev->callFunction (_index, SetCurrentProfile, params);
 }
 
-std::array<uint8_t, IOnboardProfiles::LineSize> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset)
+std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset)
 {
 	std::vector<uint8_t> params (4), results;
 	params[0] = mem_type;
 	params[1] = page;
 	writeBE<uint16_t> (params, 2, offset);
-	results = _dev->callFunction (_index, MemoryRead, params);
-	std::array<uint8_t, LineSize> data;
-	std::copy_n (results.begin (), LineSize, data.begin ());
-	return data;
+	return _dev->callFunction (_index, MemoryRead, params);
 }
 
 void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset, unsigned int length)
@@ -107,20 +104,18 @@ void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset, 
 void IOnboardProfiles::memoryWrite (std::vector<uint8_t>::const_iterator begin, std::vector<uint8_t>::const_iterator end)
 {
 	assert (std::distance (begin, end) <= LineSize);
-	std::vector<uint8_t> params (begin, end);
-	_dev->callFunction (_index, MemoryWrite, params);
+	_dev->callFunction (_index, MemoryWrite, begin, end);
 }
 
 void IOnboardProfiles::memoryWriteEnd ()
 {
-	std::vector<uint8_t> params;
-	_dev->callFunction (_index, MemoryWriteEnd, params);
+	_dev->callFunction (_index, MemoryWriteEnd);
 }
 
 int IOnboardProfiles::getCurrentDPIIndex ()
 {
-	std::vector<uint8_t> params, results;
-	results = _dev->callFunction (_index, GetCurrentDPIIndex, params);
+	std::vector<uint8_t> results;
+	results = _dev->callFunction (_index, GetCurrentDPIIndex);
 	return results[0];
 }
 

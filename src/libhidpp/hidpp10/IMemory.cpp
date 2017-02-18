@@ -23,6 +23,8 @@
 
 #include <misc/Endian.h>
 
+#include <algorithm>
+
 using namespace HIDPP;
 using namespace HIDPP10;
 
@@ -71,10 +73,8 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 	std::size_t sent = 0;
 	uint8_t seq_num = 0;
 	while (sent < data.size ()) {
-		uint8_t sub_id;
-		std::vector<uint8_t> params (LongParamLength);
 		if (first) {
-			sub_id = SendDataBeginAck;
+			std::vector<uint8_t> params (LongParamLength);
 			/* First packet header */
 			params[0] = 0x01; // Unknown meaning
 			params[1] = address.page;
@@ -87,29 +87,24 @@ void IMemory::writeMem (Address address, const std::vector<uint8_t> &data)
 				sent = data.size ();
 			}
 			else {
-				std::copy (data.begin (),
-					   data.begin () + FirstPacketDataLength,
-					   params.begin () + HeaderLength);
-				sent += FirstPacketDataLength;
+				std::size_t len = std::min (FirstPacketDataLength, data.size ());
+				std::copy_n (data.begin (), len,
+					     params.begin () + HeaderLength);
+				sent += len;
 			}
+			_dev->sendDataPacket (SendDataBeginAck, seq_num,
+					      params.begin (), params.end (),
+					      true);
 			first = false;
 		}
 		else {
-			sub_id = SendDataContinueAck;
-			if (data.size () < LongParamLength) {
-				std::copy (data.begin () + sent,
-					   data.end (),
-					   params.begin ());
-				sent = data.size ();
-			}
-			else {
-				std::copy (data.begin () + sent,
-					   data.begin () + sent + LongParamLength,
-					   params.begin ());
-				sent += LongParamLength;
-			}
+			auto it = data.begin () + sent;
+			std::size_t len = std::min (LongParamLength, data.size () - sent);
+			_dev->sendDataPacket (SendDataContinueAck, seq_num,
+					      it, it + len,
+					      true);
+			sent += len;
 		}
-		_dev->sendDataPacket (sub_id, seq_num, params, true);
 		seq_num++;
 	}
 }

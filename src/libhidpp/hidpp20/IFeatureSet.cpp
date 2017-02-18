@@ -39,8 +39,8 @@ uint8_t IFeatureSet::index () const
 
 unsigned int IFeatureSet::getCount ()
 {
-	std::vector<uint8_t> params, results;
-	results = _dev->callFunction (_index, GetCount, params);
+	std::vector<uint8_t> results;
+	results = _dev->callFunction (_index, GetCount);
 	return results[0];
 }
 

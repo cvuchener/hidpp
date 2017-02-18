@@ -31,7 +31,15 @@ public:
 
 	std::vector<uint8_t> callFunction (uint8_t feature_index,
 					   unsigned int function,
-					   const std::vector<uint8_t> &params);
+					   std::vector<uint8_t>::const_iterator param_begin,
+					   std::vector<uint8_t>::const_iterator param_end);
+
+	inline std::vector<uint8_t> callFunction (uint8_t feature_index,
+						  unsigned int function,
+						  const std::vector<uint8_t> params = {})
+	{
+		return callFunction (feature_index, function, params.begin (), params.end ());
+	}
 };
 
 }

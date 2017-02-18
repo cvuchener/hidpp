@@ -21,6 +21,8 @@
 #include <hidpp10/WriteError.h>
 #include <misc/Log.h>
 
+#include <cassert>
+
 using namespace HIDPP10;
 
 Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
@@ -29,21 +31,16 @@ Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 	// TODO: check version
 }
 
-template<uint8_t sub_id, std::size_t params_length, std::size_t results_length>
+template<uint8_t sub_id, HIDPP::Report::Type request_type, HIDPP::Report::Type result_type>
 void Device::accessRegister (uint8_t address,
 			     const std::vector<uint8_t> *params,
 			     std::vector<uint8_t> *results)
 {
-	std::vector<uint8_t> in;
+	HIDPP::Report request (request_type, deviceIndex (), sub_id, address);
 	if (params) {
-		in = *params;
-		in.resize (params_length, 0);
+		assert (params->size () <= request.parameterLength ());
+		std::copy (params->begin (), params->end (), request.parameterBegin ());
 	}
-	else {
-		in.resize (params_length, 0);
-	}
-	HIDPP::Report request (deviceIndex (),
-			       sub_id, address, in);
 	sendReport (request);
 
 	while (true) {
@@ -70,11 +67,11 @@ void Device::accessRegister (uint8_t address,
 			continue;
 		}
 
-		if (response.paramLength () != results_length)
+		if (response.type () != result_type)
 			throw std::runtime_error ("Invalid result length");
 
 		if (results)
-			*results = response.params ();
+			results->assign (response.parameterBegin (), response.parameterEnd ());
 		return;
 	}
 }
@@ -89,8 +86,7 @@ void Device::setRegister (uint8_t address,
 					  params.begin (), params.end ());
 
 		accessRegister<SetRegisterShort,
-			       HIDPP::ShortParamLength,
-			       HIDPP::ShortParamLength>
+			       HIDPP::Report::Short, HIDPP::Report::Short>
 			      (address, &params, results);
 
 		if (results)
@@ -103,8 +99,7 @@ void Device::setRegister (uint8_t address,
 					  params.begin (), params.end ());
 
 		accessRegister<SetRegisterLong,
-			       HIDPP::LongParamLength,
-			       HIDPP::ShortParamLength>
+			       HIDPP::Report::Long, HIDPP::Report::Short>
 			      (address, &params, results);
 
 		if (results)
@@ -127,8 +122,7 @@ void Device::getRegister (uint8_t address,
 						  params->begin (), params->end ());
 
 		accessRegister<GetRegisterShort,
-			       HIDPP::ShortParamLength,
-			       HIDPP::ShortParamLength>
+			       HIDPP::Report::Short, HIDPP::Report::Short>
 			      (address, params, &results);
 
 		Log::debug ().printBytes ("Results:",
@@ -141,8 +135,7 @@ void Device::getRegister (uint8_t address,
 						  params->begin (), params->end ());
 
 		accessRegister<GetRegisterLong,
-			       HIDPP::ShortParamLength,
-			       HIDPP::LongParamLength>
+			       HIDPP::Report::Short, HIDPP::Report::Long>
 			      (address, params, &results);
 
 		Log::debug ().printBytes ("Results:",
@@ -153,16 +146,16 @@ void Device::getRegister (uint8_t address,
 }
 
 void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
-			     const std::vector<uint8_t> &params,
+			     std::vector<uint8_t>::const_iterator param_begin,
+			     std::vector<uint8_t>::const_iterator param_end,
 			     bool wait_for_ack)
 {
 	Log::debug ().printf ("Sending data packet %hhu\n", seq_num);
-	Log::debug ().printBytes ("Data packet", params.begin (), params.end ());
+	Log::debug ().printBytes ("Data packet", param_begin, param_end);
 
-	HIDPP::Report packet (deviceIndex (),
-			      sub_id,
-			      seq_num,
-			      params);
+	assert (std::distance (param_begin, param_end) <= (int) HIDPP::LongParamLength);
+	HIDPP::Report packet (HIDPP::Report::Long, deviceIndex (), sub_id, seq_num);
+	std::copy (param_begin, param_end, packet.parameterBegin ());
 	sendReport (packet);
 
 	if (!wait_for_ack)
@@ -179,7 +172,8 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 			continue;
 		}
 
-		if (response.address () == 1 && response.params ()[0] == seq_num) {
+		auto response_params = response.parameterBegin ();
+		if (response.address () == 1 && response_params[0] == seq_num) {
 			/* Expected notification */
 			Log::debug ().printf ("Data packet %hhu acknowledged\n", seq_num);
 			return;

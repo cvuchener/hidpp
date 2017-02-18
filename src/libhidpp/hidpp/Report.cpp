@@ -20,6 +20,7 @@
 
 #include <hidpp10/defs.h>
 #include <hidpp20/defs.h>
+#include <algorithm>
 
 using namespace HIDPP;
 
@@ -41,172 +42,188 @@ const char *Report::InvalidReportLength::what () const noexcept
 	return "Invalid Report Length for a HID++ report";
 }
 
-// Offsets
-#define TYPE	0
-#define DEVICE_INDEX	1
-#define SUB_ID	2
-#define ADDRESS	3
+namespace Offset
+{
+static constexpr unsigned int Type = 0;
+static constexpr unsigned int DeviceIndex = 1;
+static constexpr unsigned int SubID = 2;
+static constexpr unsigned int Address = 3;
+static constexpr unsigned int Parameters = 4;
+}
 
-Report::Report (uint8_t type, const uint8_t *data, std::size_t length):
-	_header ({ type })
+Report::Report (uint8_t type, const uint8_t *data, std::size_t length)
 {
 	switch (static_cast<Type> (type)) {
 	case Short:
-		_params.resize (ShortParamLength);
+		_data.resize (HeaderLength+ShortParamLength);
 		break;
 	case Long:
-		_params.resize (LongParamLength);
+		_data.resize (HeaderLength+LongParamLength);
 		break;
 	default:
 		throw InvalidReportID ();
 	}
-	if (length != Report::HeaderLength-1+_params.size ())
+	if (length != _data.size ()-1)
 		throw InvalidReportLength ();
 
-	std::copy (data, data+HeaderLength-1, &_header[1]);
-	std::copy (data+HeaderLength-1, data+length, _params.begin ());
+	_data[Offset::Type] = type;
+	std::copy_n (data, length, &_data[1]);
 }
 
 Report::Report (Type type,
 		HIDPP::DeviceIndex device_index,
 		uint8_t sub_id,
-		uint8_t address):
-	_header({ type, device_index, sub_id, address })
+		uint8_t address)
 {
 	switch (type) {
 	case Short:
-		_params.resize (ShortParamLength, 0);
+		_data.resize (HeaderLength+ShortParamLength, 0);
 		break;
 	case Long:
-		_params.resize (LongParamLength, 0);
+		_data.resize (HeaderLength+LongParamLength, 0);
 		break;
 	}
+	_data[Offset::Type] = type;
+	_data[Offset::DeviceIndex] = device_index;
+	_data[Offset::SubID] = sub_id;
+	_data[Offset::Address] = address;
 }
 
 Report::Report (HIDPP::DeviceIndex device_index,
 		uint8_t sub_id,
 		uint8_t address,
-		const std::vector<uint8_t> &params):
-	_header({ 0, device_index, sub_id, address }),
-	_params (params)
+		std::vector<uint8_t>::const_iterator param_begin,
+		std::vector<uint8_t>::const_iterator param_end)
 {
-	switch (params.size ()) {
+	switch (std::distance (param_begin, param_end)) {
 	case ShortParamLength:
-		_header[TYPE] = Short;
+		_data.resize (HeaderLength+ShortParamLength);
+		_data[Offset::Type] = Short;
 		break;
 	case LongParamLength:
-		_header[TYPE] = Long;
+		_data.resize (HeaderLength+LongParamLength);
+		_data[Offset::Type] = Long;
 		break;
 	default:
 		throw InvalidReportLength ();
 	}
+	_data[Offset::DeviceIndex] = device_index;
+	_data[Offset::SubID] = sub_id;
+	_data[Offset::Address] = address;
+	std::copy (param_begin, param_end, &_data[Offset::Parameters]);
 }
 
 Report::Report (Type type,
 		DeviceIndex device_index,
 		uint8_t feature_index,
 		unsigned int function,
-		unsigned int sw_id):
-	_header({ type, device_index, feature_index,
-		  static_cast<uint8_t> ((function & 0x0F) << 4 | (sw_id & 0x0F)) })
+		unsigned int sw_id)
 {
 	switch (type) {
 	case Short:
-		_params.resize (ShortParamLength, 0);
+		_data.resize (HeaderLength+ShortParamLength, 0);
 		break;
 	case Long:
-		_params.resize (LongParamLength, 0);
+		_data.resize (HeaderLength+LongParamLength, 0);
 		break;
 	}
+	_data[Offset::Type] = type;
+	_data[Offset::DeviceIndex] = device_index;
+	_data[Offset::SubID] = feature_index;
+	_data[Offset::Address] = (function & 0x0f) << 4 | (sw_id & 0x0f);
 }
 
 Report::Report (DeviceIndex device_index,
 		uint8_t feature_index,
 		unsigned int function,
 		unsigned int sw_id,
-		const std::vector<uint8_t> &params):
-	_header({ 0, device_index, feature_index,
-		  static_cast<uint8_t> ((function & 0x0F) << 4 | (sw_id & 0x0F)) }),
-	_params (params)
+		std::vector<uint8_t>::const_iterator param_begin,
+		std::vector<uint8_t>::const_iterator param_end)
 {
-	switch (params.size ()) {
+	switch (std::distance (param_begin, param_end)) {
 	case ShortParamLength:
-		_header[TYPE] = Short;
+		_data.resize (HeaderLength+ShortParamLength);
+		_data[Offset::Type] = Short;
 		break;
 	case LongParamLength:
-		_header[TYPE] = Long;
+		_data.resize (HeaderLength+LongParamLength);
+		_data[Offset::Type] = Long;
 		break;
 	default:
 		throw InvalidReportLength ();
 	}
-} 
+	_data[Offset::DeviceIndex] = device_index;
+	_data[Offset::SubID] = feature_index;
+	_data[Offset::Address] = (function & 0x0f) << 4 | (sw_id & 0x0f);
+	std::copy (param_begin, param_end, &_data[Offset::Parameters]);
+}
 
 Report::Type Report::type () const
 {
-	return static_cast<Type> (_header[TYPE]);
+	return static_cast<Type> (_data[Offset::Type]);
 }
 
 DeviceIndex Report::deviceIndex () const
 {
-	return static_cast<HIDPP::DeviceIndex> (_header[DEVICE_INDEX]);
+	return static_cast<HIDPP::DeviceIndex> (_data[Offset::DeviceIndex]);
 }
 
 uint8_t Report::subID () const
 {
-	return _header[SUB_ID];
+	return _data[Offset::SubID];
 }
 
 void Report::setSubID (uint8_t sub_id)
 {
-	_header[SUB_ID] = sub_id;
+	_data[Offset::SubID] = sub_id;
 }
 
 uint8_t Report::address () const
 {
-	return _header[ADDRESS];
+	return _data[Offset::Address];
 }
 
 void Report::setAddress (uint8_t address)
 {
-	_header[ADDRESS] = address;
+	_data[Offset::Address] = address;
 }
 
 uint8_t Report::featureIndex () const
 {
-	return _header[SUB_ID];
+	return _data[Offset::SubID];
 }
 
-void Report::setfeatureIndex (uint8_t feature_index)
+void Report::setFeatureIndex (uint8_t feature_index)
 {
-	_header[SUB_ID] = feature_index;
+	_data[Offset::SubID] = feature_index;
 }
 
 unsigned int Report::function () const
 {
-	return (_header[ADDRESS] & 0xF0) >> 4;
+	return (_data[Offset::Address] & 0xf0) >> 4;
 }
 
 void Report::setFunction (unsigned int function)
 {
-	_header[ADDRESS] = (function & 0x0F) << 4 | (_header[ADDRESS] & 0x0F);
+	_data[Offset::Address] = (function & 0x0f) << 4 | (_data[Offset::Address] & 0x0f);
 }
 
 unsigned int Report::softwareID () const
 {
-	return _header[ADDRESS] & 0x0F;
+	return _data[Offset::Address] & 0x0f;
 }
 
 void Report::setSoftwareID (unsigned int sw_id)
 {
-	_header[ADDRESS] = (_header[ADDRESS] & 0xF0) | (sw_id & 0x0F);
+	_data[Offset::Address] = (_data[Offset::Address] & 0xf0) | (sw_id & 0x0f);
 }
 
-std::size_t Report::paramLength () const
+std::size_t Report::parameterLength () const
 {
-	return paramLength (static_cast<Type> (_header[TYPE]));
+	return parameterLength (static_cast<Type> (_data[Offset::Type]));
 }
 
-std::size_t Report::paramLength (Type type)
+std::size_t Report::parameterLength (Type type)
 {
 	switch (type) {
 	case Short:
@@ -218,38 +235,45 @@ std::size_t Report::paramLength (Type type)
 	}
 }
 
-std::vector<uint8_t> &Report::params ()
+std::vector<uint8_t>::iterator Report::parameterBegin ()
 {
-	return _params;
+	return _data.begin () + Offset::Parameters;
 }
 
-const std::vector<uint8_t> &Report::params () const
+std::vector<uint8_t>::const_iterator Report::parameterBegin () const
 {
-	return _params;
+	return _data.begin () + Offset::Parameters;
 }
 
-const std::vector<uint8_t> Report::rawReport () const
+std::vector<uint8_t>::iterator Report::parameterEnd ()
 {
-	std::vector<uint8_t> report (HeaderLength + _params.size ());
-	std::copy (_header.begin (), _header.end (), report.begin ());
-	std::copy (_params.begin (), _params.end (), report.begin () + HeaderLength);
-	return report;
+	return _data.end ();
+}
+
+std::vector<uint8_t>::const_iterator Report::parameterEnd () const
+{
+	return _data.end ();
+}
+
+const std::vector<uint8_t> &Report::rawReport () const
+{
+	return _data;
 }
 
 bool Report::checkErrorMessage10 (uint8_t *sub_id,
 				  uint8_t *address,
 				  uint8_t *error_code) const
 {
-	if (static_cast<Type> (_header[TYPE]) != Short ||
-	    _header[SUB_ID] != HIDPP10::ErrorMessage)
+	if (static_cast<Type> (_data[Offset::Type]) != Short ||
+	    _data[Offset::SubID] != HIDPP10::ErrorMessage)
 		return false;
-	
+
 	if (sub_id)
-		*sub_id = _header[3];
+		*sub_id = _data[3];
 	if (address)
-		*address = _params[0];
+		*address = _data[4];
 	if (error_code)
-		*error_code = _params[1];
+		*error_code = _data[5];
 	return true;
 }
 
@@ -258,18 +282,18 @@ bool Report::checkErrorMessage20 (uint8_t *feature_index,
 				  unsigned int *sw_id,
 				  uint8_t *error_code) const
 {
-	if (static_cast<Type> (_header[TYPE]) != Long ||
-	    _header[SUB_ID] != HIDPP20::ErrorMessage)
+	if (static_cast<Type> (_data[Offset::Type]) != Long ||
+	    _data[Offset::SubID] != HIDPP20::ErrorMessage)
 		return false;
-	
+
 	if (feature_index)
-		*feature_index = _header[3];
+		*feature_index = _data[3];
 	if (function)
-		*function = (_params[0] & 0xF0) >> 4;
+		*function = (_data[4] & 0xF0) >> 4;
 	if (sw_id)
-		*sw_id = _params[0] & 0x0F;
+		*sw_id = _data[4] & 0x0F;
 	if (error_code)
-		*error_code = _params[1];
+		*error_code = _data[5];
 	return true;
 }
 

@@ -38,10 +38,11 @@ public:
 			  std::vector<uint8_t> &results);
 
 	void sendDataPacket (uint8_t sub_id, uint8_t seq_num,
-			     const std::vector<uint8_t> &params,
+			     std::vector<uint8_t>::const_iterator param_begin,
+			     std::vector<uint8_t>::const_iterator param_end,
 			     bool wait_for_ack = false);
 private:
-	template<uint8_t sub_id, std::size_t params_length, std::size_t results_length>
+	template<uint8_t sub_id, HIDPP::Report::Type request_type, HIDPP::Report::Type result_type>
 	void accessRegister (uint8_t address,
 			     const std::vector<uint8_t> *params,
 			     std::vector<uint8_t> *results);
