@@ -69,8 +69,6 @@ int main (int argc, char *argv[])
 	HIDPP20::Device dev (path, device_index);
 	HIDPP20::IOnboardProfiles iop (&dev);
 
-
-	std::size_t r = 0;
 	std::vector<uint8_t> data;
 	uint8_t buffer[256];
 	int ret;
