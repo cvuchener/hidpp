@@ -31,6 +31,12 @@ Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 	// TODO: check version
 }
 
+Device::Device (HIDPP::Device &&device):
+	HIDPP::Device (std::move (device))
+{
+	// TODO: check version
+}
+
 template<uint8_t sub_id, HIDPP::Report::Type request_type, HIDPP::Report::Type result_type>
 void Device::accessRegister (uint8_t address,
 			     const std::vector<uint8_t> *params,

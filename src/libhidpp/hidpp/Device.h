@@ -59,6 +59,8 @@ public:
 	 */
 	Device (const std::string &path, DeviceIndex device_index = DefaultDevice);
 
+	Device (Device &&other) = default;
+
 	/**
 	 * Access the device index.
 	 */

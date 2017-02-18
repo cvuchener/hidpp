@@ -28,6 +28,7 @@ class Device: public HIDPP::Device
 public:
 	static unsigned int softwareID;
 	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
+	Device (HIDPP::Device &&other);
 
 	std::vector<uint8_t> callFunction (uint8_t feature_index,
 					   unsigned int function,

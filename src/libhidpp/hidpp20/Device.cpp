@@ -30,6 +30,12 @@ Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
 	// TODO: check version
 }
 
+Device::Device (HIDPP::Device &&device):
+	HIDPP::Device (std::move (device))
+{
+	// TODO: check version
+}
+
 std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 					   unsigned int function,
 					   std::vector<uint8_t>::const_iterator param_begin,

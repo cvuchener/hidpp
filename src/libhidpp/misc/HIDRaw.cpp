@@ -62,6 +62,7 @@ HIDRaw::HIDRaw (const std::string &path)
 HIDRaw::HIDRaw (const HIDRaw &other):
 	_fd (::dup (other._fd)),
 	_vendor_id (other._vendor_id), _product_id (other._product_id),
+	_name (other._name),
 	_report_desc (other._report_desc)
 {
 	if (-1 == _fd) {
@@ -69,9 +70,19 @@ HIDRaw::HIDRaw (const HIDRaw &other):
 	}
 }
 
+HIDRaw::HIDRaw (HIDRaw &&other):
+	_fd (other._fd),
+	_vendor_id (other._vendor_id), _product_id (other._product_id),
+	_name (std::move (other._name)),
+	_report_desc (std::move (other._report_desc))
+{
+	other._fd = -1;
+}
+
 HIDRaw::~HIDRaw ()
 {
-	::close (_fd);
+	if (_fd != -1)
+		::close (_fd);
 }
 
 uint16_t HIDRaw::vendorID () const

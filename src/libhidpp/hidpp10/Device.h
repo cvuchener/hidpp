@@ -29,6 +29,7 @@ class Device: public HIDPP::Device
 {
 public:
 	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
+	Device (HIDPP::Device &&device);
 
 	void setRegister (uint8_t address,
 			  const std::vector<uint8_t> &params,

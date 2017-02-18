@@ -33,6 +33,7 @@ public:
 
 	HIDRaw (const std::string &path);
 	HIDRaw (const HIDRaw &other);
+	HIDRaw (HIDRaw &&other);
 	~HIDRaw ();
 
 	uint16_t vendorID () const;
@@ -45,6 +46,8 @@ public:
 	int readReport (std::vector<uint8_t> &report, int timeout);
 
 private:
+	HIDRaw ();
+
 	int _fd;
 	uint16_t _vendor_id, _product_id;
 	std::string _name;
