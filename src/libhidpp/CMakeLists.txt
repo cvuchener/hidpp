@@ -41,6 +41,7 @@ set(LIBHIDPP_SOURCES
 	hidpp20/IRoot.cpp
 	hidpp20/IFeatureSet.cpp
 	hidpp20/IOnboardProfiles.cpp
+	hidpp20/IAdjustableDPI.cpp
 	hidpp20/ProfileDirectoryFormat.cpp
 	hidpp20/ProfileFormat.cpp
 	hidpp20/MemoryMapping.cpp

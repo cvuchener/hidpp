@@ -110,15 +110,19 @@ Reload the current profile from persistent memory (useful to get back to the las
 
 ### Changing mouse resolution
 
-    hidpp10-mouse-resolution /dev/hidrawX get
+    hidpp-mouse-resolution /dev/hidrawX get
 
 Get the current resolution from the mouse.
 
-    hidpp10-mouse-resolution /dev/hidrawX set x_dpi [y_dpi]
+    hidpp-mouse-resolution /dev/hidrawX set x_dpi [y_dpi]
 
 Set the current resolution for the mouse. If only one resolution is given, both axes use *x_dpi*. Some mice do not support per-axis resolution.
 
-Supported devices: G5, G9, G9x, G500, G500x, G700, G700s
+    hidpp-mouse-resolution /dev/hidrawX info
+
+Print informations about supported resolutions.
+
+Supported devices: G5, G9, G9x, G500, G500x, G700, G700s, HID++2.0 or later devices with “Adjustable DPI” feature (0x2201).
 
 
 ### Advanced HID++ 1.0 commands

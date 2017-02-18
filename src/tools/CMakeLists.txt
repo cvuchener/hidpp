@@ -26,10 +26,10 @@ endif()
 
 foreach(TOOL_NAME
 	hidpp-list-features
+	hidpp-mouse-resolution
 	hidpp10-dump-page
 	hidpp10-write-page
 	hidpp10-raw-command
-	hidpp10-mouse-resolution
 	hidpp10-active-profile
 	hidpp20-call-function
 	hidpp20-onboard-profiles-get-description
