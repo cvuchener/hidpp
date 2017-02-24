@@ -38,6 +38,7 @@ set(LIBHIDPP_SOURCES
 	hidpp10/MacroFormat.cpp
 	hidpp20/Device.cpp
 	hidpp20/Error.cpp
+	hidpp20/UnsupportedFeature.cpp
 	hidpp20/IRoot.cpp
 	hidpp20/IFeatureSet.cpp
 	hidpp20/IOnboardProfiles.cpp

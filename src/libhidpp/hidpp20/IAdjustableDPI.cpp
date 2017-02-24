@@ -20,6 +20,7 @@
 
 #include <hidpp20/Device.h>
 #include <hidpp20/IRoot.h>
+#include <hidpp20/UnsupportedFeature.h>
 #include <misc/Log.h>
 #include <misc/Endian.h>
 
@@ -31,6 +32,8 @@ IAdjustableDPI::IAdjustableDPI (Device *dev):
 	_dev (dev),
 	_index (IRoot (dev).getFeature (ID))
 {
+	if (_index == 0)
+		throw UnsupportedFeature (ID);
 	Log::debug ().printf ("Feature [0x%04hx] IAdjustableDPI has index 0x%02hhx\n", ID, _index);
 }
 
