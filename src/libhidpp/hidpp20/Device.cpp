@@ -18,6 +18,7 @@
 
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
+#include <hidpp10/Error.h>
 #include <misc/Log.h>
 
 using namespace HIDPP20;
@@ -90,6 +91,20 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 		    response.softwareID () == softwareID) {
 			Log::debug ().printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
 			return std::vector<uint8_t> (response.parameterBegin (), response.parameterEnd ());
+		}
+		uint8_t r_sub_id, r_address;
+		if (response.checkErrorMessage10 (&r_sub_id, &r_address, &error_code)) {
+			// For wireless devices, the receiver may answer with
+			// an HID++1.0 error if the device cannot answer itself.
+			if (r_sub_id != feature_index || r_address != (function << 4 | softwareID)) {
+				Log::debug () << __FUNCTION__ << ": "
+					<< "Ignored HID++1.0 error message with wrong feature/function/softwareID"
+					<< std::endl;
+				continue;
+			}
+
+			Log::debug ().printf ("Received error message from receiver with code 0x%02hhx\n", error_code);
+			throw HIDPP10::Error (static_cast<HIDPP10::Error::ErrorCode> (error_code));
 		}
 		Log::debug () << __FUNCTION__ << ": "
 			<< "Ignored report with wrong feature/function/softwareID"
