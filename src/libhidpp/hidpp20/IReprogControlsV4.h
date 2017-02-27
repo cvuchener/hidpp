@@ -19,18 +19,17 @@
 #ifndef HIDPP20_IREPROGCONTROLSV4_H
 #define HIDPP20_IREPROGCONTROLSV4_H
 
-#include <cstdint>
+#include <hidpp20/FeatureInterface.h>
+
 #include <vector>
 
 namespace HIDPP20
 {
 
-class Device;
-
 /**
  * Interface for HW remapping controls or diverting the button or XY events for software handling.
  */
-class IReprogControlsV4
+class IReprogControlsV4: public FeatureInterface
 {
 public:
 	static constexpr uint16_t ID = 0x1b04;
@@ -48,8 +47,6 @@ public:
 	};
 
 	IReprogControlsV4 (Device *dev);
-
-	uint8_t index () const;
 
 	/**
 	 * \return the count of control on this device.
@@ -119,10 +116,6 @@ public:
 	 * \see ControlReportingFlags.
 	 */
 	void setControlReporting (uint16_t control_id, uint8_t flags, uint16_t remap);
-
-private:
-	Device *_dev;
-	uint8_t _index;
 };
 
 }

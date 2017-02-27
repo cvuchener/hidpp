@@ -19,16 +19,15 @@
 #ifndef HIDPP20_IONBOARDPROFILES_H
 #define HIDPP20_IONBOARDPROFILES_H
 
-#include <cstdint>
+#include <hidpp20/FeatureInterface.h>
+
 #include <vector>
 #include <array>
 
 namespace HIDPP20
 {
 
-class Device;
-
-class IOnboardProfiles
+class IOnboardProfiles: public FeatureInterface
 {
 public:
 	static constexpr uint16_t ID = 0x8100;
@@ -48,8 +47,6 @@ public:
 	};
 
 	IOnboardProfiles (Device *dev);
-
-	uint8_t index () const;
 
 	enum class MemoryModel: uint8_t {
 		G402,
@@ -99,10 +96,6 @@ public:
 
 	int getCurrentDPIIndex ();
 	void setCurrentDPIIndex (int index);
-
-private:
-	Device *_dev;
-	uint8_t _index;
 };
 
 }

@@ -18,10 +18,6 @@
 
 #include <hidpp20/IOnboardProfiles.h>
 
-#include <hidpp20/Device.h>
-#include <hidpp20/IRoot.h>
-#include <hidpp20/UnsupportedFeature.h>
-#include <misc/Log.h>
 #include <misc/Endian.h>
 
 #include <cassert>
@@ -29,23 +25,14 @@
 using namespace HIDPP20;
 
 IOnboardProfiles::IOnboardProfiles (Device *dev):
-	_dev (dev),
-	_index (IRoot (dev).getFeature (ID))
+	FeatureInterface (dev, ID, "OnboardProfiles")
 {
-	if (_index == 0)
-		throw UnsupportedFeature (ID);
-	Log::debug ().printf ("Feature [0x%04hx] IOnboardProfiles has index 0x%02hhx\n", ID, _index);
-}
-
-uint8_t IOnboardProfiles::index () const
-{
-	return _index;
 }
 
 IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetDescription);
+	results = call (GetDescription);
 	return Description {
 		static_cast<MemoryModel> (results[0]),
 		static_cast<ProfileFormat> (results[1]),
@@ -60,7 +47,7 @@ IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 IOnboardProfiles::Mode IOnboardProfiles::getMode ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetMode);
+	results = call (GetMode);
 	return static_cast<Mode> (results[0]);
 }
 
@@ -68,13 +55,13 @@ void IOnboardProfiles::setMode (Mode mode)
 {
 	std::vector<uint8_t> params (1);
 	params[0] = static_cast<uint8_t> (mode);
-	_dev->callFunction (_index, SetMode, params);
+	call (SetMode, params);
 }
 
 int IOnboardProfiles::getCurrentProfile ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetCurrentProfile);
+	results = call (GetCurrentProfile);
 	return results[0];
 }
 
@@ -82,7 +69,7 @@ void IOnboardProfiles::setCurrentProfile (int index)
 {
 	std::vector<uint8_t> params (1);
 	params[0] = index;
-	_dev->callFunction (_index, SetCurrentProfile, params);
+	call (SetCurrentProfile, params);
 }
 
 std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset)
@@ -91,7 +78,7 @@ std::vector<uint8_t> IOnboardProfiles::memoryRead (MemoryType mem_type, unsigned
 	params[0] = mem_type;
 	params[1] = page;
 	writeBE<uint16_t> (params, 2, offset);
-	return _dev->callFunction (_index, MemoryRead, params);
+	return call (MemoryRead, params);
 }
 
 void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset, unsigned int length)
@@ -101,24 +88,24 @@ void IOnboardProfiles::memoryAddrWrite (unsigned int page, unsigned int offset, 
 	params[1] = page;
 	writeBE<uint16_t> (params, 2, offset);
 	writeBE<uint16_t> (params, 4, length);
-	_dev->callFunction (_index, MemoryAddrWrite, params);
+	call (MemoryAddrWrite, params);
 }
 
 void IOnboardProfiles::memoryWrite (std::vector<uint8_t>::const_iterator begin, std::vector<uint8_t>::const_iterator end)
 {
 	assert (std::distance (begin, end) <= LineSize);
-	_dev->callFunction (_index, MemoryWrite, begin, end);
+	call (MemoryWrite, begin, end);
 }
 
 void IOnboardProfiles::memoryWriteEnd ()
 {
-	_dev->callFunction (_index, MemoryWriteEnd);
+	call (MemoryWriteEnd);
 }
 
 int IOnboardProfiles::getCurrentDPIIndex ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetCurrentDPIIndex);
+	results = call (GetCurrentDPIIndex);
 	return results[0];
 }
 
@@ -126,6 +113,6 @@ void IOnboardProfiles::setCurrentDPIIndex (int index)
 {
 	std::vector<uint8_t> params (1);
 	params[0] = index;
-	_dev->callFunction (_index, SetCurrentDPIIndex, params);
+	call (SetCurrentDPIIndex, params);
 }
 

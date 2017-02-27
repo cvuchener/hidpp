@@ -18,34 +18,19 @@
 
 #include <hidpp20/IAdjustableDPI.h>
 
-#include <hidpp20/Device.h>
-#include <hidpp20/IRoot.h>
-#include <hidpp20/UnsupportedFeature.h>
-#include <misc/Log.h>
 #include <misc/Endian.h>
-
-#include <cassert>
 
 using namespace HIDPP20;
 
 IAdjustableDPI::IAdjustableDPI (Device *dev):
-	_dev (dev),
-	_index (IRoot (dev).getFeature (ID))
+	FeatureInterface (dev, ID, "AdjustableDPI")
 {
-	if (_index == 0)
-		throw UnsupportedFeature (ID);
-	Log::debug ().printf ("Feature [0x%04hx] IAdjustableDPI has index 0x%02hhx\n", ID, _index);
-}
-
-uint8_t IAdjustableDPI::index () const
-{
-	return _index;
 }
 
 unsigned int IAdjustableDPI::getSensorCount ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetSensorCount);
+	results = call (GetSensorCount);
 	return results[0];
 }
 
@@ -55,7 +40,7 @@ bool IAdjustableDPI::getSensorDPIList (unsigned int index,
 {
 	std::vector<uint8_t> params (1), results;
 	params[0] = index;
-	results = _dev->callFunction (_index, GetSensorDPIList, params);
+	results = call (GetSensorDPIList, params);
 	dpi_list.clear ();
 	bool has_dpi_step;
 	uint16_t value;
@@ -77,7 +62,7 @@ std::tuple<unsigned int, unsigned int> IAdjustableDPI::getSensorDPI (unsigned in
 {
 	std::vector<uint8_t> params (1), results;
 	params[0] = index;
-	results = _dev->callFunction (_index, GetSensorDPI, params);
+	results = call (GetSensorDPI, params);
 	unsigned int current_dpi = readBE<uint16_t> (results, 1);
 	unsigned int default_dpi = readBE<uint16_t> (results, 3);
 	return std::make_tuple (current_dpi, default_dpi);
@@ -88,6 +73,6 @@ void IAdjustableDPI::setSensorDPI (unsigned int index, unsigned int dpi)
 	std::vector<uint8_t> params (3);
 	params[0] = index;
 	writeBE<uint16_t> (params, 1, dpi);
-	_dev->callFunction (_index, SetSensorDPI, params);
+	call (SetSensorDPI, params);
 }
 

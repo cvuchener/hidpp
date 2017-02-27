@@ -16,30 +16,36 @@
  *
  */
 
-#include "UnsupportedFeature.h"
+#ifndef HIDPP20_FEATURE_INTERFACE_H
+#define HIDPP20_FEATURE_INTERFACE_H
 
-#include <sstream>
-#include <iomanip>
+#include <hidpp20/Device.h>
 
-using namespace HIDPP20;
+#include <cstdint>
+#include <vector>
 
-UnsupportedFeature::UnsupportedFeature (uint16_t feature_id, const char *name):
-	_feature_id (feature_id)
+namespace HIDPP20
 {
-	std::stringstream ss;
-	ss << "Feature [0x";
-	ss << std::hex << std::setw (4) << std::setfill ('0') << feature_id;
-	ss << "] " << name << " unsupported.";
-	_msg.assign (ss.str ());
+
+class FeatureInterface
+{
+public:
+	FeatureInterface (Device *dev, uint16_t id, const char *name);
+
+	uint8_t index () const;
+
+	template<typename... Params>
+	std::vector<uint8_t> call (unsigned int function, Params... params)
+	{
+		return _dev->callFunction (_index, function, params...);
+	}
+
+private:
+	Device *_dev;
+	uint8_t _index;
+};
+
 }
 
-const char *UnsupportedFeature::what () const noexcept
-{
-	return _msg.c_str ();
-}
-
-uint16_t UnsupportedFeature::featureID () const
-{
-	return _feature_id;
-}
+#endif
 

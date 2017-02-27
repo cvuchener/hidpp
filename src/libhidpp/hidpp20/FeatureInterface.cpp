@@ -16,30 +16,26 @@
  *
  */
 
-#include "UnsupportedFeature.h"
+#include "FeatureInterface.h"
 
-#include <sstream>
-#include <iomanip>
+#include <hidpp20/Device.h>
+#include <hidpp20/IRoot.h>
+#include <hidpp20/UnsupportedFeature.h>
+#include <misc/Log.h>
 
 using namespace HIDPP20;
 
-UnsupportedFeature::UnsupportedFeature (uint16_t feature_id, const char *name):
-	_feature_id (feature_id)
+FeatureInterface::FeatureInterface (Device *dev, uint16_t id, const char *name):
+	_dev (dev),
+	_index (IRoot (dev).getFeature (id))
 {
-	std::stringstream ss;
-	ss << "Feature [0x";
-	ss << std::hex << std::setw (4) << std::setfill ('0') << feature_id;
-	ss << "] " << name << " unsupported.";
-	_msg.assign (ss.str ());
+	if (_index == 0)
+		throw UnsupportedFeature (id, name);
+	Log::debug ().printf ("Feature [0x%04hx] %s has index 0x%02hhx\n", id, name, _index);
 }
 
-const char *UnsupportedFeature::what () const noexcept
+uint8_t FeatureInterface::index () const
 {
-	return _msg.c_str ();
-}
-
-uint16_t UnsupportedFeature::featureID () const
-{
-	return _feature_id;
+	return _index;
 }
 

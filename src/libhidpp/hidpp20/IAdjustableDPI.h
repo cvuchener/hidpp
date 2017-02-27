@@ -19,15 +19,14 @@
 #ifndef HIDPP20_IADJUSTABLEDPI_H
 #define HIDPP20_IADJUSTABLEDPI_H
 
-#include <cstdint>
+#include <hidpp20/FeatureInterface.h>
+
 #include <vector>
 
 namespace HIDPP20
 {
 
-class Device;
-
-class IAdjustableDPI
+class IAdjustableDPI: public FeatureInterface
 {
 public:
 	static constexpr uint16_t ID = 0x2201;
@@ -40,8 +39,6 @@ public:
 	};
 
 	IAdjustableDPI (Device *dev);
-
-	uint8_t index () const;
 
 	/**
 	 * \returns the number of sensor on this device.
@@ -78,10 +75,6 @@ public:
 	 * \param[in]	dpi	New DPI value
 	 */
 	void setSensorDPI (unsigned int index, unsigned int dpi);
-
-private:
-	Device *_dev;
-	uint8_t _index;
 };
 
 }

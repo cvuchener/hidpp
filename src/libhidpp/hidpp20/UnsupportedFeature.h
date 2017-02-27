@@ -27,7 +27,7 @@ namespace HIDPP20
 class UnsupportedFeature: public std::exception
 {
 public:
-	UnsupportedFeature (uint16_t feature_id);
+	UnsupportedFeature (uint16_t feature_id, const char *name);
 
 	virtual const char *what () const noexcept;
 	uint16_t featureID () const;

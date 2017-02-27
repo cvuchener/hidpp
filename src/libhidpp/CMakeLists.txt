@@ -40,6 +40,7 @@ set(LIBHIDPP_SOURCES
 	hidpp20/Error.cpp
 	hidpp20/UnsupportedFeature.cpp
 	hidpp20/IRoot.cpp
+	hidpp20/FeatureInterface.cpp
 	hidpp20/IFeatureSet.cpp
 	hidpp20/IOnboardProfiles.cpp
 	hidpp20/IAdjustableDPI.cpp

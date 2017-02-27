@@ -18,34 +18,19 @@
 
 #include "IReprogControlsV4.h"
 
-#include <hidpp20/Device.h>
-#include <hidpp20/IRoot.h>
-#include <hidpp20/UnsupportedFeature.h>
-#include <misc/Log.h>
 #include <misc/Endian.h>
-
-#include <cassert>
 
 using namespace HIDPP20;
 
 IReprogControlsV4::IReprogControlsV4 (Device *dev):
-	_dev (dev),
-	_index (IRoot (dev).getFeature (ID))
+	FeatureInterface (dev, ID, "ReprogControlsV4")
 {
-	if (_index == 0)
-		throw UnsupportedFeature (ID);
-	Log::debug ().printf ("Feature [0x%04hx] IReprogControlsV4 has index 0x%02hhx\n", ID, _index);
-}
-
-uint8_t IReprogControlsV4::index () const
-{
-	return _index;
 }
 
 unsigned int IReprogControlsV4::getControlCount ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetControlCount);
+	results = call (GetControlCount);
 	return results[0];
 }
 
@@ -53,7 +38,7 @@ IReprogControlsV4::ControlInfo IReprogControlsV4::getControlInfo (unsigned int i
 {
 	std::vector<uint8_t> params (1), results;
 	params[0] = index;
-	results = _dev->callFunction(_index, GetControlInfo, params);
+	results = call (GetControlInfo, params);
 	ControlInfo ci;
 	ci.control_id = readBE<uint16_t> (results, 0);
 	ci.task_id = readBE<uint16_t> (results, 2);
@@ -69,7 +54,7 @@ uint16_t IReprogControlsV4::getControlReporting (uint16_t control_id, uint8_t &f
 {
 	std::vector<uint8_t> params (2), results;
 	writeBE<uint16_t> (params, 0, control_id);
-	results = _dev->callFunction (_index, GetControlReporting, params);
+	results = call (GetControlReporting, params);
 	flags = results[2];
 	return readBE<uint16_t> (results, 3);
 }
@@ -80,6 +65,6 @@ void IReprogControlsV4::setControlReporting (uint16_t control_id, uint8_t flags,
 	writeBE<uint16_t> (params, 0, control_id);
 	params[2] = flags;
 	writeBE<uint16_t> (params, 3, remap);
-	_dev->callFunction (_index, SetControlReporting, params);
+	call (SetControlReporting, params);
 }
 

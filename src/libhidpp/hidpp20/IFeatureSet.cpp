@@ -18,32 +18,19 @@
 
 #include <hidpp20/IFeatureSet.h>
 
-#include <hidpp20/Device.h>
-#include <hidpp20/IRoot.h>
-#include <hidpp20/UnsupportedFeature.h>
-#include <misc/Log.h>
 #include <misc/Endian.h>
 
 using namespace HIDPP20;
 
 IFeatureSet::IFeatureSet (Device *dev):
-	_dev (dev),
-	_index (IRoot (dev).getFeature (ID))
+	FeatureInterface (dev, ID, "FeatureSet")
 {
-	if (_index == 0)
-		throw UnsupportedFeature (ID);
-	Log::debug ().printf ("Feature [0x%04hx] IFeatureSet has index 0x%02hhx\n", ID, _index);
-}
-
-uint8_t IFeatureSet::index () const
-{
-	return _index;
 }
 
 unsigned int IFeatureSet::getCount ()
 {
 	std::vector<uint8_t> results;
-	results = _dev->callFunction (_index, GetCount);
+	results = call (GetCount);
 	return results[0];
 }
 
@@ -54,7 +41,7 @@ uint16_t IFeatureSet::getFeatureID (uint8_t feature_index,
 {
 	std::vector<uint8_t> params (1), results;
 	params[0] = feature_index;
-	results = _dev->callFunction (_index, GetFeatureID, params);
+	results = call (GetFeatureID, params);
 	if (obsolete)
 		*obsolete = results[2] & (1<<7);
 	if (hidden)
