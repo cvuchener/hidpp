@@ -41,6 +41,7 @@ foreach(TOOL_NAME
 	hidpp20-dump-page
 	hidpp20-write-page
 	hidpp20-write-data
+	hidpp20-mouse-event-test
 )
 	add_executable(${TOOL_NAME}
 		${TOOL_NAME}.cpp
