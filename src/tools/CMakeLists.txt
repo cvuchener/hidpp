@@ -11,7 +11,7 @@ add_library(common OBJECT
 add_executable(hidpp-check-device
 	hidpp-check-device.cpp
 	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp-check-device hidpp)
+target_link_libraries(hidpp-check-device hidpp ${CMAKE_THREAD_LIBS_INIT})
 
 if(LIBUDEV_FOUND)
 	add_executable(hidpp-list-devices
@@ -19,7 +19,11 @@ if(LIBUDEV_FOUND)
 		$<TARGET_OBJECTS:common>)
 	target_include_directories(hidpp-list-devices
 		PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
-	target_link_libraries(hidpp-list-devices hidpp ${LIBUDEV_LIBRARIES})
+	target_link_libraries(hidpp-list-devices
+		hidpp
+		${LIBUDEV_LIBRARIES}
+		${CMAKE_THREAD_LIBS_INIT}
+	)
 else()
 	message("hidpp-list-devices require libudev.")
 endif()
@@ -41,7 +45,10 @@ foreach(TOOL_NAME
 	add_executable(${TOOL_NAME}
 		${TOOL_NAME}.cpp
 		$<TARGET_OBJECTS:common>)
-	target_link_libraries(${TOOL_NAME} hidpp)
+	target_link_libraries(${TOOL_NAME}
+		hidpp
+		${CMAKE_THREAD_LIBS_INIT}
+	)
 endforeach()
 
 if(TINYXML2_FOUND)
@@ -49,21 +56,23 @@ if(TINYXML2_FOUND)
 		profile/MacroText.cpp
 		profile/ProfileXML.cpp)
 	
-	add_executable(hidpp-persistent-profiles
-		hidpp-persistent-profiles.cpp
-		$<TARGET_OBJECTS:profile>
-		$<TARGET_OBJECTS:common>)
-	target_include_directories(hidpp-persistent-profiles
-		PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
-	target_link_libraries(hidpp-persistent-profiles hidpp ${TINYXML2_LIBRARIES})
+	foreach(TOOL_NAME
+		hidpp-persistent-profiles
+		hidpp10-load-temp-profile
+	)
+		add_executable(${TOOL_NAME}
+			${TOOL_NAME}.cpp
+			$<TARGET_OBJECTS:profile>
+			$<TARGET_OBJECTS:common>)
+		target_include_directories(${TOOL_NAME}
+			PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
+		target_link_libraries(${TOOL_NAME}
+			hidpp
+			${TINYXML2_LIBRARIES}
+			${CMAKE_THREAD_LIBS_INIT}
+		)
+	endforeach()
 	
-	add_executable(hidpp10-load-temp-profile
-		hidpp10-load-temp-profile.cpp
-		$<TARGET_OBJECTS:profile>
-		$<TARGET_OBJECTS:common>)
-	target_include_directories(hidpp10-load-temp-profile
-		PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
-	target_link_libraries(hidpp10-load-temp-profile hidpp ${TINYXML2_LIBRARIES})
 else()
 	message("Profile tools require tinyxml2.")
 endif()

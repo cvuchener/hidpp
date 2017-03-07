@@ -16,6 +16,7 @@
  *
  */
 
+#include <hidpp/Dispatcher.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>
@@ -215,21 +216,21 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[first_arg];
-
-	unsigned int major, minor;
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		HIDPP::Device dev (path, device_index);
-		dev.getProtocolVersion (major, minor);
+		dispatcher.reset (new HIDPP::Dispatcher (argv[first_arg]));
 	}
 	catch (std::exception &e) {
-		fprintf (stderr, "Cannot open device: %s\n", e.what ());
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
 		return EXIT_FAILURE;
 	}
 
+	unsigned int major, minor;
+	std::tie (major, minor) = dispatcher->getVersion (device_index);
+
 	std::unique_ptr<Operations> ops;
 	if (major == 1) {
-		HIDPP10::Device dev (path, device_index);
+		HIDPP10::Device dev (dispatcher.get (), device_index);
 
 		const HIDPP10::MouseInfo *info = HIDPP10::getMouseInfo (dev.productID ());
 		if (!info) {
@@ -250,7 +251,7 @@ int main (int argc, char *argv[])
 		}
 	}
 	else {
-		ops.reset (new Operations20 (HIDPP20::Device (path, device_index), sensor));
+		ops.reset (new Operations20 (HIDPP20::Device (dispatcher.get (), device_index), sensor));
 	}
 
 	std::string op = argv[first_arg+1];

@@ -70,6 +70,24 @@ Report::Report (uint8_t type, const uint8_t *data, std::size_t length)
 	std::copy_n (data, length, &_data[1]);
 }
 
+Report::Report (std::vector<uint8_t> &&data)
+{
+	std::size_t expected_len;
+	switch (static_cast<Type> (data[0])) {
+	case Short:
+		expected_len = HeaderLength+ShortParamLength;
+		break;
+	case Long:
+		expected_len = HeaderLength+LongParamLength;
+		break;
+	default:
+		throw InvalidReportID ();
+	}
+	if (data.size () != expected_len)
+		throw InvalidReportLength ();
+	_data = std::move (data);
+}
+
 Report::Report (Type type,
 		HIDPP::DeviceIndex device_index,
 		uint8_t sub_id,

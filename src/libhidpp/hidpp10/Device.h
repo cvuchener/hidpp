@@ -22,13 +22,15 @@
 #include <hidpp/Device.h>
 #include <hidpp/Report.h>
 
+namespace HIDPP { class Dispatcher; }
+
 namespace HIDPP10
 {
 
 class Device: public HIDPP::Device
 {
 public:
-	Device (const std::string &path, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
+	Device (HIDPP::Dispatcher *dispatcher, HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice);
 	Device (HIDPP::Device &&device);
 
 	void setRegister (uint8_t address,

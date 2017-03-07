@@ -24,6 +24,7 @@ extern "C" {
 }
 
 #include <misc/Log.h>
+#include <hidpp/Dispatcher.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Error.h>
 #include <hidpp20/Error.h>
@@ -76,6 +77,7 @@ int main (int argc, char *argv[])
 		struct udev_device *device = udev_device_new_from_syspath (ctx, udev_list_entry_get_name (current));
 		const char *hidraw_node = udev_device_get_devnode (device);
 		try {
+			HIDPP::Dispatcher dispatcher (hidraw_node);
 			bool has_receiver_index = false;
 			for (HIDPP::DeviceIndex index: {
 					HIDPP::DefaultDevice,
@@ -90,15 +92,15 @@ int main (int argc, char *argv[])
 				if (!has_receiver_index && index == HIDPP::WirelessDevice1)
 					break;
 				try {
-					HIDPP::Device dev (hidraw_node, index);
+					HIDPP::Device dev (&dispatcher, index);
 					unsigned int major, minor;
-					dev.getProtocolVersion (major, minor);
+					std::tie (major, minor) = dispatcher.getVersion (index);
 					printf ("%s", hidraw_node);
 					if (index != HIDPP::DefaultDevice)
 						printf (" (device %d)", index);
 					printf (": %s (%04hx:%04hx) HID++ %d.%d\n",
 							dev.name ().c_str (),
-							dev.vendorID (), dev.productID (),
+							dispatcher.hidraw ().vendorID (), dev.productID (),
 							major, minor);
 					if (index == HIDPP::DefaultDevice)
 						has_receiver_index = true;
@@ -113,14 +115,14 @@ int main (int argc, char *argv[])
 					Log::error ().printf ("Error while querying %s device %d: %s\n",
 						     hidraw_node, index, e.what ());
 				}
-				catch (HIDRaw::TimeoutError e) {
+				catch (HIDPP::Dispatcher::TimeoutError e) {
 					Log::warning ().printf ("Device %s (index %d) timed out\n",
 						     hidraw_node, index);
 				}
 			}
 
 		}
-		catch (HIDPP::Device::NoHIDPPReportException e) {
+		catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
 		}
 		catch (std::system_error e) {
 			Log::warning ().printf ("Failed to open %s: %s\n", hidraw_node, e.what ());

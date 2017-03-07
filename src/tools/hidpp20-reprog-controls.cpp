@@ -16,10 +16,12 @@
  *
  */
 
+#include <hidpp/Dispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IReprogControlsV4.h>
 #include <cstdio>
+#include <memory>
 
 #include "common/common.h"
 #include "common/Option.h"
@@ -97,8 +99,17 @@ int main (int argc, char *argv[])
 	const char *path = argv[first_arg];
 	std::string op = argv[first_arg+1];
 	first_arg += 2;
+
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		Device dev (path, device_index);
+		dispatcher.reset (new HIDPP::Dispatcher (path));
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+	Device dev (dispatcher.get (), device_index);
+	try {
 		IReprogControlsV4 irc (&dev);
 		if (op == "info") {
 			unsigned int count = irc.getControlCount ();

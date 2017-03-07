@@ -17,11 +17,13 @@
  */
 
 #include <cstdio>
+#include <memory>
 
 extern "C" {
 #include <unistd.h>
 }
 
+#include <hidpp/Dispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IOnboardProfiles.h>
@@ -66,8 +68,15 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	HIDPP20::Device dev (path, device_index);
-	HIDPP20::IOnboardProfiles iop (&dev);
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
+	try {
+		dispatcher.reset (new HIDPP::Dispatcher (path));
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+	HIDPP20::Device dev (dispatcher.get (), device_index);
 
 	std::vector<uint8_t> data;
 	uint8_t buffer[256];
@@ -81,6 +90,7 @@ int main (int argc, char *argv[])
 	}
 
 	try {
+		HIDPP20::IOnboardProfiles iop (&dev);
 		iop.memoryAddrWrite (page, offset, data.size ());
 
 		constexpr auto LineSize = HIDPP20::IOnboardProfiles::LineSize;

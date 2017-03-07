@@ -18,11 +18,13 @@
 
 #include <cstdio>
 #include <iostream>
+#include <memory>
 
 extern "C" {
 #include <unistd.h>
 }
 
+#include <hidpp/Dispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/IProfile.h>
 
@@ -52,9 +54,16 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[first_arg];
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
+	try {
+		dispatcher.reset (new HIDPP::Dispatcher (argv[first_arg]));
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
 
-	HIDPP10::Device dev (path, device_index);
+	HIDPP10::Device dev (dispatcher.get (), device_index);
 	HIDPP10::IProfile iprofile (&dev);
 
 	std::string command = argv[first_arg+1];

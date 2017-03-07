@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <map>
 
+#include <hidpp/Dispatcher.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/Error.h>
@@ -173,20 +174,11 @@ int main (int argc, char *argv[])
 
 	const char *path = argv[first_arg];
 
-	/*
-	 * Check protocol version
-	 */
-	unsigned int major, minor;
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		HIDPP::Device dev (path, device_index);
-		dev.getProtocolVersion (major, minor);
-		printf ("%s (%04hx:%04hx) is a HID++ %d.%d device\n",
-			dev.name ().c_str (),
-			dev.vendorID (), dev.productID (),
-			major, minor);
-
+		dispatcher.reset (new HIDPP::Dispatcher (path));
 	}
-	catch (HIDPP::Device::NoHIDPPReportException e) {
+	catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
 		printf ("%s is not a HID++ device\n", path);
 		return EXIT_FAILURE;
 	}
@@ -194,11 +186,24 @@ int main (int argc, char *argv[])
 		fprintf (stderr, "Failed to open %s: %s\n", path, e.what ());
 		return EXIT_FAILURE;
 	}
+	HIDPP::Device dev (dispatcher.get (), device_index);
+
+	/*
+	 * Check protocol version
+	 */
+	unsigned int major, minor;
+	std::tie (major, minor) = dispatcher->getVersion (device_index);
+
+	printf ("%s (%04hx:%04hx) is a HID++ %d.%d device\n",
+		dev.name ().c_str (),
+		dispatcher->hidraw ().vendorID (), dev.productID (),
+		major, minor);
+
 	/*
 	 * HID++ 1.0
 	 */
 	if (major == 1 && minor == 0) {
-		HIDPP10::Device dev (path, device_index);
+		HIDPP10::Device dev (std::move (dev));
 
 		for (unsigned int address = 0; address < 256; ++address) {
 			testRegister (&dev, HIDPP::ShortParamLength, static_cast<uint8_t> (address), do_write_tests);
@@ -246,7 +251,7 @@ int main (int argc, char *argv[])
 	 * HID++ 2.0 and later
 	 */
 	else if (major >= 2) {
-		HIDPP20::Device dev (path, device_index);
+		HIDPP20::Device dev (std::move (dev));
 		HIDPP20::IFeatureSet ifeatureset (&dev);
 
 		unsigned int feature_count = ifeatureset.getCount ();

@@ -20,7 +20,7 @@
 
 using namespace HIDPP20;
 
-Error::Error (ErrorCode error_code):
+Error::Error (uint8_t error_code):
 	_error_code (error_code)
 {
 }
@@ -53,7 +53,7 @@ const char *Error::what () const noexcept
 	}
 }
 
-Error::ErrorCode Error::errorCode () const
+uint8_t Error::errorCode () const
 {
 	return _error_code;
 }

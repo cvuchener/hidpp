@@ -18,7 +18,9 @@
 
 #include <cstdio>
 
+#include <hidpp/Dispatcher.h>
 #include <hidpp/Device.h>
+#include <hidpp10/Error.h>
 #include <misc/Log.h>
 
 #include "common/common.h"
@@ -50,15 +52,20 @@ int main (int argc, char *argv[])
 
 	try {
 		unsigned int major, minor;
-		HIDPP::Device dev (path, device_index);
-		dev.getProtocolVersion (major, minor);
+		HIDPP::Dispatcher dispatcher (path);
+		std::tie (major, minor) = dispatcher.getVersion (device_index);
 		printf ("%d.%d\n", major, minor);
+		HIDPP::Device dev (&dispatcher, device_index);
 		Log::info ().printf ("Device is %s (%04hx:%04hx)\n",
 				     dev.name ().c_str (),
-				     dev.vendorID (), dev.productID ());
+				     dispatcher.hidraw ().vendorID (), dev.productID ());
 	}
-	catch (HIDPP::Device::NoHIDPPReportException e) {
+	catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
 		Log::info () << "Device is not a HID++ device" << std::endl;
+		return EXIT_FAILURE;
+	}
+	catch (HIDPP10::Error e) {
+		fprintf (stderr, "Error while retrieving informations from receiver: %s\n", e.what ());
 		return EXIT_FAILURE;
 	}
 	catch (std::system_error e) {
