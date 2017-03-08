@@ -191,13 +191,24 @@ std::future<Report> Dispatcher::sendCommand (Report &&report)
 	return it->promised_report.get_future ();
 }
 
-Dispatcher::listener_iterator Dispatcher::registerEventListener (DeviceIndex index, uint8_t sub_id, std::function<void (const Report &)> listener, bool only_once)
+std::future<Report> Dispatcher::getNotification (DeviceIndex index, uint8_t sub_id)
 {
 	std::unique_lock<std::mutex> lock (_mutex);
-	return _listeners.emplace (std::make_tuple (index, sub_id), Listener { listener, only_once });
+	auto promise = std::make_shared<std::promise<Report>> ();
+	std::future<Report> future = promise->get_future ();
+	_listeners.emplace (std::make_tuple (index, sub_id),
+		Listener ([promise] (const Report &report) { promise->set_value (report); }, true));
+	return future;
 }
 
-void Dispatcher::unregisterEventListener (listener_iterator it)
+Dispatcher::listener_iterator Dispatcher::registerEventQueue (DeviceIndex index, uint8_t sub_id, EventQueue<Report> *queue)
+{
+	std::unique_lock<std::mutex> lock (_mutex);
+	return _listeners.emplace (std::make_tuple (index, sub_id),
+		Listener (std::bind (&EventQueue<Report>::push, queue, std::placeholders::_1), false));
+}
+
+void Dispatcher::unregisterEventQueue (listener_iterator it)
 {
 	std::unique_lock<std::mutex> lock (_mutex);
 	_listeners.erase (it);
@@ -310,3 +321,8 @@ void Dispatcher::processReport (std::vector<uint8_t> &&raw_report)
 	}
 }
 
+Dispatcher::Listener::Listener (const std::function<void (const Report &)> fn, bool only_once):
+	fn (fn),
+	only_once (only_once)
+{
+}

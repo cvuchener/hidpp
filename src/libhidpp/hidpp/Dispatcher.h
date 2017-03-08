@@ -20,6 +20,7 @@
 #define HIDPP_DISPATCHER_H
 
 #include <misc/HIDRaw.h>
+#include <misc/EventQueue.h>
 #include <hidpp/Report.h>
 #include <thread>
 #include <future>
@@ -44,6 +45,7 @@ class Dispatcher
 	{
 		std::function<void (const Report &)> fn;
 		bool only_once;
+		Listener (const std::function<void (const Report &)> fn, bool only_once);
 	};
 	typedef std::multimap<std::tuple<DeviceIndex, uint8_t>, Listener> listener_container;
 public:
@@ -94,28 +96,26 @@ public:
 	 */
 	std::future<Report> sendCommand (Report &&report);
 
+	/**
+	 * Get exactly one notification matching \p index and \p sub_id.
+	 */
+	std::future<Report> getNotification (DeviceIndex index, uint8_t sub_id);
+
 	typedef listener_container::iterator listener_iterator;
 	/**
 	 * Add a listener function for events matching \p index and \p sub_id.
 	 *
 	 * \param index		Event device index
 	 * \param sub_id	Event sub_id (or feature index)
-	 * \param listener	The function that will be called for each
-	 *			matching event. The call is made from the
-	 *			Dispatcher thread.
-	 * \param only_once	If true, the listener is automatically
-	 *			unregistered after the first event.
+	 * \param queue		Queue where events will be pushed.
 	 *
 	 * \returns The listener iterator used for unregistering.
 	 */
-	listener_iterator registerEventListener (DeviceIndex index, uint8_t sub_id, std::function<void (const Report &)> listener, bool only_once = false);
+	listener_iterator registerEventQueue (DeviceIndex index, uint8_t sub_id, EventQueue<Report> *queue);
 	/**
-	 * Unregister the listener given by the iterator.
-	 *
-	 * Do not try to unregister listener with \p only_once set to true.
-	 * There may be a race condition where the listener is already unregistered.
+	 * Unregister the event queue given by the iterator.
 	 */
-	void unregisterEventListener (listener_iterator it);
+	void unregisterEventQueue (listener_iterator it);
 
 private:
 	void run ();

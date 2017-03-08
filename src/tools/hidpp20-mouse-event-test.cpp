@@ -63,8 +63,11 @@ public:
 	}
 };
 
+EventQueue<HIDPP::Report> *queue;
+
 void sigint (int)
 {
+	queue->interrupt ();
 }
 
 int main (int argc, char *argv[])
@@ -92,17 +95,22 @@ int main (int argc, char *argv[])
 	HIDPP::Dispatcher dispatcher (argv[first_arg]);
 	Device dev (&dispatcher, device_index);
 	IMouseButtonSpy imbs (&dev);
-	ButtonListener listener (imbs.getMouseButtonCount ());
 
-	auto it = dispatcher.registerEventListener (device_index, imbs.index (), std::bind (&ButtonListener::handleEvent, &listener, std::placeholders::_1));
-	imbs.startMouseButtonSpy ();
+	queue = new EventQueue<HIDPP::Report>;
 	struct sigaction sa;
 	memset (&sa, 0, sizeof (struct sigaction));
 	sa.sa_handler = sigint;
 	sigaction (SIGINT, &sa, nullptr);
-	pause ();
+
+	ButtonListener listener (imbs.getMouseButtonCount ());
+
+	auto it = dispatcher.registerEventQueue (device_index, imbs.index (), queue);
+	imbs.startMouseButtonSpy ();
+	while (auto report = queue->pop ()) {
+		listener.handleEvent (report.value ());
+	}
 	imbs.stopMouseButtonSpy ();
-	dispatcher.unregisterEventListener (it);
+	dispatcher.unregisterEventQueue (it);
 
 	return EXIT_SUCCESS;
 }

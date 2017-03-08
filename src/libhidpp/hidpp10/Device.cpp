@@ -140,15 +140,10 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 	HIDPP::Report packet (HIDPP::Report::Long, deviceIndex (), sub_id, seq_num);
 	std::copy (param_begin, param_end, packet.parameterBegin ());
 
-	std::promise<HIDPP::Report> promise;
 	std::future<HIDPP::Report> notification;
 
 	if (wait_for_ack) {
-		notification = promise.get_future ();
-		dispatcher ()->registerEventListener (
-			deviceIndex (), SendDataAcknowledgement,
-			[&promise] (const HIDPP::Report &report) { promise.set_value (report); },
-			true);
+		notification = dispatcher ()->getNotification (deviceIndex (), SendDataAcknowledgement);
 	}
 
 	dispatcher ()->sendCommandWithoutResponse (packet);
