@@ -32,6 +32,8 @@ class FeatureInterface
 public:
 	FeatureInterface (Device *dev, uint16_t id, const char *name);
 
+	Device *device () const;
+
 	uint8_t index () const;
 
 	template<typename... Params>

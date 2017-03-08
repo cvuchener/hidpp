@@ -34,6 +34,11 @@ FeatureInterface::FeatureInterface (Device *dev, uint16_t id, const char *name):
 	Log::debug ().printf ("Feature [0x%04hx] %s has index 0x%02hhx\n", id, name, _index);
 }
 
+Device *FeatureInterface::device () const
+{
+	return _dev;
+}
+
 uint8_t FeatureInterface::index () const
 {
 	return _index;

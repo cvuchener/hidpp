@@ -20,6 +20,8 @@
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IMouseButtonSpy.h>
+#include <hidpp20/IOnboardProfiles.h>
+#include <hidpp20/UnsupportedFeature.h>
 #include <cstdio>
 #include <memory>
 
@@ -35,16 +37,39 @@ extern "C" {
 
 using namespace HIDPP20;
 
-class ButtonListener
+class EventListener
 {
+public:
+	virtual const HIDPP20::FeatureInterface *feature () const = 0;
+	virtual void handleEvent (const HIDPP::Report &event) = 0;
+};
+
+class ButtonListener: public EventListener
+{
+	HIDPP20::IMouseButtonSpy _imbs;
+	HIDPP::Dispatcher::listener_iterator _it;
 	unsigned int _button_count;
 	uint16_t _button_state;
 public:
-	ButtonListener (unsigned int button_count):
-		_button_count (button_count),
+	ButtonListener (HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
+		_imbs (dev),
+		_it (dev->dispatcher ()->registerEventQueue (dev->deviceIndex (), _imbs.index (), queue)),
+		_button_count (_imbs.getMouseButtonCount ()),
 		_button_state (0)
 	{
 		printf ("The mouse has %d buttons.\n", _button_count);
+		_imbs.startMouseButtonSpy ();
+	}
+
+	~ButtonListener ()
+	{
+		_imbs.stopMouseButtonSpy ();
+		_imbs.device ()->dispatcher ()->unregisterEventQueue (_it);
+	}
+
+	const HIDPP20::FeatureInterface *feature () const
+	{
+		return &_imbs;
 	}
 
 	void handleEvent (const HIDPP::Report &event)
@@ -58,6 +83,46 @@ public:
 					printf ("Button %d: %s\n", i, (new_state & (1<<i) ? "pressed" : "released"));
 			}
 			_button_state = new_state;
+			break;
+		}
+	}
+};
+
+class ProfileListener: public EventListener
+{
+	HIDPP20::IOnboardProfiles _iop;
+	HIDPP::Dispatcher::listener_iterator _it;
+	HIDPP20::IOnboardProfiles::Mode _old_mode;
+public:
+	ProfileListener (HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
+		_iop (dev),
+		_it (dev->dispatcher ()->registerEventQueue (dev->deviceIndex (), _iop.index (), queue)),
+		_old_mode (_iop.getMode ())
+	{
+		_iop.setMode (IOnboardProfiles::Mode::Onboard);
+	}
+
+	~ProfileListener ()
+	{
+		_iop.setMode (_old_mode);
+		_iop.device ()->dispatcher ()->unregisterEventQueue (_it);
+	}
+
+	const HIDPP20::FeatureInterface *feature () const
+	{
+		return &_iop;
+	}
+
+	void handleEvent (const HIDPP::Report &event)
+	{
+		switch (event.function ()) {
+		case IOnboardProfiles::CurrentProfileChanged:
+			printf ("Current profile changed: %u\n",
+				IOnboardProfiles::currentProfileChanged (event));
+			break;
+		case IOnboardProfiles::CurrentDPIIndexChanged:
+			printf ("Current dpi index changed: %u\n",
+			IOnboardProfiles::currentDPIIndexChanged (event));
 			break;
 		}
 	}
@@ -94,7 +159,6 @@ int main (int argc, char *argv[])
 
 	HIDPP::Dispatcher dispatcher (argv[first_arg]);
 	Device dev (&dispatcher, device_index);
-	IMouseButtonSpy imbs (&dev);
 
 	queue = new EventQueue<HIDPP::Report>;
 	struct sigaction sa;
@@ -102,15 +166,28 @@ int main (int argc, char *argv[])
 	sa.sa_handler = sigint;
 	sigaction (SIGINT, &sa, nullptr);
 
-	ButtonListener listener (imbs.getMouseButtonCount ());
-
-	auto it = dispatcher.registerEventQueue (device_index, imbs.index (), queue);
-	imbs.startMouseButtonSpy ();
-	while (auto report = queue->pop ()) {
-		listener.handleEvent (report.value ());
+	{
+		std::map<uint8_t, std::unique_ptr<EventListener>> listeners;
+		try {
+			auto ptr = std::make_unique<ButtonListener> (&dev, queue);
+			listeners.emplace (ptr->feature ()->index (), std::move (ptr));
+		}
+		catch (HIDPP20::UnsupportedFeature e) {
+			printf ("%s\n", e.what ());
+		}
+		try {
+			auto ptr = std::make_unique<ProfileListener> (&dev, queue);
+			listeners.emplace (ptr->feature ()->index (), std::move (ptr));
+		}
+		catch (HIDPP20::UnsupportedFeature e) {
+			printf ("%s\n", e.what ());
+		}
+		while (auto opt = queue->pop ()) {
+			const auto &report = opt.value ();
+			listeners[report.featureIndex ()]->handleEvent (report);
+		}
 	}
-	imbs.stopMouseButtonSpy ();
-	dispatcher.unregisterEventQueue (it);
+	delete queue;
 
 	return EXIT_SUCCESS;
 }
