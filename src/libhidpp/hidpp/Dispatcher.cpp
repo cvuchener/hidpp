@@ -29,3 +29,12 @@ const char *Dispatcher::TimeoutError::what () const noexcept
 {
 	return "readReport timed out";
 }
+
+Dispatcher::AsyncReport::~AsyncReport ()
+{
+}
+
+Dispatcher::~Dispatcher ()
+{
+}
+

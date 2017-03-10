@@ -45,6 +45,8 @@ public:
 	class AsyncReport
 	{
 	public:
+		virtual ~AsyncReport ();
+
 		/**
 		 * Get the report.
 		 *
@@ -68,6 +70,8 @@ public:
 		 */
 		virtual Report get (int timeout) = 0;
 	};
+
+	virtual ~Dispatcher ();
 
 	virtual uint16_t vendorID () const = 0;
 	virtual uint16_t productID () const = 0;
