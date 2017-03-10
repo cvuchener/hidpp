@@ -149,7 +149,7 @@ int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
 	FD_SET (_pipe[0], &fds);
 	ret = select (std::max (_fd, _pipe[0])+1,
 			&fds, nullptr, nullptr,
-			(timeout > 0 ? &to : nullptr));
+			(timeout < 0 ? nullptr : &to));
 	if (ret == -1)
 		throw std::system_error (errno, std::system_category (), "select");
 	if (FD_ISSET (_fd, &fds)) {

@@ -41,11 +41,11 @@ public:
 
 	/**
 	 * \param[out]	report	HID report
-	 * \param[in]	timeout	Time-out in milliseconds, 0 or negative for no timeout.
+	 * \param[in]	timeout	Time-out in milliseconds, negative for no timeout.
 	 *
 	 * \returns report size or 0 if interrupted or timed out.
 	 */
-	int readReport (std::vector<uint8_t> &report, int timeout = 0);
+	int readReport (std::vector<uint8_t> &report, int timeout = -1);
 
 	/**
 	 * Interrupts the current (or next) readReport call so it returns immediately.
