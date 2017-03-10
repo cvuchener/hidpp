@@ -70,6 +70,17 @@ public:
 	 */
 	std::string name () const;
 
+	/**
+	 * Get the version for the device with the given index.
+	 *
+	 * Some devices fail to answer with a valid error message
+	 * when the device index is not supported. This methods throws
+	 * TimeourError if an answer is not received fast enough.
+	 *
+	 * \return Major and minor version number.
+	 */
+	std::tuple<unsigned int, unsigned int> protocolVersion ();
+
 private:
 	Dispatcher *_dispatcher;
 	DeviceIndex _device_index;

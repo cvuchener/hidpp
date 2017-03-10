@@ -58,7 +58,7 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 	HIDPP::Report request (type, deviceIndex (), feature_index, function, softwareID);
 	std::copy (param_begin, param_end, request.parameterBegin ());
 
-	auto response = dispatcher ()->sendCommand (std::move (request)).get ();
+	auto response = dispatcher ()->sendCommand (std::move (request))->get ();
 
 	Log::debug ().printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
 	return std::vector<uint8_t> (response.parameterBegin (), response.parameterEnd ());

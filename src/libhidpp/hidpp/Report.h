@@ -27,6 +27,8 @@
 namespace HIDPP
 {
 
+bool checkReportDescriptor (const std::basic_string<unsigned char> &report_desc);
+
 /**
  * Contains a HID++ report.
  *

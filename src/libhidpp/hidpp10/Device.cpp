@@ -50,7 +50,7 @@ void Device::accessRegister (uint8_t address,
 		std::copy (params->begin (), params->end (), request.parameterBegin ());
 	}
 
-	auto response = dispatcher ()->sendCommand (std::move (request)).get ();
+	auto response = dispatcher ()->sendCommand (std::move (request))->get ();
 
 	if (response.type () != result_type)
 		throw std::runtime_error ("Invalid result length");
@@ -140,7 +140,7 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 	HIDPP::Report packet (HIDPP::Report::Long, deviceIndex (), sub_id, seq_num);
 	std::copy (param_begin, param_end, packet.parameterBegin ());
 
-	std::future<HIDPP::Report> notification;
+	std::unique_ptr<HIDPP::Dispatcher::AsyncReport> notification;
 
 	if (wait_for_ack) {
 		notification = dispatcher ()->getNotification (deviceIndex (), SendDataAcknowledgement);
@@ -149,7 +149,7 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 	dispatcher ()->sendCommandWithoutResponse (packet);
 
 	if (wait_for_ack) {
-		auto response = notification.get ();
+		auto response = notification->get ();
 		auto response_params = response.parameterBegin ();
 		if (response.address () == 1 && response_params[0] == seq_num) {
 			/* Expected notification */

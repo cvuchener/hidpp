@@ -16,7 +16,7 @@
  *
  */
 
-#include <hidpp/Dispatcher.h>
+#include <hidpp/DispatcherThread.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IMouseButtonSpy.h>
@@ -47,13 +47,15 @@ public:
 class ButtonListener: public EventListener
 {
 	HIDPP20::IMouseButtonSpy _imbs;
-	HIDPP::Dispatcher::listener_iterator _it;
+	HIDPP::DispatcherThread *_dispatcher;
+	HIDPP::DispatcherThread::listener_iterator _it;
 	unsigned int _button_count;
 	uint16_t _button_state;
 public:
-	ButtonListener (HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
+	ButtonListener (HIDPP::DispatcherThread *dispatcher, HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
 		_imbs (dev),
-		_it (dev->dispatcher ()->registerEventQueue (dev->deviceIndex (), _imbs.index (), queue)),
+		_dispatcher (dispatcher),
+		_it (dispatcher->registerEventQueue (dev->deviceIndex (), _imbs.index (), queue)),
 		_button_count (_imbs.getMouseButtonCount ()),
 		_button_state (0)
 	{
@@ -64,7 +66,7 @@ public:
 	~ButtonListener ()
 	{
 		_imbs.stopMouseButtonSpy ();
-		_imbs.device ()->dispatcher ()->unregisterEventQueue (_it);
+		_dispatcher->unregisterEventQueue (_it);
 	}
 
 	const HIDPP20::FeatureInterface *feature () const
@@ -91,12 +93,14 @@ public:
 class ProfileListener: public EventListener
 {
 	HIDPP20::IOnboardProfiles _iop;
-	HIDPP::Dispatcher::listener_iterator _it;
+	HIDPP::DispatcherThread *_dispatcher;
+	HIDPP::DispatcherThread::listener_iterator _it;
 	HIDPP20::IOnboardProfiles::Mode _old_mode;
 public:
-	ProfileListener (HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
+	ProfileListener (HIDPP::DispatcherThread *dispatcher, HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
 		_iop (dev),
-		_it (dev->dispatcher ()->registerEventQueue (dev->deviceIndex (), _iop.index (), queue)),
+		_dispatcher (dispatcher),
+		_it (dispatcher->registerEventQueue (dev->deviceIndex (), _iop.index (), queue)),
 		_old_mode (_iop.getMode ())
 	{
 		_iop.setMode (IOnboardProfiles::Mode::Onboard);
@@ -105,7 +109,7 @@ public:
 	~ProfileListener ()
 	{
 		_iop.setMode (_old_mode);
-		_iop.device ()->dispatcher ()->unregisterEventQueue (_it);
+		_dispatcher->unregisterEventQueue (_it);
 	}
 
 	const HIDPP20::FeatureInterface *feature () const
@@ -157,7 +161,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	HIDPP::Dispatcher dispatcher (argv[first_arg]);
+	HIDPP::DispatcherThread dispatcher (argv[first_arg]);
 	Device dev (&dispatcher, device_index);
 
 	queue = new EventQueue<HIDPP::Report>;
@@ -169,14 +173,14 @@ int main (int argc, char *argv[])
 	{
 		std::map<uint8_t, std::unique_ptr<EventListener>> listeners;
 		try {
-			auto ptr = std::make_unique<ButtonListener> (&dev, queue);
+			auto ptr = std::make_unique<ButtonListener> (&dispatcher, &dev, queue);
 			listeners.emplace (ptr->feature ()->index (), std::move (ptr));
 		}
 		catch (HIDPP20::UnsupportedFeature e) {
 			printf ("%s\n", e.what ());
 		}
 		try {
-			auto ptr = std::make_unique<ProfileListener> (&dev, queue);
+			auto ptr = std::make_unique<ProfileListener> (&dispatcher, &dev, queue);
 			listeners.emplace (ptr->feature ()->index (), std::move (ptr));
 		}
 		catch (HIDPP20::UnsupportedFeature e) {

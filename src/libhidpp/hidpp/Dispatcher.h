@@ -19,35 +19,14 @@
 #ifndef HIDPP_DISPATCHER_H
 #define HIDPP_DISPATCHER_H
 
-#include <misc/HIDRaw.h>
-#include <misc/EventQueue.h>
 #include <hidpp/Report.h>
-#include <thread>
-#include <future>
-#include <list>
-#include <map>
-#include <functional>
-#include <chrono>
+#include <memory>
 
 namespace HIDPP
 {
 
 class Dispatcher
 {
-	struct Command
-	{
-		Report report;
-		std::promise<Report> promised_report;
-	};
-	typedef std::list<Command> command_container;
-	typedef command_container::iterator command_iterator;
-	struct Listener
-	{
-		std::function<void (const Report &)> fn;
-		bool only_once;
-		Listener (const std::function<void (const Report &)> fn, bool only_once);
-	};
-	typedef std::multimap<std::tuple<DeviceIndex, uint8_t>, Listener> listener_container;
 public:
 	/**
 	 * Exception when no HID++ report is found in the report descriptor.
@@ -55,7 +34,6 @@ public:
 	class NoHIDPPReportException: public std::exception
 	{
 	public:
-		NoHIDPPReportException ();
 		virtual const char *what () const noexcept;
 	};
 
@@ -64,69 +42,58 @@ public:
 		virtual const char *what () const noexcept;
 	};
 
-	Dispatcher (const char *path);
-	~Dispatcher ();
+	class AsyncReport
+	{
+	public:
+		/**
+		 * Get the report.
+		 *
+		 * This method blocks until the report is received.
+		 *
+		 * \throws HIDPP10::Error, HIDPP20::Error,
+		 *	std::system_error, std::runtime_error
+		 */
+		virtual Report get () = 0;
 
-	const HIDRaw &hidraw () const;
+		/**
+		 * Get the report with a timeout.
+		 *
+		 * This method blocks until the report is received
+		 * or the timeout expires.
+		 *
+		 * A TimeoutError is thrown is no report is received.
+		 *
+		 * \throws HIDPP10::Error, HIDPP20::Error,
+		 *	std::system_error, std::runtime_error
+		 */
+		virtual Report get (int timeout) = 0;
+	};
 
-	/**
-	 * Get the version for the device with the given index.
-	 *
-	 * Some devices fail to answer with a valid error message
-	 * when the device index is not supported. This methods throws
-	 * TimeourError if an answer is not received fast enough.
-	 *
-	 * \return Major and minor version number.
-	 */
-	std::tuple<unsigned int, unsigned int> getVersion (DeviceIndex index);
+	virtual uint16_t vendorID () const = 0;
+	virtual uint16_t productID () const = 0;
+	virtual std::string name () const = 0;
 
 	/**
 	 * Sends the report without expecting any answer from the device.
 	 */
-	void sendCommandWithoutResponse (const Report &report);
+	virtual void sendCommandWithoutResponse (const Report &report) = 0;
 
 	/**
 	 * Sends the report expecting a matching (device index, sub ID and address)
 	 * answer.
 	 *
-	 * This method returns immediately after sending the report. Receiving the
-	 * answer is done asynchronously.
-	 *
-	 * \returns the future answer report.
+	 * \returns object for retrieving the answer report asynchronously.
 	 */
-	std::future<Report> sendCommand (Report &&report);
+	virtual std::unique_ptr<AsyncReport> sendCommand (Report &&report) = 0;
 
 	/**
 	 * Get exactly one notification matching \p index and \p sub_id.
-	 */
-	std::future<Report> getNotification (DeviceIndex index, uint8_t sub_id);
-
-	typedef listener_container::iterator listener_iterator;
-	/**
-	 * Add a listener function for events matching \p index and \p sub_id.
 	 *
-	 * \param index		Event device index
-	 * \param sub_id	Event sub_id (or feature index)
-	 * \param queue		Queue where events will be pushed.
-	 *
-	 * \returns The listener iterator used for unregistering.
+	 * \return object for retrieving the notification report asynchronously.
 	 */
-	listener_iterator registerEventQueue (DeviceIndex index, uint8_t sub_id, EventQueue<Report> *queue);
-	/**
-	 * Unregister the event queue given by the iterator.
-	 */
-	void unregisterEventQueue (listener_iterator it);
+	virtual std::unique_ptr<AsyncReport> getNotification (DeviceIndex index, uint8_t sub_id) = 0;
 
 private:
-	void run ();
-	void processReport (std::vector<uint8_t> &&raw_report);
-
-	HIDRaw _dev;
-	command_container _commands;
-	listener_container _listeners;
-	std::mutex _mutex;
-	bool _stop;
-	std::thread _thread;
 };
 
 }

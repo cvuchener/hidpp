@@ -7,6 +7,7 @@ set(LIBHIDPP_SOURCES
 	misc/CRC.cpp
 	misc/UsageStrings.cpp
 	hidpp/Dispatcher.cpp
+	hidpp/DispatcherThread.cpp
 	hidpp/Device.cpp
 	hidpp/Report.cpp
 	hidpp/DeviceInfo.cpp

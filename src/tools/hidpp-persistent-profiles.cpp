@@ -24,7 +24,7 @@ extern "C" {
 #include <unistd.h>
 }
 
-#include <hidpp/Dispatcher.h>
+#include <hidpp/DispatcherThread.h>
 #include <hidpp10/Device.h>
 #include <hidpp20/Device.h>
 #include <hidpp10/ProfileDirectoryFormat.h>
@@ -72,7 +72,7 @@ int main (int argc, char *argv[])
 
 	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		dispatcher.reset (new HIDPP::Dispatcher (path));
+		dispatcher = std::make_unique<HIDPP::DispatcherThread> (path);
 	}
 	catch (std::exception &e) {
 		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
@@ -80,7 +80,8 @@ int main (int argc, char *argv[])
 	}
 
 	unsigned int major, minor;
-	std::tie (major, minor) = dispatcher->getVersion (device_index);
+	HIDPP::Device generic_device (dispatcher.get (), device_index);
+	std::tie (major, minor) = generic_device.protocolVersion () ;
 
 	std::unique_ptr<HIDPP::Device> device;
 	std::unique_ptr<HIDPP::AbstractProfileDirectoryFormat> profdir_format;
@@ -93,7 +94,7 @@ int main (int argc, char *argv[])
 	 * HID++ 1.0
 	 */
 	if (major == 1 && minor == 0) {
-		auto dev = new HIDPP10::Device (dispatcher.get (), device_index);
+		auto dev = new HIDPP10::Device (std::move (generic_device));
 		device.reset (dev);
 		profdir_format = HIDPP10::getProfileDirectoryFormat (dev);
 		profile_format = HIDPP10::getProfileFormat (dev);
@@ -105,7 +106,7 @@ int main (int argc, char *argv[])
 	 * HID++ 2.0 and later
 	 */
 	else if (major >= 2) {
-		auto dev = new HIDPP20::Device (dispatcher.get (), device_index);
+		auto dev = new HIDPP20::Device (std::move (generic_device));
 		device.reset (dev);
 		profdir_format = HIDPP20::getProfileDirectoryFormat (dev);
 		profile_format = HIDPP20::getProfileFormat (dev);

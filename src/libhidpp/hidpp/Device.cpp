@@ -21,6 +21,8 @@
 #include <hidpp/Dispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/IReceiver.h>
+#include <hidpp10/Error.h>
+#include <hidpp20/IRoot.h>
 #include <misc/Log.h>
 
 #include <algorithm>
@@ -41,9 +43,8 @@ Device::Device (Dispatcher *dispatcher, DeviceIndex device_index):
 		_name = ireceiver.getDeviceName (device_index - 1);
 	}
 	else {
-		auto &hidraw = _dispatcher->hidraw ();
-		_product_id = hidraw.productID ();
-		_name = hidraw.name ();
+		_product_id = _dispatcher->productID ();
+		_name = _dispatcher->name ();
 	}
 }
 
@@ -65,4 +66,22 @@ uint16_t Device::productID () const
 std::string Device::name () const
 {
 	return _name;
+}
+
+std::tuple<unsigned int, unsigned int> Device::protocolVersion ()
+{
+	static constexpr unsigned int software_id = 1;
+	Report request (Report::Short, _device_index, HIDPP20::IRoot::index, HIDPP20::IRoot::Ping, software_id);
+	auto response = _dispatcher->sendCommand (std::move (request));
+	try {
+		auto report = response->get (500);
+		auto params = report.parameterBegin ();
+		return std::make_tuple (params[0], params[1]);
+	}
+	catch (HIDPP10::Error e) {
+		if (e.errorCode () == HIDPP10::Error::InvalidSubID) // Expected error from a HID++ 1.0 device
+			return std::make_tuple (1, 0);
+		else
+			throw e;
+	}
 }

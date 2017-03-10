@@ -16,7 +16,7 @@
  *
  */
 
-#include <hidpp/Dispatcher.h>
+#include <hidpp/DispatcherThread.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <cstdio>
@@ -74,7 +74,7 @@ int main (int argc, char *argv[])
 
 	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		dispatcher.reset (new HIDPP::Dispatcher (path));
+		dispatcher = std::make_unique<HIDPP::DispatcherThread> (path);
 	}
 	catch (std::exception &e) {
 		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
