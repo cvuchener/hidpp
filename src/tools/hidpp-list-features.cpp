@@ -19,7 +19,7 @@
 #include <cstdio>
 #include <map>
 
-#include <hidpp/DispatcherThread.h>
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/Error.h>
@@ -176,7 +176,7 @@ int main (int argc, char *argv[])
 
 	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		dispatcher = std::make_unique<HIDPP::DispatcherThread> (path);
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (path);
 	}
 	catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
 		printf ("%s is not a HID++ device\n", path);

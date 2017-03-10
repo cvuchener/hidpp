@@ -24,7 +24,7 @@ extern "C" {
 }
 
 #include <misc/Log.h>
-#include <hidpp/DispatcherThread.h>
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Error.h>
 #include <hidpp20/Error.h>
@@ -77,7 +77,7 @@ int main (int argc, char *argv[])
 		struct udev_device *device = udev_device_new_from_syspath (ctx, udev_list_entry_get_name (current));
 		const char *hidraw_node = udev_device_get_devnode (device);
 		try {
-			HIDPP::DispatcherThread dispatcher (hidraw_node);
+			HIDPP::SimpleDispatcher dispatcher (hidraw_node);
 			bool has_receiver_index = false;
 			for (HIDPP::DeviceIndex index: {
 					HIDPP::DefaultDevice,

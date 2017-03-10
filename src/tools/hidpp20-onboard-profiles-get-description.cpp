@@ -19,7 +19,7 @@
 #include <cstdio>
 #include <memory>
 
-#include <hidpp/DispatcherThread.h>
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IOnboardProfiles.h>
@@ -53,7 +53,7 @@ int main (int argc, char *argv[])
 
 	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		dispatcher = std::make_unique<HIDPP::DispatcherThread> (argv[first_arg]);
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (argv[first_arg]);
 	}
 	catch (std::exception &e) {
 		fprintf (stderr, "Failed to open device: %s.\n", e.what ());

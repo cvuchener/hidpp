@@ -23,7 +23,7 @@ extern "C" {
 #include <unistd.h>
 }
 
-#include <hidpp/DispatcherThread.h>
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/IMemory.h>
 
@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
 
 	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		dispatcher = std::make_unique<HIDPP::DispatcherThread> (path);
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (path);
 	}
 	catch (std::exception &e) {
 		fprintf (stderr, "Failed to open device: %s.\n", e.what ());

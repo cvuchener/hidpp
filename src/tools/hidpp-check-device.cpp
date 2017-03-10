@@ -18,7 +18,7 @@
 
 #include <cstdio>
 
-#include <hidpp/DispatcherThread.h>
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp/Device.h>
 #include <hidpp10/Error.h>
 #include <misc/Log.h>
@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
 
 	try {
 		unsigned int major, minor;
-		HIDPP::DispatcherThread dispatcher (path);
+		HIDPP::SimpleDispatcher dispatcher (path);
 		HIDPP::Device dev (&dispatcher, device_index);
 		std::tie (major, minor) = dev.protocolVersion ();
 		printf ("%d.%d\n", major, minor);
