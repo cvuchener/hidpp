@@ -16,6 +16,7 @@
  *
  */
 
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp/DispatcherThread.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
@@ -37,25 +38,21 @@ extern "C" {
 
 using namespace HIDPP20;
 
-class EventListener
+class EventHandler
 {
 public:
 	virtual const HIDPP20::FeatureInterface *feature () const = 0;
 	virtual void handleEvent (const HIDPP::Report &event) = 0;
 };
 
-class ButtonListener: public EventListener
+class ButtonHandler: public EventHandler
 {
 	HIDPP20::IMouseButtonSpy _imbs;
-	HIDPP::DispatcherThread *_dispatcher;
-	HIDPP::DispatcherThread::listener_iterator _it;
 	unsigned int _button_count;
 	uint16_t _button_state;
 public:
-	ButtonListener (HIDPP::DispatcherThread *dispatcher, HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
+	ButtonHandler (HIDPP20::Device *dev):
 		_imbs (dev),
-		_dispatcher (dispatcher),
-		_it (dispatcher->registerEventQueue (dev->deviceIndex (), _imbs.index (), queue)),
 		_button_count (_imbs.getMouseButtonCount ()),
 		_button_state (0)
 	{
@@ -63,10 +60,9 @@ public:
 		_imbs.startMouseButtonSpy ();
 	}
 
-	~ButtonListener ()
+	~ButtonHandler ()
 	{
 		_imbs.stopMouseButtonSpy ();
-		_dispatcher->unregisterEventQueue (_it);
 	}
 
 	const HIDPP20::FeatureInterface *feature () const
@@ -90,26 +86,21 @@ public:
 	}
 };
 
-class ProfileListener: public EventListener
+class ProfileHandler: public EventHandler
 {
 	HIDPP20::IOnboardProfiles _iop;
-	HIDPP::DispatcherThread *_dispatcher;
-	HIDPP::DispatcherThread::listener_iterator _it;
 	HIDPP20::IOnboardProfiles::Mode _old_mode;
 public:
-	ProfileListener (HIDPP::DispatcherThread *dispatcher, HIDPP20::Device *dev, EventQueue<HIDPP::Report> *queue):
+	ProfileHandler (HIDPP20::Device *dev):
 		_iop (dev),
-		_dispatcher (dispatcher),
-		_it (dispatcher->registerEventQueue (dev->deviceIndex (), _iop.index (), queue)),
 		_old_mode (_iop.getMode ())
 	{
 		_iop.setMode (IOnboardProfiles::Mode::Onboard);
 	}
 
-	~ProfileListener ()
+	~ProfileHandler ()
 	{
 		_iop.setMode (_old_mode);
-		_dispatcher->unregisterEventQueue (_it);
 	}
 
 	const HIDPP20::FeatureInterface *feature () const
@@ -132,19 +123,120 @@ public:
 	}
 };
 
-EventQueue<HIDPP::Report> *queue;
+class EventListener
+{
+public:
+	virtual ~EventListener () { }
+	virtual void addEventHandler (std::unique_ptr<EventHandler> &&handler) = 0;
+	virtual void removeEventHandlers () = 0;
+	virtual void start () = 0;
+	virtual void stop () = 0;
+};
+
+class ThreadListener: public EventListener
+{
+	HIDPP::DispatcherThread *dispatcher;
+	HIDPP::DeviceIndex index;
+	EventQueue<HIDPP::Report> queue;
+	std::map<uint8_t, std::unique_ptr<EventHandler>> handlers;
+	std::map<uint8_t, HIDPP::DispatcherThread::listener_iterator> iterators;
+public:
+	ThreadListener (HIDPP::DispatcherThread *dispatcher, HIDPP::DeviceIndex index):
+		dispatcher (dispatcher),
+		index (index)
+	{
+	}
+
+	virtual void addEventHandler (std::unique_ptr<EventHandler> &&handler)
+	{
+		uint8_t feature = handler->feature ()->index ();
+		handlers.emplace (feature, std::move (handler)).first;
+		iterators.emplace (feature, dispatcher->registerEventQueue (index, feature, &queue));
+	}
+
+	virtual void removeEventHandlers ()
+	{
+		for (const auto &p: iterators)
+			dispatcher->unregisterEventQueue (p.second);
+		handlers.clear ();
+		iterators.clear ();
+	}
+
+	virtual void start ()
+	{
+		while (auto opt = queue.pop ()) {
+			const auto &report = opt.value ();
+			handlers[report.featureIndex ()]->handleEvent (report);
+		}
+	}
+
+	virtual void stop ()
+	{
+		queue.interrupt ();
+	}
+};
+
+class SimpleListener: public EventListener
+{
+	HIDPP::SimpleDispatcher *dispatcher;
+	HIDPP::DeviceIndex index;
+	std::map<uint8_t, std::unique_ptr<EventHandler>> handlers;
+	std::map<uint8_t, HIDPP::SimpleDispatcher::listener_iterator> iterators;
+public:
+	SimpleListener (HIDPP::SimpleDispatcher *dispatcher, HIDPP::DeviceIndex index):
+		dispatcher (dispatcher),
+		index (index)
+	{
+	}
+
+	virtual void addEventHandler (std::unique_ptr<EventHandler> &&handler)
+	{
+		uint8_t feature = handler->feature ()->index ();
+		auto it = handlers.emplace (feature, std::move (handler)).first;
+		iterators.emplace (feature, dispatcher->registerEventHandler (index, feature,
+			std::bind (&EventHandler::handleEvent, it->second.get (), std::placeholders::_1)));
+	}
+
+	virtual void removeEventHandlers ()
+	{
+		for (const auto &p: iterators)
+			dispatcher->unregisterEventHandler (p.second);
+		handlers.clear ();
+		iterators.clear ();
+	}
+
+	virtual void start ()
+	{
+		dispatcher->listen ();
+	}
+
+	virtual void stop ()
+	{
+		dispatcher->stop ();
+	}
+};
+
+EventListener *listener;
 
 void sigint (int)
 {
-	queue->interrupt ();
+	listener->stop ();
 }
 
 int main (int argc, char *argv[])
 {
 	static const char *args = "/dev/hidrawX";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
+	bool thread = false;
 
 	std::vector<Option> options = {
+		Option ('t', "thread",
+			Option::NoArgument, "",
+			"Use threaded dispatcher",
+			[&thread] (const char *optarg) {
+				thread = true;
+				return true;
+			}),
 		DeviceIndexOption (device_index),
 		VerboseOption (),
 	};
@@ -161,37 +253,49 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	HIDPP::DispatcherThread dispatcher (argv[first_arg]);
-	Device dev (&dispatcher, device_index);
-
-	queue = new EventQueue<HIDPP::Report>;
-	struct sigaction sa;
-	memset (&sa, 0, sizeof (struct sigaction));
-	sa.sa_handler = sigint;
-	sigaction (SIGINT, &sa, nullptr);
-
-	{
-		std::map<uint8_t, std::unique_ptr<EventListener>> listeners;
-		try {
-			auto ptr = std::make_unique<ButtonListener> (&dispatcher, &dev, queue);
-			listeners.emplace (ptr->feature ()->index (), std::move (ptr));
+	const char *path = argv[first_arg];
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
+	std::unique_ptr<HIDPP20::Device> dev;
+	try {
+		if (thread) {
+			HIDPP::DispatcherThread *d = new HIDPP::DispatcherThread (path);
+			dev = std::make_unique<HIDPP20::Device> (d, device_index);
+			listener = new ThreadListener (d, device_index);
+			dispatcher.reset (d);
 		}
-		catch (HIDPP20::UnsupportedFeature e) {
-			printf ("%s\n", e.what ());
-		}
-		try {
-			auto ptr = std::make_unique<ProfileListener> (&dispatcher, &dev, queue);
-			listeners.emplace (ptr->feature ()->index (), std::move (ptr));
-		}
-		catch (HIDPP20::UnsupportedFeature e) {
-			printf ("%s\n", e.what ());
-		}
-		while (auto opt = queue->pop ()) {
-			const auto &report = opt.value ();
-			listeners[report.featureIndex ()]->handleEvent (report);
+		else {
+			HIDPP::SimpleDispatcher *d = new HIDPP::SimpleDispatcher (path);
+			dev = std::make_unique<HIDPP20::Device> (d, device_index);
+			listener = new SimpleListener (d, device_index);
+			dispatcher.reset (d);
 		}
 	}
-	delete queue;
+	catch (std::exception &e) {
+		fprintf (stderr, "Initialization failed: %s\n", e.what ());
+		delete listener;
+		return EXIT_FAILURE;
+	}
+
+	struct sigaction sa, oldsa;
+	memset (&sa, 0, sizeof (struct sigaction));
+	sa.sa_handler = sigint;
+	sigaction (SIGINT, &sa, &oldsa);
+
+	try {
+		listener->addEventHandler (std::make_unique<ButtonHandler> (dev.get ()));
+	}
+	catch (HIDPP20::UnsupportedFeature e) {
+		printf ("%s\n", e.what ());
+	}
+	try {
+		listener->addEventHandler (std::make_unique<ProfileHandler> (dev.get ()));
+	}
+	catch (HIDPP20::UnsupportedFeature e) {
+		printf ("%s\n", e.what ());
+	}
+	listener->start();
+	sigaction (SIGINT, &oldsa, nullptr);
+	delete listener;
 
 	return EXIT_SUCCESS;
 }
