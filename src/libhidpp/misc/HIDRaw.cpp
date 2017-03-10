@@ -144,12 +144,14 @@ int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
 	int ret;
 	timeval to = { timeout/1000, (timeout%1000) * 1000 };
 	fd_set fds;
-	FD_ZERO (&fds);
-	FD_SET (_fd, &fds);
-	FD_SET (_pipe[0], &fds);
-	ret = select (std::max (_fd, _pipe[0])+1,
-			&fds, nullptr, nullptr,
-			(timeout < 0 ? nullptr : &to));
+	do {
+		FD_ZERO (&fds);
+		FD_SET (_fd, &fds);
+		FD_SET (_pipe[0], &fds);
+		ret = select (std::max (_fd, _pipe[0])+1,
+				&fds, nullptr, nullptr,
+				(timeout < 0 ? nullptr : &to));
+	} while (ret == -1 && errno == EINTR);
 	if (ret == -1)
 		throw std::system_error (errno, std::system_category (), "select");
 	if (FD_ISSET (_fd, &fds)) {
