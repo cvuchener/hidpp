@@ -102,7 +102,7 @@ int main (int argc, char *argv[])
 							dev.name ().c_str (),
 							dispatcher.hidraw ().vendorID (), dev.productID (),
 							major, minor);
-					if (index == HIDPP::DefaultDevice)
+					if (index == HIDPP::DefaultDevice && dev.protocolVersion () == std::make_tuple (1, 0))
 						has_receiver_index = true;
 				}
 				catch (HIDPP10::Error e) {
