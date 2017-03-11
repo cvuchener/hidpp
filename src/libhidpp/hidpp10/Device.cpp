@@ -30,13 +30,17 @@ using namespace HIDPP10;
 Device::Device (HIDPP::Dispatcher *dispatcher, HIDPP::DeviceIndex device_index):
 	HIDPP::Device (dispatcher, device_index)
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (version != std::make_tuple (1, 0))
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 Device::Device (HIDPP::Device &&device):
 	HIDPP::Device (std::move (device))
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (version != std::make_tuple (1, 0))
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 template<uint8_t sub_id, HIDPP::Report::Type request_type, HIDPP::Report::Type result_type>

@@ -21,6 +21,7 @@
 
 #include <hidpp/defs.h>
 #include <hidpp/Report.h>
+#include <tuple>
 
 namespace HIDPP
 {
@@ -35,6 +36,15 @@ class Dispatcher;
 class Device
 {
 public:
+	class InvalidProtocolVersion: public std::exception
+	{
+	public:
+		InvalidProtocolVersion (const std::tuple<unsigned int, unsigned int> &version);
+		const char *what () const noexcept;
+
+	private:
+		std::string _msg;
+	};
 
 	/**
 	 * HID++ device constructor.
@@ -42,8 +52,10 @@ public:
 	 * For receivers and wireless devices, multiple devices use the same hidraw
 	 * node, \p device_index is needed to select a particular device.
 	 *
-	 * \throws HIDPP10::Error Only for wireless devices, if there is an error
-	 *                        while reading device information.
+	 * The constructor ask the receiver for information for wireless devices and
+	 * check the protocol version. If something goes wrong it may throw HID++ errors
+	 * (HIDPP10::Error or HIDPP20::Error) or other exception (e.g. std::system_error
+	 * for errors with the HID node).
 	 */
 	Device (Dispatcher *dispatcher, DeviceIndex device_index = DefaultDevice);
 
@@ -86,6 +98,7 @@ private:
 	DeviceIndex _device_index;
 	uint16_t _product_id;
 	std::string _name;
+	std::tuple<unsigned int, unsigned int> _version;
 };
 
 }

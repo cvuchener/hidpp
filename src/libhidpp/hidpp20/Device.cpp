@@ -28,13 +28,17 @@ unsigned int Device::softwareID = 1;
 Device::Device (HIDPP::Dispatcher *dispatcher, HIDPP::DeviceIndex device_index):
 	HIDPP::Device (dispatcher, device_index)
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (std::get<0> (version) < 2)
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 Device::Device (HIDPP::Device &&device):
 	HIDPP::Device (std::move (device))
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (std::get<0> (version) < 2)
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
