@@ -53,19 +53,21 @@ int main (int argc, char *argv[])
 	try {
 		unsigned int major, minor;
 		HIDPP::SimpleDispatcher dispatcher (path);
-		HIDPP::Device dev (&dispatcher, device_index);
-		std::tie (major, minor) = dev.protocolVersion ();
-		printf ("%d.%d\n", major, minor);
-		Log::info ().printf ("Device is %s (%04hx:%04hx)\n",
-				     dev.name ().c_str (),
-				     dispatcher.hidraw ().vendorID (), dev.productID ());
+		try {
+			HIDPP::Device dev (&dispatcher, device_index);
+			std::tie (major, minor) = dev.protocolVersion ();
+			printf ("%d.%d\n", major, minor);
+			Log::info ().printf ("Device is %s (%04hx:%04hx)\n",
+					     dev.name ().c_str (),
+					     dispatcher.hidraw ().vendorID (), dev.productID ());
+		}
+		catch (std::exception &e) {
+			fprintf (stderr, "Error accessing device: %s\n", e.what ());
+			return EXIT_FAILURE;
+		}
 	}
 	catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
 		Log::info () << "Device is not a HID++ device" << std::endl;
-		return EXIT_FAILURE;
-	}
-	catch (HIDPP10::Error e) {
-		fprintf (stderr, "Error while retrieving informations from receiver: %s\n", e.what ());
 		return EXIT_FAILURE;
 	}
 	catch (std::system_error e) {
