@@ -42,7 +42,7 @@ bool IAdjustableDPI::getSensorDPIList (unsigned int index,
 	params[0] = index;
 	results = call (GetSensorDPIList, params);
 	dpi_list.clear ();
-	bool has_dpi_step;
+	bool has_dpi_step = false;
 	uint16_t value;
 	auto current = results.begin () + 1;
 	while ((value = readBE<uint16_t> (current)) != 0) {
