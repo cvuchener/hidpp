@@ -112,8 +112,10 @@ int main (int argc, char *argv[])
 					}
 				}
 				catch (HIDPP20::Error e) {
-					Log::error ().printf ("Error while querying %s device %d: %s\n",
-						     hidraw_node, index, e.what ());
+					if (e.errorCode () != HIDPP20::Error::UnknownDevice) {
+						Log::error ().printf ("Error while querying %s device %d: %s\n",
+								      hidraw_node, index, e.what ());
+					}
 				}
 				catch (HIDPP::Dispatcher::TimeoutError e) {
 					Log::warning ().printf ("Device %s (index %d) timed out\n",

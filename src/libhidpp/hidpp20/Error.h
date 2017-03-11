@@ -40,6 +40,7 @@ public:
 		InvalidFunctionID = 7,
 		Busy = 8,
 		Unsupported = 9,
+		UnknownDevice = 10,
 	};
 
 	Error (uint8_t error_code);

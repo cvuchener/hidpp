@@ -50,12 +50,22 @@ Device::Device (Dispatcher *dispatcher, DeviceIndex device_index):
 		// Ask receiver for device info when wireless
 		HIDPP10::Device ur (_dispatcher, DefaultDevice);
 		HIDPP10::IReceiver ireceiver (&ur);
-		ireceiver.getDeviceInformation (device_index - 1,
-						nullptr,
-						nullptr,
-						&_product_id,
-						nullptr);
-		_name = ireceiver.getDeviceName (device_index - 1);
+		try {
+			ireceiver.getDeviceInformation (device_index - 1,
+							nullptr,
+							nullptr,
+							&_product_id,
+							nullptr);
+			_name = ireceiver.getDeviceName (device_index - 1);
+		}
+		catch (HIDPP10::Error e) {
+			if (e.errorCode () == HIDPP10::Error::InvalidValue) {
+				// the invalid value is the device index
+				throw HIDPP10::Error (HIDPP10::Error::UnknownDevice);
+			}
+			Log::error () << "Error while asking receiver for infos: " << e.what () << std::endl;
+			throw;
+		}
 	}
 	else {
 		// Use HID info for corded devices

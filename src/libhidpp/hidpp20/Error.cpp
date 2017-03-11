@@ -48,6 +48,8 @@ const char *Error::what () const noexcept
 		return "Busy";
 	case Unsupported:
 		return "Unsupported";
+	case UnknownDevice:
+		return "Unknown device";
 	default:
 		return "Unknown error code";
 	}
