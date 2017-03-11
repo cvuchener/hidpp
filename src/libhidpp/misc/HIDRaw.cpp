@@ -44,10 +44,11 @@ HIDRaw::HIDRaw (const std::string &path)
 	_product_id = di.product;
 
 	char string[256];
-	if (-1 == ::ioctl (_fd, HIDIOCGRAWNAME(sizeof(string)), string)) {
+	int ret;
+	if (-1 == (ret = ::ioctl (_fd, HIDIOCGRAWNAME(sizeof(string)), string))) {
 		throw std::system_error (errno, std::system_category (), "HIDIOCGRAWNAME");
 	}
-	_name = string;
+	_name.assign (string, ret);
 
 	struct hidraw_report_descriptor rdesc;
 	if (-1 == ::ioctl (_fd, HIDIOCGRDESCSIZE, &rdesc.size)) {
