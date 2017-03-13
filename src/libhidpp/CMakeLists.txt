@@ -49,6 +49,7 @@ set(LIBHIDPP_SOURCES
 	hidpp20/IAdjustableDPI.cpp
 	hidpp20/IReprogControlsV4.cpp
 	hidpp20/IMouseButtonSpy.cpp
+	hidpp20/ITouchpadRawXY.cpp
 	hidpp20/ProfileDirectoryFormat.cpp
 	hidpp20/ProfileFormat.cpp
 	hidpp20/MemoryMapping.cpp
