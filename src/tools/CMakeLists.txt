@@ -14,16 +14,21 @@ add_executable(hidpp-check-device
 target_link_libraries(hidpp-check-device hidpp ${CMAKE_THREAD_LIBS_INIT})
 
 if(LIBUDEV_FOUND)
-	add_executable(hidpp-list-devices
-		hidpp-list-devices.cpp
-		$<TARGET_OBJECTS:common>)
-	target_include_directories(hidpp-list-devices
-		PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
-	target_link_libraries(hidpp-list-devices
-		hidpp
-		${LIBUDEV_LIBRARIES}
-		${CMAKE_THREAD_LIBS_INIT}
+	foreach(TOOL_NAME
+		hidpp-list-devices
+		hidpp20-raw-touchpad-driver
 	)
+		add_executable(${TOOL_NAME}
+			${TOOL_NAME}.cpp
+			$<TARGET_OBJECTS:common>)
+		target_include_directories(${TOOL_NAME}
+			PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
+		target_link_libraries(${TOOL_NAME}
+			hidpp
+			${LIBUDEV_LIBRARIES}
+			${CMAKE_THREAD_LIBS_INIT}
+		)
+	endforeach()
 else()
 	message("hidpp-list-devices require libudev.")
 endif()
