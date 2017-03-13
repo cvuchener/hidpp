@@ -62,7 +62,7 @@ public:
 
 DispatcherThread::DispatcherThread (const char *path):
 	_dev (path),
-	_stop (false)
+	_running (true)
 {
 	const HIDRaw::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
 	if (!checkReportDescriptor (rdesc))
@@ -72,7 +72,7 @@ DispatcherThread::DispatcherThread (const char *path):
 
 DispatcherThread::~DispatcherThread ()
 {
-	_stop = true;
+	_running = false;
 	_dev.interruptRead ();
 	_thread.join ();
 }
@@ -105,6 +105,8 @@ void DispatcherThread::sendCommandWithoutResponse (const Report &report)
 std::unique_ptr<Dispatcher::AsyncReport> DispatcherThread::sendCommand (Report &&report)
 {
 	std::unique_lock<std::mutex> lock (_mutex);
+	if (!_running)
+		throw _exception;
 	_dev.writeReport (report.rawReport ());
 	auto it = _commands.insert (_commands.end (), Command { std::move (report) });
 	return std::make_unique<CommandResponse> (this, it->promised_report.get_future (), it);
@@ -113,10 +115,14 @@ std::unique_ptr<Dispatcher::AsyncReport> DispatcherThread::sendCommand (Report &
 std::unique_ptr<Dispatcher::AsyncReport> DispatcherThread::getNotification (DeviceIndex index, uint8_t sub_id)
 {
 	std::unique_lock<std::mutex> lock (_mutex);
+	if (!_running)
+		throw _exception;
 	auto promise = std::make_shared<std::promise<Report>> ();
 	std::future<Report> future = promise->get_future ();
 	auto it = _listeners.emplace (std::make_tuple (index, sub_id),
-		Listener ([promise] (const Report &report) { promise->set_value (report); }, true));
+		Listener ([promise] (const Report &report) { promise->set_value (report); },
+			  [promise] (std::exception_ptr e) { promise->set_exception (e); },
+			  true));
 	return std::make_unique<Notification> (this, std::move (future), it);
 }
 
@@ -124,7 +130,9 @@ DispatcherThread::listener_iterator DispatcherThread::registerEventQueue (Device
 {
 	std::unique_lock<std::mutex> lock (_mutex);
 	return _listeners.emplace (std::make_tuple (index, sub_id),
-		Listener (std::bind (&EventQueue<Report>::push, queue, std::placeholders::_1), false));
+		Listener (std::bind (&EventQueue<Report>::push, queue, std::placeholders::_1),
+			  [queue] (std::exception_ptr) { queue->interrupt (); },
+			  false));
 }
 
 void DispatcherThread::unregisterEventQueue (listener_iterator it)
@@ -133,9 +141,14 @@ void DispatcherThread::unregisterEventQueue (listener_iterator it)
 	_listeners.erase (it);
 }
 
+bool DispatcherThread::running () const
+{
+	return _running;
+}
+
 void DispatcherThread::run ()
 {
-	while (!_stop) {
+	while (_running) {
 		try {
 			std::vector<uint8_t> raw_report (Report::MaxDataLength+1);
 			if (0 != _dev.readReport (raw_report))
@@ -148,21 +161,26 @@ void DispatcherThread::run ()
 			Log::error () << "Ignored report with invalid length" << std::endl;
 		}
 		catch (std::exception &e) {
-			std::unique_lock<std::mutex> lock (_mutex);
 			Log::error () << "Failed to read HID report: " << e.what () << std::endl;
-			for (auto &cmd: _commands) {
-				cmd.promised_report.set_exception (std::current_exception ());
-			}
-			return;
+			_exception = std::current_exception ();
+			goto stop;
 		}
 	}
-
+	_exception = std::make_exception_ptr (NotRunning ());
+stop:
+	_running = false;
 	{
 		std::unique_lock<std::mutex> lock (_mutex);
 		if (!_commands.empty ()) {
-			Log::warning () << "Unfinished commands while terminating dispatcher." << std::endl;
+			Log::warning () << "Unfinished commands while stopping dispatcher thread." << std::endl;
 			for (auto &cmd: _commands) {
-				cmd.promised_report.set_exception (std::make_exception_ptr (std::runtime_error ("Dispatcher terminated")));
+				cmd.promised_report.set_exception (_exception);
+			}
+		}
+		if (!_listeners.empty ()) {
+			Log::warning () << "Registered listeners while stopping dispatcher thread." << std::endl;
+			for (const auto &l: _listeners) {
+				l.second.except (_exception);
 			}
 		}
 	}
@@ -240,8 +258,14 @@ void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 	}
 }
 
-DispatcherThread::Listener::Listener (const std::function<void (const Report &)> fn, bool only_once):
+DispatcherThread::Listener::Listener (const std::function<void (const Report &)> &fn, const std::function<void (std::exception_ptr)> &except, bool only_once):
 	fn (fn),
+	except (except),
 	only_once (only_once)
 {
+}
+
+const char *DispatcherThread::NotRunning::what () const noexcept
+{
+	return "Dispatcher thread is not running";
 }

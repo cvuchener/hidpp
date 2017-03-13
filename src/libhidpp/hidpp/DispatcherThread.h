@@ -44,12 +44,21 @@ class DispatcherThread: public Dispatcher
 	struct Listener
 	{
 		std::function<void (const Report &)> fn;
+		std::function<void (std::exception_ptr)> except;
 		bool only_once;
-		Listener (const std::function<void (const Report &)> fn, bool only_once);
+		Listener (const std::function<void (const Report &)> &fn,
+			  const std::function<void (std::exception_ptr)> &except,
+			  bool only_once);
 	};
 	typedef std::multimap<std::tuple<DeviceIndex, uint8_t>, Listener> listener_container;
 
 public:
+	class NotRunning: public std::exception
+	{
+	public:
+		const char *what () const noexcept;
+	};
+
 	DispatcherThread (const char *path);
 	~DispatcherThread ();
 
@@ -66,6 +75,9 @@ public:
 	/**
 	 * Add a listener function for events matching \p index and \p sub_id.
 	 *
+	 * The queue is interrupted is the thread is stopped while
+	 * it is still registered.
+	 *
 	 * \param index		Event device index
 	 * \param sub_id	Event sub_id (or feature index)
 	 * \param queue		Queue where events will be pushed.
@@ -78,6 +90,8 @@ public:
 	 */
 	void unregisterEventQueue (listener_iterator it);
 
+	bool running () const;
+
 private:
 	void run ();
 	void processReport (std::vector<uint8_t> &&raw_report);
@@ -86,8 +100,9 @@ private:
 	command_container _commands;
 	listener_container _listeners;
 	std::mutex _mutex;
-	bool _stop;
 	std::thread _thread;
+	bool _running;
+	std::exception_ptr _exception;
 
 	template<typename Container, Container DispatcherThread::*container>
 	class AsyncReport;

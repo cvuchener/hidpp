@@ -294,6 +294,7 @@ int main (int argc, char *argv[])
 		printf ("%s\n", e.what ());
 	}
 	listener->start();
+	listener->removeEventHandlers ();
 	sigaction (SIGINT, &oldsa, nullptr);
 	delete listener;
 
