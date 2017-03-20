@@ -27,6 +27,8 @@
 namespace HIDPP
 {
 
+bool checkReportDescriptor (const std::basic_string<unsigned char> &report_desc);
+
 /**
  * Contains a HID++ report.
  *
@@ -90,7 +92,7 @@ public:
 	static constexpr std::size_t MaxDataLength = 19;
 
 	/**
-	 * Raw data constructor
+	 * Build the report by copying the raw data.
 	 *
 	 * \param report_id	Report ID
 	 * \param data		Raw report data
@@ -100,6 +102,16 @@ public:
 	 * \throws InvalidReportLength
 	 */
 	Report (uint8_t report_id, const uint8_t *data, std::size_t length);
+
+	/**
+	 * Build the report by moving the raw data.
+	 *
+	 * \param data	Report data including the report ID in its first byte.
+	 *
+	 * \throws InvalidReportID
+	 * \throws InvalidReportLength
+	 */
+	Report (std::vector<uint8_t> &&data);
 
 	/**
 	 * Access report type.

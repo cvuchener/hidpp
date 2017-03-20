@@ -16,9 +16,11 @@
  *
  */
 
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <cstdio>
+#include <memory>
 
 #include "common/common.h"
 #include "common/Option.h"
@@ -70,8 +72,16 @@ int main (int argc, char *argv[])
 		params.push_back (static_cast<uint8_t> (value));
 	}
 
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		HIDPP20::Device dev (path, device_index);
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (path);
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+	HIDPP20::Device dev (dispatcher.get (), device_index);
+	try {
 		results = dev.callFunction (static_cast<uint8_t> (feature_index),
 					    static_cast<unsigned int> (function),
 					    params);

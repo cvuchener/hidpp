@@ -16,25 +16,29 @@
  *
  */
 
-#include <hidpp20/Device.h>
-#include <hidpp20/Error.h>
-#include <hidpp10/Error.h>
+#include "Device.h"
+
+#include <hidpp/Dispatcher.h>
 #include <misc/Log.h>
 
 using namespace HIDPP20;
 
 unsigned int Device::softwareID = 1;
 
-Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
-	HIDPP::Device (path, device_index)
+Device::Device (HIDPP::Dispatcher *dispatcher, HIDPP::DeviceIndex device_index):
+	HIDPP::Device (dispatcher, device_index)
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (std::get<0> (version) < 2)
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 Device::Device (HIDPP::Device &&device):
 	HIDPP::Device (std::move (device))
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (std::get<0> (version) < 2)
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
@@ -57,57 +61,9 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 	}
 	HIDPP::Report request (type, deviceIndex (), feature_index, function, softwareID);
 	std::copy (param_begin, param_end, request.parameterBegin ());
-	sendReport (request);
-	while (true) {
-		HIDPP::Report response = getReport ();
 
-		if (response.deviceIndex () != deviceIndex ()) {
-				Log::debug () << __FUNCTION__ << ": "
-					      << "Ignored report with wrong device index"
-					      << std::endl;
-			continue;
-		}
+	auto response = dispatcher ()->sendCommand (std::move (request))->get ();
 
-		uint8_t r_feature_index, error_code;
-		unsigned int r_function, r_sw_id;
-		if (response.checkErrorMessage20 (&r_feature_index,
-						  &r_function,
-						  &r_sw_id,
-						  &error_code)) {
-			if (r_feature_index != feature_index ||
-			    r_function != function ||
-			    r_sw_id != softwareID) {
-				Log::debug () << __FUNCTION__ << ": "
-					<< "Ignored error message with wrong feature/function/softwareID"
-					<< std::endl;
-				continue;
-			}
-
-			Log::debug ().printf ("Received error message with code 0x%02hhx\n", error_code);
-			throw Error (static_cast<Error::ErrorCode> (error_code));
-		}
-		if (response.featureIndex () == feature_index &&
-		    response.function () == function &&
-		    response.softwareID () == softwareID) {
-			Log::debug ().printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
-			return std::vector<uint8_t> (response.parameterBegin (), response.parameterEnd ());
-		}
-		uint8_t r_sub_id, r_address;
-		if (response.checkErrorMessage10 (&r_sub_id, &r_address, &error_code)) {
-			// For wireless devices, the receiver may answer with
-			// an HID++1.0 error if the device cannot answer itself.
-			if (r_sub_id != feature_index || r_address != (function << 4 | softwareID)) {
-				Log::debug () << __FUNCTION__ << ": "
-					<< "Ignored HID++1.0 error message with wrong feature/function/softwareID"
-					<< std::endl;
-				continue;
-			}
-
-			Log::debug ().printf ("Received error message from receiver with code 0x%02hhx\n", error_code);
-			throw HIDPP10::Error (static_cast<HIDPP10::Error::ErrorCode> (error_code));
-		}
-		Log::debug () << __FUNCTION__ << ": "
-			<< "Ignored report with wrong feature/function/softwareID"
-			<< std::endl;
-	}
+	Log::debug ().printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
+	return std::vector<uint8_t> (response.parameterBegin (), response.parameterEnd ());
 }

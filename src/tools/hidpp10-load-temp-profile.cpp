@@ -24,6 +24,7 @@ extern "C" {
 #include <unistd.h>
 }
 
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>
 #include <hidpp10/defs.h>
@@ -67,9 +68,16 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[first_arg];
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
+	try {
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (argv[first_arg]);
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
 
-	Device dev (path, device_index);
+	HIDPP10::Device dev (dispatcher.get (), device_index);
 	IProfile iprofile (&dev);
 	auto profile_format = getProfileFormat (&dev);
 	auto profdir_format = getProfileDirectoryFormat (&dev);

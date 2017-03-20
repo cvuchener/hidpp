@@ -16,35 +16,48 @@
  *
  */
 
-#ifndef HIDPP20_FEATURE_INTERFACE_H
-#define HIDPP20_FEATURE_INTERFACE_H
+#ifndef HIDPP20_ITOUCHPADRAWXY_H
+#define HIDPP20_ITOUCHPADRAWXY_H
 
-#include <hidpp20/Device.h>
-
-#include <cstdint>
-#include <vector>
+#include <hidpp20/FeatureInterface.h>
 
 namespace HIDPP20
 {
 
-class FeatureInterface
+class ITouchpadRawXY: public FeatureInterface
 {
 public:
-	FeatureInterface (Device *dev, uint16_t id, const char *name);
+	static constexpr uint16_t ID = 0x6100;
 
-	Device *device () const;
+	enum Function {
+		GetTouchpadInfo = 0,
+		SetTouchpadRawMode = 2,
+	};
 
-	uint8_t index () const;
+	enum Event {
+		TouchpadRawEvent = 0,
+	};
 
-	template<typename... Params>
-	std::vector<uint8_t> call (unsigned int function, Params... params)
-	{
-		return _dev->callFunction (_index, function, params...);
-	}
+	ITouchpadRawXY (Device *dev);
 
-private:
-	Device *_dev;
-	uint8_t _index;
+	struct TouchpadInfo {
+		unsigned int x_max, y_max;
+	};
+	TouchpadInfo getTouchpadInfo ();
+
+	void setTouchpadRawMode (bool enable);
+
+	struct TouchpadRawData {
+		uint16_t seqnum;
+		struct Point {
+			int16_t x, y;
+			uint8_t unknown0;
+			uint8_t unknown1;
+			int id;
+			int unknown2;
+		} points[2];
+	};
+	static TouchpadRawData touchpadRawEvent (const HIDPP::Report &event);
 };
 
 }

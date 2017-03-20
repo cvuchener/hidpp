@@ -46,6 +46,11 @@ public:
 		SetCurrentDPIIndex = 12,
 	};
 
+	enum Event {
+		CurrentProfileChanged = 0,
+		CurrentDPIIndexChanged = 1,
+	};
+
 	IOnboardProfiles (Device *dev);
 
 	enum class MemoryModel: uint8_t {
@@ -81,8 +86,8 @@ public:
 
 	Mode getMode ();
 	void setMode (Mode mode);
-	int getCurrentProfile ();
-	void setCurrentProfile (int index);
+	unsigned int getCurrentProfile ();
+	void setCurrentProfile (unsigned int index);
 
 	enum MemoryType: uint8_t {
 		Writeable = 0,
@@ -94,8 +99,11 @@ public:
 	void memoryWrite (std::vector<uint8_t>::const_iterator begin, std::vector<uint8_t>::const_iterator end);
 	void memoryWriteEnd ();
 
-	int getCurrentDPIIndex ();
-	void setCurrentDPIIndex (int index);
+	unsigned int getCurrentDPIIndex ();
+	void setCurrentDPIIndex (unsigned int index);
+
+	static unsigned int currentProfileChanged (const HIDPP::Report &event);
+	static unsigned int currentDPIIndexChanged (const HIDPP::Report &event);
 };
 
 }

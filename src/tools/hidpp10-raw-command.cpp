@@ -16,9 +16,11 @@
  *
  */
 
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/Error.h>
 #include <cstdio>
+#include <memory>
 
 #include "common/common.h"
 #include "common/Option.h"
@@ -46,9 +48,17 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
+	try {
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (argv[first_arg]);
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+
 	char *endptr;
-	
-	const char *path = argv[first_arg];
+
 	int address = strtol (argv[first_arg+1], &endptr, 0);
 	if (*endptr != '\0' || address < 0 || address > 255) {
 		fprintf (stderr, "Invalid register address.\n");
@@ -66,7 +76,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	HIDPP10::Device dev (path, device_index);
+	HIDPP10::Device dev (dispatcher.get (), device_index);
 	std::vector<uint8_t> params, results;
 	for (int i = 0; first_arg+4+i < argc; ++i) {
 		int value = strtol (argv[first_arg+4+i], &endptr, 16);

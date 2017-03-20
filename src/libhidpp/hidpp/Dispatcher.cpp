@@ -16,38 +16,25 @@
  *
  */
 
-#ifndef HIDPP20_FEATURE_INTERFACE_H
-#define HIDPP20_FEATURE_INTERFACE_H
+#include "Dispatcher.h"
 
-#include <hidpp20/Device.h>
+using namespace HIDPP;
 
-#include <cstdint>
-#include <vector>
-
-namespace HIDPP20
+const char *Dispatcher::NoHIDPPReportException::what () const noexcept
 {
-
-class FeatureInterface
-{
-public:
-	FeatureInterface (Device *dev, uint16_t id, const char *name);
-
-	Device *device () const;
-
-	uint8_t index () const;
-
-	template<typename... Params>
-	std::vector<uint8_t> call (unsigned int function, Params... params)
-	{
-		return _dev->callFunction (_index, function, params...);
-	}
-
-private:
-	Device *_dev;
-	uint8_t _index;
-};
-
+	return "No HID++ report";
 }
 
-#endif
+const char *Dispatcher::TimeoutError::what () const noexcept
+{
+	return "readReport timed out";
+}
+
+Dispatcher::AsyncReport::~AsyncReport ()
+{
+}
+
+Dispatcher::~Dispatcher ()
+{
+}
 

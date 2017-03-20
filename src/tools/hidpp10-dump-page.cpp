@@ -17,11 +17,13 @@
  */
 
 #include <cstdio>
+#include <memory>
 
 extern "C" {
 #include <unistd.h>
 }
 
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/IMemory.h>
 
@@ -50,7 +52,15 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[first_arg];
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
+	try {
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (argv[first_arg]);
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+
 	char *endptr;
 	unsigned int page = strtol (argv[first_arg+1], &endptr, 0);
 	if (*endptr != '\0') {
@@ -58,7 +68,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	HIDPP10::Device dev (path, device_index);
+	HIDPP10::Device dev (dispatcher.get (), device_index);
 
 	static constexpr std::size_t PageSize = 512;
 	std::vector<uint8_t> data (PageSize);

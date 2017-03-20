@@ -17,11 +17,13 @@
  */
 
 #include <cstdio>
+#include <memory>
 
 extern "C" {
 #include <unistd.h>
 }
 
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IOnboardProfiles.h>
@@ -67,8 +69,16 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		HIDPP20::Device dev (path, device_index);
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (path);
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+	HIDPP20::Device dev (dispatcher.get (), device_index);
+	try {
 		HIDPP20::IOnboardProfiles iop (&dev);
 		auto desc = iop.getDescription ();
 		unsigned int i = 0;

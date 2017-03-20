@@ -38,7 +38,9 @@ HIDRaw::HIDRaw (const std::string &path)
 
 	struct hidraw_devinfo di;
 	if (-1 == ::ioctl (_fd, HIDIOCGRAWINFO, &di)) {
-		throw std::system_error (errno, std::system_category (), "HIDIOCGRAWINFO");
+		int err = errno;
+		::close (_fd);
+		throw std::system_error (err, std::system_category (), "HIDIOCGRAWINFO");
 	}
 	_vendor_id = di.vendor;
 	_product_id = di.product;
@@ -46,18 +48,30 @@ HIDRaw::HIDRaw (const std::string &path)
 	char string[256];
 	int ret;
 	if (-1 == (ret = ::ioctl (_fd, HIDIOCGRAWNAME(sizeof(string)), string))) {
-		throw std::system_error (errno, std::system_category (), "HIDIOCGRAWNAME");
+		int err = errno;
+		::close (_fd);
+		throw std::system_error (err, std::system_category (), "HIDIOCGRAWNAME");
 	}
 	_name.assign (string, ret);
 
 	struct hidraw_report_descriptor rdesc;
 	if (-1 == ::ioctl (_fd, HIDIOCGRDESCSIZE, &rdesc.size)) {
-		throw std::system_error (errno, std::system_category (), "HIDIOCGRDESCSIZE");
+		int err = errno;
+		::close (_fd);
+		throw std::system_error (err, std::system_category (), "HIDIOCGRDESCSIZE");
 	}
 	if (-1 == ::ioctl (_fd, HIDIOCGRDESC, &rdesc)) {
-		throw std::system_error (errno, std::system_category (), "HIDIOCGRDESC");
+		int err = errno;
+		::close (_fd);
+		throw std::system_error (err, std::system_category (), "HIDIOCGRDESC");
 	}
 	_report_desc = ReportDescriptor (rdesc.value, rdesc.size);
+
+	if (-1 == ::pipe (_pipe)) {
+		int err = errno;
+		::close (_fd);
+		throw std::system_error (err, std::system_category (), "pipe");
+	}
 }
 
 HIDRaw::HIDRaw (const HIDRaw &other):
@@ -69,21 +83,30 @@ HIDRaw::HIDRaw (const HIDRaw &other):
 	if (-1 == _fd) {
 		throw std::system_error (errno, std::system_category (), "dup");
 	}
+	if (-1 == ::pipe (_pipe)) {
+		int err = errno;
+		::close (_fd);
+		throw std::system_error (err, std::system_category (), "pipe");
+	}
 }
 
 HIDRaw::HIDRaw (HIDRaw &&other):
 	_fd (other._fd),
+	_pipe {other._pipe[0], other._pipe[1]},
 	_vendor_id (other._vendor_id), _product_id (other._product_id),
 	_name (std::move (other._name)),
 	_report_desc (std::move (other._report_desc))
 {
-	other._fd = -1;
+	other._fd = other._pipe[0] = other._pipe[1] = -1;
 }
 
 HIDRaw::~HIDRaw ()
 {
-	if (_fd != -1)
+	if (_fd != -1) {
 		::close (_fd);
+		::close (_pipe[0]);
+		::close (_pipe[1]);
+	}
 }
 
 uint16_t HIDRaw::vendorID () const
@@ -117,37 +140,42 @@ int HIDRaw::writeReport (const std::vector<uint8_t> &report)
 	return ret;
 }
 
-int HIDRaw::readReport (std::vector<uint8_t> &report)
-{
-	int ret = read (_fd, report.data (), report.size ());
-	if (ret == -1) {
-		report.clear ();
-		throw std::system_error (errno, std::system_category (), "read");
-	}
-	report.resize (ret);
-	Log::debugReport ().printBytes ("Recv HID report:",
-					report.begin (), report.end ());
-	return ret;
-}
-
 int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
 {
 	int ret;
-	timeval to = { timeout, 0 };
+	timeval to = { timeout/1000, (timeout%1000) * 1000 };
 	fd_set fds;
-	FD_ZERO (&fds);
-	FD_SET (_fd, &fds);
-	ret = select (_fd+1, &fds, nullptr, nullptr, &to);
-	if (ret == -1) {
-		report.clear ();
+	do {
+		FD_ZERO (&fds);
+		FD_SET (_fd, &fds);
+		FD_SET (_pipe[0], &fds);
+		ret = select (std::max (_fd, _pipe[0])+1,
+				&fds, nullptr, nullptr,
+				(timeout < 0 ? nullptr : &to));
+	} while (ret == -1 && errno == EINTR);
+	if (ret == -1)
 		throw std::system_error (errno, std::system_category (), "select");
+	if (FD_ISSET (_fd, &fds)) {
+		ret = read (_fd, report.data (), report.size ());
+		if (ret == -1)
+			throw std::system_error (errno, std::system_category (), "read");
+		report.resize (ret);
+		Log::debugReport ().printBytes ("Recv HID report:",
+						report.begin (), report.end ());
+		return ret;
 	}
-	if (FD_ISSET (_fd, &fds))
-		return readReport (report);
-	throw TimeoutError ();
+	if (FD_ISSET (_pipe[0], &fds)) {
+		char c;
+		ret = read (_pipe[0], &c, sizeof (char));
+		if (ret == -1)
+			throw std::system_error (errno, std::system_category (), "read pipe");
+	}
+	return 0;
 }
 
-const char *HIDRaw::TimeoutError::what () const noexcept
+void HIDRaw::interruptRead ()
 {
-	return "readReport timed out";
+	char c = 0;
+	if (-1 == write (_pipe[1], &c, sizeof (char)))
+		throw std::system_error (errno, std::system_category (), "write pipe");
 }

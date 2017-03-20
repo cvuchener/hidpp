@@ -16,35 +16,36 @@
  *
  */
 
-#ifndef HIDPP20_FEATURE_INTERFACE_H
-#define HIDPP20_FEATURE_INTERFACE_H
+#ifndef HIDPP20_IMOUSEBUTTONSPY_H
+#define HIDPP20_IMOUSEBUTTONSPY_H
 
-#include <hidpp20/Device.h>
-
-#include <cstdint>
-#include <vector>
+#include <hidpp20/FeatureInterface.h>
 
 namespace HIDPP20
 {
 
-class FeatureInterface
+class IMouseButtonSpy: public FeatureInterface
 {
 public:
-	FeatureInterface (Device *dev, uint16_t id, const char *name);
+	static constexpr uint16_t ID = 0x8110;
 
-	Device *device () const;
+	enum Function {
+		GetMouseButtonCount = 0,
+		StartMouseButtonSpy = 1,
+		StopMouseButtonSpy = 2,
+	};
 
-	uint8_t index () const;
+	enum Event {
+		MouseButtonEvent = 0,
+	};
 
-	template<typename... Params>
-	std::vector<uint8_t> call (unsigned int function, Params... params)
-	{
-		return _dev->callFunction (_index, function, params...);
-	}
+	IMouseButtonSpy (Device *dev);
 
-private:
-	Device *_dev;
-	uint8_t _index;
+	unsigned int getMouseButtonCount ();
+	void startMouseButtonSpy ();
+	void stopMouseButtonSpy ();
+
+	static uint16_t mouseButtonEvent (const HIDPP::Report &event);
 };
 
 }

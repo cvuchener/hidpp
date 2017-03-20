@@ -25,10 +25,6 @@
 class HIDRaw
 {
 public:
-	class TimeoutError: public std::exception
-	{
-		virtual const char *what () const noexcept;
-	};
 	typedef std::basic_string<uint8_t> ReportDescriptor;
 
 	HIDRaw (const std::string &path);
@@ -42,13 +38,25 @@ public:
 	const ReportDescriptor &getReportDescriptor () const;
 
 	int writeReport (const std::vector<uint8_t> &report);
-	int readReport (std::vector<uint8_t> &report);
-	int readReport (std::vector<uint8_t> &report, int timeout);
+
+	/**
+	 * \param[out]	report	HID report
+	 * \param[in]	timeout	Time-out in milliseconds, negative for no timeout.
+	 *
+	 * \returns report size or 0 if interrupted or timed out.
+	 */
+	int readReport (std::vector<uint8_t> &report, int timeout = -1);
+
+	/**
+	 * Interrupts the current (or next) readReport call so it returns immediately.
+	 */
+	void interruptRead ();
 
 private:
 	HIDRaw ();
 
 	int _fd;
+	int _pipe[2];
 	uint16_t _vendor_id, _product_id;
 	std::string _name;
 	ReportDescriptor _report_desc;

@@ -16,7 +16,9 @@
  *
  */
 
-#include <hidpp10/Device.h>
+#include "Device.h"
+
+#include <hidpp/Dispatcher.h>
 #include <hidpp10/Error.h>
 #include <hidpp10/WriteError.h>
 #include <misc/Log.h>
@@ -25,16 +27,20 @@
 
 using namespace HIDPP10;
 
-Device::Device (const std::string &path, HIDPP::DeviceIndex device_index):
-	HIDPP::Device (path, device_index)
+Device::Device (HIDPP::Dispatcher *dispatcher, HIDPP::DeviceIndex device_index):
+	HIDPP::Device (dispatcher, device_index)
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (version != std::make_tuple (1, 0))
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 Device::Device (HIDPP::Device &&device):
 	HIDPP::Device (std::move (device))
 {
-	// TODO: check version
+	auto version = protocolVersion ();
+	if (version != std::make_tuple (1, 0))
+		throw HIDPP::Device::InvalidProtocolVersion (version);
 }
 
 template<uint8_t sub_id, HIDPP::Report::Type request_type, HIDPP::Report::Type result_type>
@@ -47,39 +53,14 @@ void Device::accessRegister (uint8_t address,
 		assert (params->size () <= request.parameterLength ());
 		std::copy (params->begin (), params->end (), request.parameterBegin ());
 	}
-	sendReport (request);
 
-	while (true) {
-		HIDPP::Report response = getReport ();
+	auto response = dispatcher ()->sendCommand (std::move (request))->get ();
 
-		uint8_t r_sub_id, r_address, error_code;
-		if (response.checkErrorMessage10 (&r_sub_id, &r_address, &error_code)) {
-			if (r_sub_id != sub_id || r_address != address) {
-				Log::debug () << __FUNCTION__ << ": "
-					      << "Ignored error message with wrong subID or address"
-					      << std::endl;
-				continue;
-			}
+	if (response.type () != result_type)
+		throw std::runtime_error ("Invalid result length");
 
-			Log::debug ().printf ("Received error message with code 0x%02hhx\n", error_code);
-			throw Error (static_cast<Error::ErrorCode> (error_code));
-		}
-
-		if (response.subID () != sub_id ||
-		    response.address () != address) {
-			Log::debug () << __FUNCTION__ << ": "
-				      << "Ignored report with wrong subID or address"
-				      << std::endl;
-			continue;
-		}
-
-		if (response.type () != result_type)
-			throw std::runtime_error ("Invalid result length");
-
-		if (results)
-			results->assign (response.parameterBegin (), response.parameterEnd ());
-		return;
-	}
+	if (results)
+		results->assign (response.parameterBegin (), response.parameterEnd ());
 }
 
 void Device::setRegister (uint8_t address,
@@ -162,22 +143,17 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 	assert (std::distance (param_begin, param_end) <= (int) HIDPP::LongParamLength);
 	HIDPP::Report packet (HIDPP::Report::Long, deviceIndex (), sub_id, seq_num);
 	std::copy (param_begin, param_end, packet.parameterBegin ());
-	sendReport (packet);
 
-	if (!wait_for_ack)
-		return;
+	std::unique_ptr<HIDPP::Dispatcher::AsyncReport> notification;
 
-	while (true) {
-		HIDPP::Report response = getReport ();
+	if (wait_for_ack) {
+		notification = dispatcher ()->getNotification (deviceIndex (), SendDataAcknowledgement);
+	}
 
-		if (response.deviceIndex () != deviceIndex () ||
-		    response.subID () != SendDataAcknowledgement) {
-			Log::debug () << __FUNCTION__ << ": "
-				      << "Ignored notification with wrong deviceIndex or subID"
-				      << std::endl;
-			continue;
-		}
+	dispatcher ()->sendCommandWithoutResponse (packet);
 
+	if (wait_for_ack) {
+		auto response = notification->get ();
 		auto response_params = response.parameterBegin ();
 		if (response.address () == 1 && response_params[0] == seq_num) {
 			/* Expected notification */

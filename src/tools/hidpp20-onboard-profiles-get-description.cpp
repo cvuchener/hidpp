@@ -16,6 +16,10 @@
  *
  */
 
+#include <cstdio>
+#include <memory>
+
+#include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
 #include <hidpp20/IOnboardProfiles.h>
@@ -47,10 +51,17 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	const char *path = argv[first_arg];
-
+	std::unique_ptr<HIDPP::Dispatcher> dispatcher;
 	try {
-		HIDPP20::Device dev (path, device_index);
+		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (argv[first_arg]);
+	}
+	catch (std::exception &e) {
+		fprintf (stderr, "Failed to open device: %s.\n", e.what ());
+		return EXIT_FAILURE;
+	}
+
+	HIDPP20::Device dev (dispatcher.get (), device_index);
+	try {
 		HIDPP20::IOnboardProfiles iop (&dev);
 		auto desc = iop.getDescription ();
 		printf ("Memory model:\t%hhu\n", static_cast<uint8_t> (desc.memory_model));
