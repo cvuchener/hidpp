@@ -104,8 +104,8 @@ enum RGBEffect: uint8_t
 };
 
 ProfileFormat::ProfileFormat (const IOnboardProfiles::Description &desc):
-	AbstractProfileFormat (ProfileLength.at (_desc.profile_format),
-			     _desc.button_count, MaxModeCount),
+	AbstractProfileFormat (ProfileLength.at (desc.profile_format),
+			       desc.button_count, MaxModeCount),
 	_desc (desc),
 	_general_settings (CommonGeneralSettings),
 	_has_g_shift ((_desc.mechanical_layout & 0x03) == 2),
