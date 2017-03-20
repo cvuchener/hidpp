@@ -86,10 +86,11 @@ void SimpleDispatcher::unregisterEventHandler (listener_iterator it)
 
 void SimpleDispatcher::listen ()
 {
+	auto debug = Log::debug ("dispatcher");
 	try {
 		while (true) {
 			Report report = getReport ();
-			Log::debug () << "Ignored report while listening for events." << std::endl;
+			debug << "Ignored report while listening for events." << std::endl;
 		}
 	}
 	catch (Dispatcher::TimeoutError e) {
@@ -142,10 +143,11 @@ Report SimpleDispatcher::CommandResponse::get ()
 
 Report SimpleDispatcher::CommandResponse::get (int timeout)
 {
+	auto debug = Log::debug ("dispatcher");
 	while (true) {
 		Report response = dispatcher->getReport (timeout);
 		if (response.deviceIndex () != report.deviceIndex ()) {
-			Log::debug () << "Ignored response because of different device index." << std::endl;
+			debug << "Ignored response because of different device index." << std::endl;
 			continue;
 		}
 		unsigned int function, swid;
@@ -154,7 +156,7 @@ Report SimpleDispatcher::CommandResponse::get (int timeout)
 			if (sub_id == report.subID () && address == report.address ())
 				throw HIDPP10::Error (error_code);
 			else {
-				Log::debug () << "Ignored HID++1.0 error response." << std::endl;
+				debug << "Ignored HID++1.0 error response." << std::endl;
 				continue;
 			}
 		}
@@ -162,7 +164,7 @@ Report SimpleDispatcher::CommandResponse::get (int timeout)
 			if (feature == report.featureIndex () && function == report.function () && swid == report.softwareID ())
 				throw HIDPP20::Error (error_code);
 			else {
-				Log::debug () << "Ignored HID++2.0 error response." << std::endl;
+				debug << "Ignored HID++2.0 error response." << std::endl;
 				continue;
 			}
 		}
@@ -183,12 +185,13 @@ Report SimpleDispatcher::Notification::get ()
 
 Report SimpleDispatcher::Notification::get (int timeout)
 {
+	auto debug = Log::debug ("dispatcher");
 	while (true) {
 		Report report = dispatcher->getReport (timeout);
 		if (report.deviceIndex () == index && report.subID () == sub_id) {
 			return report;
 		}
-		Log::debug () << "Ignored report while waiting for notification." << std::endl;
+		debug << "Ignored report while waiting for notification." << std::endl;
 	}
 }
 

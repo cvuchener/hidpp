@@ -29,9 +29,11 @@ FeatureInterface::FeatureInterface (Device *dev, uint16_t id, const char *name):
 	_dev (dev),
 	_index (IRoot (dev).getFeature (id))
 {
-	if (_index == 0)
+	if (_index == 0) {
+		Log::info ("feature").printf ("Feature [0x%04hx] %s is not supported\n", id, name);
 		throw UnsupportedFeature (id, name);
-	Log::debug ().printf ("Feature [0x%04hx] %s has index 0x%02hhx\n", id, name, _index);
+	}
+	Log::info ("feature").printf ("Feature [0x%04hx] %s has index 0x%02hhx\n", id, name, _index);
 }
 
 Device *FeatureInterface::device () const

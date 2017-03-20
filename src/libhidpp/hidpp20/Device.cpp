@@ -46,9 +46,9 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 					   std::vector<uint8_t>::const_iterator param_begin,
 					   std::vector<uint8_t>::const_iterator param_end)
 {
-	Log::debug ().printf ("Calling feature 0x%02hhx/function %u\n",
-			      feature_index, function);
-	Log::debug ().printBytes ("Parameters:", param_begin, param_end);
+	auto debug = Log::debug ("call");
+	debug.printf ("Calling feature 0x%02hhx/function %u\n", feature_index, function);
+	debug.printBytes ("Parameters:", param_begin, param_end);
 
 	std::size_t len = std::distance (param_begin, param_end);
 	HIDPP::Report::Type type;
@@ -64,6 +64,6 @@ std::vector<uint8_t> Device::callFunction (uint8_t feature_index,
 
 	auto response = dispatcher ()->sendCommand (std::move (request))->get ();
 
-	Log::debug ().printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
+	debug.printBytes ("Results:", response.parameterBegin (), response.parameterEnd ());
 	return std::vector<uint8_t> (response.parameterBegin (), response.parameterEnd ());
 }

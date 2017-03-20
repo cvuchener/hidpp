@@ -50,31 +50,15 @@ Option DeviceIndexOption (HIDPP::DeviceIndex &device_index)
 
 Option VerboseOption ()
 {
+	Log::init ();
 	return Option (
 		'v', "verbose",
-		Option::OptionalArgument, "level",
-		"Change verbosity level (level may be error|warning|info|debug|report).",
+		Option::OptionalArgument, "list",
+		"Enable verbose mode or change verbosity settings from a comma-separated list of category setting: [-]category[:subcategory].",
 		[] (const char *optarg) -> bool {
-			if (optarg) {
-				std::string level = optarg;
-				if (level == "error")
-					Log::setLevel (Log::Error);
-				else if (level == "warning")
-					Log::setLevel (Log::Warning);
-				else if (level == "info")
-					Log::setLevel (Log::Info);
-				else if (level == "debug")
-					Log::setLevel (Log::Debug);
-				else if (level == "report")
-					Log::setLevel (Log::DebugReport);
-				else {
-					fprintf (stderr, "Invalid verbose level: %s\n", optarg);
-					return false;
-				}
-			}
-			else {
-				Log::setLevel (Log::Warning);
-			}
+			if (!optarg)
+				optarg = "";
+			Log::init (optarg);
 			return true;
 		}
 	);

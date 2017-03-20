@@ -266,7 +266,8 @@ parse_end:
 Macro::Macro (const Macro &other):
 	_items (other._items)
 {
-	Log::debug () << "Copying macro" << std::endl;
+	auto debug = Log::debug ("macro");
+	debug << "Copying macro" << std::endl;
 	// The destination of every jump needs to be corrected in the copied list
 	std::map<const Item *, iterator> translation;
 
@@ -274,9 +275,7 @@ Macro::Macro (const Macro &other):
 	for (iterator it = _items.begin ();
 	     it != _items.end ();
 	     ++it, ++other_it) {
-		Log::debug ().printf ("Add translation %p to %p\n",
-				      &(*other_it), &(*it));
-
+		debug.printf ("Add translation %p to %p\n", &(*other_it), &(*it));
 		translation.insert ({ &(*other_it), it });
 	}
 
@@ -284,8 +283,7 @@ Macro::Macro (const Macro &other):
 		if (item.isJump ()) {
 			Item *old_item = &(*item.jumpDestination ());
 			iterator new_item = translation[old_item];
-			Log::debug ().printf ("Replace %p with %p\n",
-					      old_item, &(*new_item));
+			debug.printf ("Replace %p with %p\n", old_item, &(*new_item));
 
 			item.setJumpDestination (new_item);
 		}
@@ -294,6 +292,7 @@ Macro::Macro (const Macro &other):
 
 Address Macro::write (const AbstractMacroFormat &format, AbstractMemoryMapping &mem, Address &start) const
 {
+	auto debug = Log::debug ("macro");
 	typedef std::vector<uint8_t>::iterator iterator;
 	std::map<const Item *, Address> jump_dests; // Associate address with jump destination items
 	std::vector<std::pair<const Item *, iterator>> jump_addrs; // Jumps and their address positions
@@ -334,7 +333,7 @@ Address Macro::write (const AbstractMacroFormat &format, AbstractMemoryMapping &
 				// If we write this item now, there will not be enough
 				// room to write a jump. We check if the whole macro can
 				// fit before the end of page.
-				Log::debug () << "Check end of page jump at " << std::distance (instr_location, page_end) << " bytes from the end" << std::endl;
+				debug << "Check end of page jump at " << std::distance (instr_location, page_end) << " bytes from the end" << std::endl;
 				bool need_jump = false;
 				instr_location += item_len;
 				for (auto it2 = std::next(it); it2 != _items.end (); ++it2) {
@@ -354,20 +353,20 @@ Address Macro::write (const AbstractMacroFormat &format, AbstractMemoryMapping &
 					++current_page.page;
 					if (!first_instruction) {
 						assert (std::distance (current, page_end) > (int) (jump_len + CRCLength));
-						Log::debug () << "Adding jump to page " << current_page.page << std::endl;
+						debug << "Adding jump to page " << current_page.page << std::endl;
 						format.writeJump (current, current_page);
 					}
 					current = mem.getWritableIterator (current_page);
 					page_end = mem.getWritablePage (current_page).end ();
 					if (first_instruction) {
-						Log::debug () << "Macro start was moved because of lacking space at the given address" << std::endl;
+						debug << "Macro start was moved because of lacking space at the given address" << std::endl;
 						start = current_page;
 					}
 				}
 				else {
 					// The macro will fit in the current page, no need
 					// to check again.
-					Log::debug () << "Macro end fits in the current page" << std::endl;
+					debug << "Macro end fits in the current page" << std::endl;
 					check_end_of_page_jump = false;
 				}
 			}
@@ -376,13 +375,13 @@ Address Macro::write (const AbstractMacroFormat &format, AbstractMemoryMapping &
 		// Add padding if required
 		while (is_jump_dest && !mem.computeOffset (current, item_addr)) {
 			current = format.writeNoOp (current);
-			Log::debug () << "Macro padding" << std::endl;
+			debug << "Macro padding" << std::endl;
 		}
 
 		// Write the item itself
 		std::vector<uint8_t>::iterator jump_addr_it;
 		current = format.writeItem (current, item, jump_addr_it);
-		Log::debug ().printBytes (Item::InstructionStrings.at (item.instruction ()), current-item_len, current);
+		debug.printBytes (Item::InstructionStrings.at (item.instruction ()), current-item_len, current);
 
 		// Remember jump address position for later resolution
 		if (item.isJump ()) {
@@ -415,6 +414,7 @@ Address Macro::write (const AbstractMacroFormat &format, AbstractMemoryMapping &
 
 void Macro::simplify ()
 {
+	auto debug = Log::debug ("macro");
 	std::map<Item *, std::vector<Item *>> back_refs;
 
 	for (auto item: _items) {
@@ -431,8 +431,7 @@ void Macro::simplify ()
 			for (Item *jump: back_refs[&*it]) {
 				jump->setJumpDestination (std::next(it));
 			}
-			Log::debug ().printf ("Remove useless macro item %p: instruction = %d\n",
-					      &*it, it->instruction ());
+			debug.printf ("Remove useless macro item %p: instruction = %d\n", &*it, it->instruction ());
 			it = _items.erase (it);
 		}
 		else

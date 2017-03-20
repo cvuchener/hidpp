@@ -67,31 +67,28 @@ void Device::setRegister (uint8_t address,
 			  const std::vector<uint8_t> &params,
 			  std::vector<uint8_t> *results)
 {
+	auto debug = Log::debug ("register");
 	if (params.size () <= HIDPP::ShortParamLength) {
-		Log::debug ().printf ("Setting short register 0x%02hhx\n", address);
-		Log::debug ().printBytes ("Parameters:",
-					  params.begin (), params.end ());
+		debug.printf ("Setting short register 0x%02hhx\n", address);
+		debug.printBytes ("Parameters:", params.begin (), params.end ());
 
 		accessRegister<SetRegisterShort,
 			       HIDPP::Report::Short, HIDPP::Report::Short>
 			      (address, &params, results);
 
 		if (results)
-			Log::debug ().printBytes ("Results:",
-						  results->begin (), results->end ());
+			debug.printBytes ("Results:", results->begin (), results->end ());
 	}
 	else if (params.size () <= HIDPP::LongParamLength) {
-		Log::debug ().printf ("Setting long register 0x%02hhx\n", address);
-		Log::debug ().printBytes ("Parameters:",
-					  params.begin (), params.end ());
+		debug.printf ("Setting long register 0x%02hhx\n", address);
+		debug.printBytes ("Parameters:", params.begin (), params.end ());
 
 		accessRegister<SetRegisterLong,
 			       HIDPP::Report::Long, HIDPP::Report::Short>
 			      (address, &params, results);
 
 		if (results)
-			Log::debug ().printBytes ("Results:",
-						  results->begin (), results->end ());
+			debug.printBytes ("Results:", results->begin (), results->end ());
 	}
 	else
 		throw std::logic_error ("Register too long");
@@ -102,31 +99,28 @@ void Device::getRegister (uint8_t address,
 			  const std::vector<uint8_t> *params,
 			  std::vector<uint8_t> &results)
 {
+	auto debug = Log::debug ("register");
 	if (results.size () <= HIDPP::ShortParamLength) {
-		Log::debug ().printf ("Getting short register 0x%02hhx\n", address);
+		debug.printf ("Getting short register 0x%02hhx\n", address);
 		if (params)
-			Log::debug ().printBytes ("Parameters:",
-						  params->begin (), params->end ());
+			debug.printBytes ("Parameters:", params->begin (), params->end ());
 
 		accessRegister<GetRegisterShort,
 			       HIDPP::Report::Short, HIDPP::Report::Short>
 			      (address, params, &results);
 
-		Log::debug ().printBytes ("Results:",
-				 results.begin (), results.end ());
+		debug.printBytes ("Results:", results.begin (), results.end ());
 	}
 	else if (results.size () <= HIDPP::LongParamLength) {
-		Log::debug ().printf ("Getting long register 0x%02hhx\n", address);
+		debug.printf ("Getting long register 0x%02hhx\n", address);
 		if (params)
-			Log::debug ().printBytes ("Parameters:",
-						  params->begin (), params->end ());
+			debug.printBytes ("Parameters:", params->begin (), params->end ());
 
 		accessRegister<GetRegisterLong,
 			       HIDPP::Report::Short, HIDPP::Report::Long>
 			      (address, params, &results);
 
-		Log::debug ().printBytes ("Results:",
-					  results.begin (), results.end ());
+		debug.printBytes ("Results:", results.begin (), results.end ());
 	}
 	else
 		throw std::logic_error ("Register too long");
@@ -137,8 +131,9 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 			     std::vector<uint8_t>::const_iterator param_end,
 			     bool wait_for_ack)
 {
-	Log::debug ().printf ("Sending data packet %hhu\n", seq_num);
-	Log::debug ().printBytes ("Data packet", param_begin, param_end);
+	auto debug = Log::debug ("data");
+	debug.printf ("Sending data packet %hhu\n", seq_num);
+	debug.printBytes ("Data packet", param_begin, param_end);
 
 	assert (std::distance (param_begin, param_end) <= (int) HIDPP::LongParamLength);
 	HIDPP::Report packet (HIDPP::Report::Long, deviceIndex (), sub_id, seq_num);
@@ -157,12 +152,12 @@ void Device::sendDataPacket (uint8_t sub_id, uint8_t seq_num,
 		auto response_params = response.parameterBegin ();
 		if (response.address () == 1 && response_params[0] == seq_num) {
 			/* Expected notification */
-			Log::debug ().printf ("Data packet %hhu acknowledged\n", seq_num);
+			debug.printf ("Data packet %hhu acknowledged\n", seq_num);
 			return;
 		}
 		else {
 			/* The notification is an error message */
-			Log::debug ().printf ("Data packet %hhu: error 0x%02hhx\n",
+			debug.printf ("Data packet %hhu: error 0x%02hhx\n",
 					      seq_num, response.address ());
 			throw WriteError (response.address ());
 		}

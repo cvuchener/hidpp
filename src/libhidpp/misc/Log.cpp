@@ -23,7 +23,43 @@
 #include <cstdio>
 #include <cstring>
 
-Log::Level Log::_level = Log::Error;
+Log::Category::Category (const char *tag, bool enabled_by_default):
+	_enabled (enabled_by_default),
+	_tag (tag)
+{
+}
+
+void Log::Category::enable (bool enabled)
+{
+	_enabled = enabled;
+}
+
+void Log::Category::enable (const std::string &sub, bool enabled)
+{
+	_sub_categories[sub] = enabled;
+}
+
+bool Log::Category::isEnabled (const std::string &sub) const
+{
+	if (!sub.empty ()) {
+		auto it = _sub_categories.find (sub);
+		if (it != _sub_categories.end ())
+			return it->second;
+	}
+	return _enabled;
+}
+
+std::string Log::Category::tag (const std::string &sub) const
+{
+	if (!sub.empty ())
+		return _tag + ':' + sub;
+	return _tag;
+}
+
+Log::Category Log::Error ("error", true);
+Log::Category Log::Warning ("warning");
+Log::Category Log::Info ("info");
+Log::Category Log::Debug ("debug");
 
 std::mutex Log::_mutex;
 
@@ -48,32 +84,55 @@ Log::~Log ()
 {
 }
 
-void Log::setLevel (Log::Level level)
+void Log::init (const char *setting_string)
 {
-	_level = level;
-}
+	#define ADD_CATEGORY_BY_TAG(cat) { cat.tag (), &cat }
+	static std::map<std::string, Category *> categories_by_tag {
+		ADD_CATEGORY_BY_TAG (Log::Error),
+		ADD_CATEGORY_BY_TAG (Log::Warning),
+		ADD_CATEGORY_BY_TAG (Log::Info),
+		ADD_CATEGORY_BY_TAG (Log::Debug),
+	};
+	const char *current;
+	if (setting_string)
+		current = setting_string;
+	else if (!(current = getenv ("HIDPP_LOG")))
+		return;
 
-Log::Level Log::level ()
-{
-	return _level;
-}
+	// Enable verbose mode, if setting is present (even if empty).
+	Log::Warning.enable ();
 
-Log Log::log (Log::Level level)
-{
-	if (level <= _level) {
-		switch (level) {
-		case Error:
-			return Log ("error");
-		case Warning:
-			return Log ("warning");
-		case Info:
-			return Log ("info");
-		case Debug:
-			return Log ("debug");
-		case DebugReport:
-			return Log ("debug report");
+	const char *end = current + strlen (current);
+	while (current != end) {
+		bool enabling = true;
+		const char *next = std::find (current, end, ',');
+		const char *sub = std::find (current, next, ':');
+		if (*current == '-') {
+			enabling = false;
+			++current;
 		}
+		std::string tag (current, sub);
+		auto it = categories_by_tag.find (tag);
+		if (it == categories_by_tag.end ())
+			std::cerr << "Invalid log category tag: " << tag << std::endl;
+		else {
+			if (sub != next)
+				it->second->enable (std::string (sub+1, next), enabling);
+			else
+				it->second->enable (enabling);
+		}
+		if (next != end)
+			++next; // skip comma
+		current = next;
 	}
+}
+
+Log Log::log (const Category *category, const char *sub)
+{
+	if (sub && category->isEnabled (sub))
+		return Log (category->tag (sub));
+	if (!sub && category->isEnabled ())
+		return Log (category->tag ());
 	return Log ();
 }
 

@@ -135,8 +135,7 @@ int HIDRaw::writeReport (const std::vector<uint8_t> &report)
 	if (ret == -1) {
 		throw std::system_error (errno, std::system_category (), "write");
 	}
-	Log::debugReport ().printBytes ("Send HID report:",
-					report.begin (), report.end ());
+	Log::debug ("report").printBytes ("Send HID report:", report.begin (), report.end ());
 	return ret;
 }
 
@@ -160,8 +159,7 @@ int HIDRaw::readReport (std::vector<uint8_t> &report, int timeout)
 		if (ret == -1)
 			throw std::system_error (errno, std::system_category (), "read");
 		report.resize (ret);
-		Log::debugReport ().printBytes ("Recv HID report:",
-						report.begin (), report.end ());
+		Log::debug ("report").printBytes ("Recv HID report:", report.begin (), report.end ());
 		return ret;
 	}
 	if (FD_ISSET (_pipe[0], &fds)) {
