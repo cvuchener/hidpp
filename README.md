@@ -11,7 +11,7 @@ Documentation for HID++ 1.0 mice, can be found on [my G500 repository](https://g
 Building
 --------
 
-The library has no dependency except for C++11 standard library and Linux hidraw API.
+The library has no dependency except for C++14 standard library and Linux hidraw API.
 
 `hidpp-list-devices` depends on **libudev**. Profile tools use **TinyXML2** for parsing and writing profiles.
 
