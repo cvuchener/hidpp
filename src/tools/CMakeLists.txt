@@ -12,6 +12,7 @@ add_executable(hidpp-check-device
 	hidpp-check-device.cpp
 	$<TARGET_OBJECTS:common>)
 target_link_libraries(hidpp-check-device hidpp ${CMAKE_THREAD_LIBS_INIT})
+install(TARGETS hidpp-check-device RUNTIME DESTINATION bin)
 
 if(LIBUDEV_FOUND)
 	foreach(TOOL_NAME
@@ -28,6 +29,7 @@ if(LIBUDEV_FOUND)
 			${LIBUDEV_LIBRARIES}
 			${CMAKE_THREAD_LIBS_INIT}
 		)
+		install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
 	endforeach()
 else()
 	message("hidpp-list-devices require libudev.")
@@ -55,6 +57,7 @@ foreach(TOOL_NAME
 		hidpp
 		${CMAKE_THREAD_LIBS_INIT}
 	)
+	install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
 endforeach()
 
 if(TINYXML2_FOUND)
@@ -77,6 +80,7 @@ if(TINYXML2_FOUND)
 			${TINYXML2_LIBRARIES}
 			${CMAKE_THREAD_LIBS_INIT}
 		)
+		install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
 	endforeach()
 	
 else()

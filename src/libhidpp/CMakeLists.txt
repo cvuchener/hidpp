@@ -59,3 +59,9 @@ set(LIBHIDPP_SOURCES
 include_directories(.)
 add_library(hidpp SHARED ${LIBHIDPP_SOURCES})
 
+install(DIRECTORY "./" DESTINATION "include/hidpp"
+	FILES_MATCHING PATTERN "*.h")
+install(TARGETS hidpp
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib)
+

@@ -1,0 +1,1 @@
+SUBSYSTEM=="hidraw", PROGRAM="@PREFIX@/bin/hidpp-check-device %N", TAG+="uaccess"

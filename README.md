@@ -24,6 +24,12 @@ cmake ..
 make
 ```
 
+Library and tools can be installed with `make install`.
+
+### CMake options
+
+ - `INSTALL_UDEV_RULES`: install an udev rule for adding user access to HID++ devices. This will add a file in `/etc/udev/rules.d` (not in `CMAKE_INSTALL_PREFIX`). Run `udevadm control --reload` and `udevadm trigger` after the installation for updating udev rules and already present devices.
+
 
 Commands
 --------
