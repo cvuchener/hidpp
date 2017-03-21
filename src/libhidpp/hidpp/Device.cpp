@@ -46,7 +46,8 @@ const char *Device::InvalidProtocolVersion::what () const noexcept
 Device::Device (Dispatcher *dispatcher, DeviceIndex device_index):
 	_dispatcher (dispatcher), _device_index (device_index)
 {
-	if (device_index >= WirelessDevice1 && device_index <= WirelessDevice6) {
+	bool is_wireless = device_index >= WirelessDevice1 && device_index <= WirelessDevice6;
+	if (is_wireless) {
 		// Ask receiver for device info when wireless
 		HIDPP10::Device ur (_dispatcher, DefaultDevice);
 		HIDPP10::IReceiver ireceiver (&ur);
@@ -78,7 +79,7 @@ Device::Device (Dispatcher *dispatcher, DeviceIndex device_index):
 	Report request (Report::Short, _device_index, HIDPP20::IRoot::index, HIDPP20::IRoot::Ping, software_id);
 	auto response = _dispatcher->sendCommand (std::move (request));
 	try {
-		auto report = response->get (500);
+		auto report = response->get (is_wireless ? 2000 : 500); // use longer timeout for wireless devices that can be sleeping.
 		auto params = report.parameterBegin ();
 		_version = std::make_tuple (params[0], params[1]);
 	}
