@@ -5,7 +5,7 @@ I wrote this library as a personal hack tool for testing Logitech's HID++ protoc
 
 For simpler profiles, you may prefer to use [libratbag](https://github.com/libratbag/libratbag).
 
-Documentation for HID++ 1.0 mice, can be found on [my G500 repository](https://github.com/cvuchener/g500/tree/master/doc). Other varied documents (HID++ 1.0 receivers, HID++ 2.0 devices) from Logitech can be found on [this Google drive](https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28).
+Documentation for HID++ 1.0 mice, can be found on [my G500 repository](https://github.com/cvuchener/g500/tree/master/doc). Other varied documents (HID++ 1.0 receivers, HID++ 2.0 devices) from Logitech can be found on [this Google drive](https://drive.google.com/folderview?id=0BxbRzx7vEV7eWmgwazJ3NUFfQ28). Peter Wu has some HID++ 2.0 features documentation on [his website](https://lekensteyn.nl/files/logitech/).
 
 
 Building
