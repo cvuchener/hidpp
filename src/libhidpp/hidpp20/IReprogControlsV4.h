@@ -59,16 +59,16 @@ public:
 		uint16_t task_id;
 		uint8_t flags;		///< Control info flags. \see ControlInfoFlags
 		uint8_t pos;		///< Position for F keys, 0 for other controls.
-		uint8_t group;
-		uint8_t group_mask;
-		uint8_t additional_flags;
+		uint8_t group;		///< Group of this control ID.
+		uint8_t group_mask;	///< The control may be remapped to control IDs from groups in this mask.
+		uint8_t additional_flags;	///< More control info flags. \see ControlInfoAdditionalFlags
 	};
 	enum ControlInfoFlags: uint8_t {
 		MouseButton = 1<<0,	///< The control is a mouse button.
 		FKey = 1<<1,		///< The control is a F key.
 		HotKey = 1<<2,		///< The control is a non-standard, non-F key.
 		FnToggle = 1<<3,	///< The control is toggled by the fn key.
-		Remappable = 1<<4,	///< The control can be remapped.
+		ReprogHint = 1<<4,	///< The software can reprogram the key. If not set it should only use it as described by the task ID.
 		TemporaryDivertable = 1<<5,	///< The control can be diverted temporarily.
 		PersistentDivertable = 1<<6,	///< The control can be diverted persistently.
 		Virtual = 1<<7,		///< The control is not a physical control, it is a function for remapping others.
@@ -111,7 +111,7 @@ public:
 	 * \param[in]	flags		Diverted status of the control. The "Change" flags
 	 *				must be set for actually changing the corresponding
 	 *				settings.
-	 * \param[in]	remap		Remapped control ID. 0 for not remapping the control.
+	 * \param[in]	remap		Remapped control ID. 0 for no change.
 	 *
 	 * \see ControlReportingFlags.
 	 */

@@ -45,6 +45,8 @@ static void printFlags (T flags, std::vector<std::tuple<T, const char*>> list)
 			printf ("%s", str);
 		}
 	}
+	if (first)
+		printf ("-");
 }
 
 enum Flag {
@@ -113,7 +115,7 @@ int main (int argc, char *argv[])
 		IReprogControlsV4 irc (&dev);
 		if (op == "info") {
 			unsigned int count = irc.getControlCount ();
-			printf ("Control\tTask\tInfo\tFn\tCapabilities\n");
+			printf ("Control\tTask\tInfo\tFn\tCapabilities\tGroup\tRemap to groups\n");
 			for (unsigned int i = 0; i < count; ++i) {
 				auto info = irc.getControlInfo (i);
 				printf ("0x%04hx\t0x%04hx", info.control_id, info.task_id);
@@ -133,12 +135,31 @@ int main (int argc, char *argv[])
 
 				printf ("\t");
 				printFlags (info.flags | ((uint16_t) info.additional_flags << 8), {
-					std::make_tuple (IReprogControlsV4::Remappable, "remap"),
+					std::make_tuple (IReprogControlsV4::ReprogHint, "reprog"),
 					std::make_tuple (IReprogControlsV4::TemporaryDivertable, "divert"),
 					std::make_tuple (IReprogControlsV4::PersistentDivertable, "persist"),
 					std::make_tuple (IReprogControlsV4::Virtual, "virtual"),
 					std::make_tuple (IReprogControlsV4::RawXY<<8, "rawxy"),
 				});
+				printf ("\t");
+				if (info.group != 0)
+					printf ("%d", info.group);
+				else
+					printf ("-");
+				printf ("\t");
+				if (info.group_mask != 0) {
+					bool first = true;
+					for (unsigned int i = 0; i < 8; ++i)
+						if (info.group_mask & 1<<i) {
+							if (first)
+								first = false;
+							else
+								printf ("+");
+							printf ("%d", i+1);
+						}
+				}
+				else
+					printf ("-");
 				printf ("\n");
 			}
 		}
