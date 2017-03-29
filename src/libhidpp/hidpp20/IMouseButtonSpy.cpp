@@ -44,6 +44,16 @@ void IMouseButtonSpy::stopMouseButtonSpy ()
 	call (StopMouseButtonSpy);
 }
 
+std::vector<uint8_t> IMouseButtonSpy::getMouseButtonMapping ()
+{
+	return call (GetMouseButtonMapping);
+}
+
+void IMouseButtonSpy::setMouseButtonMapping (const std::vector<uint8_t> &button_mapping)
+{
+	call (SetMouseButtonMapping, button_mapping);
+}
+
 uint16_t IMouseButtonSpy::mouseButtonEvent (const HIDPP::Report &event)
 {
 	assert (event.function () == MouseButtonEvent);

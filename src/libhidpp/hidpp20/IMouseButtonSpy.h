@@ -24,6 +24,27 @@
 namespace HIDPP20
 {
 
+/**
+ * Get or divert mouse button events
+ *
+ * MouseButtonSpy can send events with raw button
+ * events indepedant of any remapping or profile
+ * settings.
+ *
+ * The event reports 16 buttons state as bits in
+ * a uint16_t value.
+ *
+ * Button can be remapped or disabled for standard
+ * HID reports but it does not affect how they are
+ * reported in MouseButtonSpy event.
+ *
+ * If an on-board profile is used, the remapping does
+ * not apply. For using the remapping from this feature,
+ * on-board profiles must be disabled by setting HostMode
+ * in the OnboardProfiles feature.
+ *
+ * Button mapping is reset with the mouse.
+ */
 class IMouseButtonSpy: public FeatureInterface
 {
 public:
@@ -33,6 +54,8 @@ public:
 		GetMouseButtonCount = 0,
 		StartMouseButtonSpy = 1,
 		StopMouseButtonSpy = 2,
+		GetMouseButtonMapping = 3,
+		SetMouseButtonMapping = 4,
 	};
 
 	enum Event {
@@ -42,9 +65,36 @@ public:
 	IMouseButtonSpy (Device *dev);
 
 	unsigned int getMouseButtonCount ();
+
+	/**
+	 * Start sending mouse button events.
+	 */
 	void startMouseButtonSpy ();
+	/**
+	 * Stop sending mouse button events.
+	 */
 	void stopMouseButtonSpy ();
 
+	/**
+	 * Get the current button mapping.
+	 *
+	 * Disabled buttons have code 0. Enabled buttons use codes 1 to 16.
+	 */
+	std::vector<uint8_t> getMouseButtonMapping ();
+	/**
+	 * Set the current button mapping.
+	 *
+	 * 0 disables the button. Valid buttons are 1 to 16.
+	 *
+	 * At most 16 buttons can be remapped.
+	 */
+	void setMouseButtonMapping (const std::vector<uint8_t> &button_mapping);
+
+	/**
+	 * Parse the mouse button event.
+	 *
+	 * \returns mouse button bits.
+	 */
 	static uint16_t mouseButtonEvent (const HIDPP::Report &event);
 };
 
