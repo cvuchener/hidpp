@@ -23,6 +23,7 @@
 #include <array>
 #include <sstream>
 #include <limits>
+#include <cassert>
 
 using namespace HIDPP;
 
@@ -258,6 +259,8 @@ bool SettingDesc::check (const Setting &setting) const
 			}
 		}
 		return true;
+	default:
+		return false;
 	}
 }
 
@@ -320,6 +323,29 @@ Setting SettingDesc::convertFromString (const std::string &str) const
 Setting SettingDesc::defaultValue () const
 {
 	return _default_value;
+}
+
+Setting::Type SettingDesc::type () const
+{
+	return _type;
+}
+
+std::pair<int, int> SettingDesc::integerRange () const
+{
+	assert (_type == Setting::Type::Integer);
+	return std::make_pair (_min, _max);
+}
+
+unsigned int SettingDesc::LEDCount () const
+{
+	assert (_type == Setting::Type::LEDVector);
+	return _led_count;
+}
+
+const EnumDesc &SettingDesc::enumDesc () const
+{
+	assert (_type == Setting::Type::Enum);
+	return *_enum_desc;
 }
 
 bool SettingDesc::isComposed () const

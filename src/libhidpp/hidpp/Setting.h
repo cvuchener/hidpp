@@ -122,6 +122,11 @@ public:
 	Setting convertFromString (const std::string &str) const;
 	Setting defaultValue () const;
 
+	Setting::Type type () const;
+	std::pair<int, int> integerRange () const;
+	unsigned int LEDCount () const;
+	const EnumDesc &enumDesc () const;
+
 	bool isComposed () const;
 	const_iterator begin () const;
 	const_iterator end () const;
