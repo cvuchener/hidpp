@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HID_RAW_H
-#define HID_RAW_H
+#ifndef LIBHIDPP_HID_RAW_H
+#define LIBHIDPP_HID_RAW_H
 
 #include <string>
 #include <vector>

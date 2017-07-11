@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef LIBHIDPP_LOG_H
+#define LIBHIDPP_LOG_H
 
 #include <ostream>
 #include <sstream>

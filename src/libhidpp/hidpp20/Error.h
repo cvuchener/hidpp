@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_ERROR_H
-#define HIDPP20_ERROR_H
+#ifndef LIBHIDPP_HIDPP20_ERROR_H
+#define LIBHIDPP_HIDPP20_ERROR_H
 
 #include <stdexcept>
 

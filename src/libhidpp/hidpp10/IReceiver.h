@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_IRECEIVER_H
-#define HIDPP10_IRECEIVER_H
+#ifndef LIBHIDPP_HIDPP10_IRECEIVER_H
+#define LIBHIDPP_HIDPP10_IRECEIVER_H
 
 #include <cstdint>
 #include <string>

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_PROFILE_H
-#define HIDPP_PROFILE_H
+#ifndef LIBHIDPP_HIDPP_PROFILE_H
+#define LIBHIDPP_HIDPP_PROFILE_H
 
 #include <hidpp/Address.h>
 #include <hidpp/Setting.h>

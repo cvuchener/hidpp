@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef DEVICE_INFO_H
-#define DEVICE_INFO_H
+#ifndef LIBHIDPP_DEVICE_INFO_H
+#define LIBHIDPP_DEVICE_INFO_H
 
 #include <cstdint>
 

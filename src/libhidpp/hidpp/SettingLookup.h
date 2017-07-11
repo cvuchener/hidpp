@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_SETTING_LOOKUP_H
-#define HIDPP_SETTING_LOOKUP_H
+#ifndef LIBHIDPP_HIDPP_SETTING_LOOKUP_H
+#define LIBHIDPP_HIDPP_SETTING_LOOKUP_H
 
 #include <hidpp/Setting.h>
 #include <misc/Log.h>

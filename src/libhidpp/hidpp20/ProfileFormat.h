@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_PROFILE_FORMAT_H
-#define HIDPP20_PROFILE_FORMAT_H
+#ifndef LIBHIDPP_HIDPP20_PROFILE_FORMAT_H
+#define LIBHIDPP_HIDPP20_PROFILE_FORMAT_H
 
 #include <hidpp/AbstractProfileFormat.h>
 #include <hidpp20/IOnboardProfiles.h>

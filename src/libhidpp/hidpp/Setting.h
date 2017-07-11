@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_SETTING_H
-#define HIDPP_SETTING_H
+#ifndef LIBHIDPP_HIDPP_SETTING_H
+#define LIBHIDPP_HIDPP_SETTING_H
 
 #include <vector>
 #include <map>

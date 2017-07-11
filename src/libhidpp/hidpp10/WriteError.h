@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_WRITE_ERROR_H
-#define HIDPP10_WRITE_ERROR_H
+#ifndef LIBHIDPP_HIDPP10_WRITE_ERROR_H
+#define LIBHIDPP_HIDPP10_WRITE_ERROR_H
 
 #include <stdexcept>
 #include <cstdint>

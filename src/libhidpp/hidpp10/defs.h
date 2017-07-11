@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_DEFS_H
-#define HIDPP10_DEFS_H
+#ifndef LIBHIDPP_HIDPP10_DEFS_H
+#define LIBHIDPP_HIDPP10_DEFS_H
 
 #include <cstdint>
 

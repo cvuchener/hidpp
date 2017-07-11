@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef USAGE_STRINGS_H
-#define USAGE_STRINGS_H
+#ifndef LIBHIDPP_USAGE_STRINGS_H
+#define LIBHIDPP_USAGE_STRINGS_H
 
 #include <string>
 

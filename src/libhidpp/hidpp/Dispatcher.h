@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_DISPATCHER_H
-#define HIDPP_DISPATCHER_H
+#ifndef LIBHIDPP_HIDPP_DISPATCHER_H
+#define LIBHIDPP_HIDPP_DISPATCHER_H
 
 #include <hidpp/Report.h>
 #include <memory>

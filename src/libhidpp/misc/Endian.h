@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ENDIAN_H
-#define ENDIAN_H
+#ifndef LIBHIDPP_ENDIAN_H
+#define LIBHIDPP_ENDIAN_H
 
 #include <tuple>
 

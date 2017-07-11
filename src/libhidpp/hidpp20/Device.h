@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_DEVICE_H
-#define HIDPP20_DEVICE_H
+#ifndef LIBHIDPP_HIDPP20_DEVICE_H
+#define LIBHIDPP_HIDPP20_DEVICE_H
 
 #include <hidpp/Device.h>
 

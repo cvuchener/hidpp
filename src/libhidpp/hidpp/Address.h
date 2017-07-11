@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_ADDRESS_H
-#define HIDPP_ADDRESS_H
+#ifndef LIBHIDPP_HIDPP_ADDRESS_H
+#define LIBHIDPP_HIDPP_ADDRESS_H
 
 namespace HIDPP
 {

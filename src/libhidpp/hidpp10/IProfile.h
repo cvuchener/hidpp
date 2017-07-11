@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_IPROFILE_H
-#define HIDPP10_IPROFILE_H
+#ifndef LIBHIDPP_HIDPP10_IPROFILE_H
+#define LIBHIDPP_HIDPP10_IPROFILE_H
 
 #include <hidpp10/IMemory.h>
 

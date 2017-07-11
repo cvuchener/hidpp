@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_ENUM_H
-#define HIDPP_ENUM_H
+#ifndef LIBHIDPP_HIDPP_ENUM_H
+#define LIBHIDPP_HIDPP_ENUM_H
 
 #include <map>
 #include <string>

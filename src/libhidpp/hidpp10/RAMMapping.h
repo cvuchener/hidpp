@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_RAM_MAPPING_H
-#define HIDPP10_RAM_MAPPING_H
+#ifndef LIBHIDPP_HIDPP10_RAM_MAPPING_H
+#define LIBHIDPP_HIDPP10_RAM_MAPPING_H
 
 #include <hidpp/AbstractMemoryMapping.h>
 #include <hidpp10/IMemory.h>

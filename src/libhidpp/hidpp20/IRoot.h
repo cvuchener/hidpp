@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_IROOT_H
-#define HIDPP20_IROOT_H
+#ifndef LIBHIDPP_HIDPP20_IROOT_H
+#define LIBHIDPP_HIDPP20_IROOT_H
 
 #include <cstdint>
 

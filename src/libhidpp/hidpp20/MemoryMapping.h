@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_MEMORY_MAPPING_H
-#define HIDPP20_MEMORY_MAPPING_H
+#ifndef LIBHIDPP_HIDPP20_MEMORY_MAPPING_H
+#define LIBHIDPP_HIDPP20_MEMORY_MAPPING_H
 
 #include <hidpp/AbstractMemoryMapping.h>
 #include <hidpp20/IOnboardProfiles.h>

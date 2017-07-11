@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_REPORT_H
-#define HIDPP_REPORT_H
+#ifndef LIBHIDPP_HIDPP_REPORT_H
+#define LIBHIDPP_HIDPP_REPORT_H
 
 #include <hidpp/defs.h>
 

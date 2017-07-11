@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_IFEATURESET_H
-#define HIDPP20_IFEATURESET_H
+#ifndef LIBHIDPP_HIDPP20_IFEATURESET_H
+#define LIBHIDPP_HIDPP20_IFEATURESET_H
 
 #include <hidpp20/FeatureInterface.h>
 

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_MACRO_H
-#define HIDPP_MACRO_H
+#ifndef LIBHIDPP_HIDPP_MACRO_H
+#define LIBHIDPP_HIDPP_MACRO_H
 
 #include <string>
 #include <map>

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_PROFILE_FORMAT_H
-#define HIDPP10_PROFILE_FORMAT_H
+#ifndef LIBHIDPP_HIDPP10_PROFILE_FORMAT_H
+#define LIBHIDPP_HIDPP10_PROFILE_FORMAT_H
 
 #include <hidpp/AbstractProfileFormat.h>
 

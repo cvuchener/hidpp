@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_PROFILE_FORMAT_G700_H
-#define HIDPP10_PROFILE_FORMAT_G700_H
+#ifndef LIBHIDPP_HIDPP10_PROFILE_FORMAT_G700_H
+#define LIBHIDPP_HIDPP10_PROFILE_FORMAT_G700_H
 
 #include <hidpp/AbstractProfileFormat.h>
 #include <hidpp10/Sensor.h>

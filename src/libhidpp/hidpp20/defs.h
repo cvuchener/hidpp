@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_DEFS_H
-#define HIDPP20_DEFS_H
+#ifndef LIBHIDPP_HIDPP20_DEFS_H
+#define LIBHIDPP_HIDPP20_DEFS_H
 
 namespace HIDPP20
 {

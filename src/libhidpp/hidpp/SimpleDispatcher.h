@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_SIMPLE_DISPATCHER_H
-#define HIDPP_SIMPLE_DISPATCHER_H
+#ifndef LIBHIDPP_HIDPP_SIMPLE_DISPATCHER_H
+#define LIBHIDPP_HIDPP_SIMPLE_DISPATCHER_H
 
 #include <hidpp/Dispatcher.h>
 #include <misc/HIDRaw.h>

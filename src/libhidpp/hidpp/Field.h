@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_FIELD_H
-#define HIDPP_FIELD_H
+#ifndef LIBHIDPP_HIDPP_FIELD_H
+#define LIBHIDPP_HIDPP_FIELD_H
 
 #include <misc/Endian.h>
 

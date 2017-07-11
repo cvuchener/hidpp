@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_IMEMORY_H
-#define HIDPP10_IMEMORY_H
+#ifndef LIBHIDPP_HIDPP10_IMEMORY_H
+#define LIBHIDPP_HIDPP10_IMEMORY_H
 
 #include <vector>
 #include <cstdint>

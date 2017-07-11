@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_EVENT_QUEUE_H
-#define HIDPP_EVENT_QUEUE_H
+#ifndef LIBHIDPP_HIDPP_EVENT_QUEUE_H
+#define LIBHIDPP_HIDPP_EVENT_QUEUE_H
 
 #include <queue>
 #include <mutex>

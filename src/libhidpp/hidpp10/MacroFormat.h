@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_MACRO_FORMAT_H
-#define HIDPP10_MACRO_FORMAT_H
+#ifndef LIBHIDPP_HIDPP10_MACRO_FORMAT_H
+#define LIBHIDPP_HIDPP10_MACRO_FORMAT_H
 
 #include <hidpp/AbstractMacroFormat.h>
 

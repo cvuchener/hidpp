@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP20_PROFILE_DIRECTORY_FORMAT_H
-#define HIDPP20_PROFILE_DIRECTORY_FORMAT_H
+#ifndef LIBHIDPP_HIDPP20_PROFILE_DIRECTORY_FORMAT_H
+#define LIBHIDPP_HIDPP20_PROFILE_DIRECTORY_FORMAT_H
 
 #include <hidpp/AbstractProfileDirectoryFormat.h>
 #include <memory>

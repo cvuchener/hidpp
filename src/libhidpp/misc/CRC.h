@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef CRC_H
-#define CRC_H
+#ifndef LIBHIDPP_CRC_H
+#define LIBHIDPP_CRC_H
 
 #include <cstdint>
 #include <vector>

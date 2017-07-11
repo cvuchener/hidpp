@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP_ABSTRACT_MACRO_FORMAT_H
-#define HIDPP_ABSTRACT_MACRO_FORMAT_H
+#ifndef LIBHIDPP_HIDPP_ABSTRACT_MACRO_FORMAT_H
+#define LIBHIDPP_HIDPP_ABSTRACT_MACRO_FORMAT_H
 
 #include <hidpp/Address.h>
 #include <hidpp/Macro.h>

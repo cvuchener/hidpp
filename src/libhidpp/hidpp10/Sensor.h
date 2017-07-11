@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef HIDPP10_SENSOR_H
-#define HIDPP10_SENSOR_H
+#ifndef LIBHIDPP_HIDPP10_SENSOR_H
+#define LIBHIDPP_HIDPP10_SENSOR_H
 
 #include <vector>
 
