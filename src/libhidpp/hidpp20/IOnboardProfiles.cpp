@@ -24,6 +24,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t IOnboardProfiles::ID;
+
 IOnboardProfiles::IOnboardProfiles (Device *dev):
 	FeatureInterface (dev, ID, "OnboardProfiles")
 {

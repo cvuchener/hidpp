@@ -24,6 +24,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t IRoot::ID;
+
 IRoot::IRoot (Device *dev):
 	_dev (dev)
 {

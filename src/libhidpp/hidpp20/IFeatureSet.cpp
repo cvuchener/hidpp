@@ -22,6 +22,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t IFeatureSet::ID;
+
 IFeatureSet::IFeatureSet (Device *dev):
 	FeatureInterface (dev, ID, "FeatureSet")
 {

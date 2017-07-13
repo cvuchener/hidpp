@@ -23,6 +23,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t IMouseButtonSpy::ID;
+
 IMouseButtonSpy::IMouseButtonSpy (Device *dev):
 	FeatureInterface (dev, ID, "MouseButtonSpy")
 {

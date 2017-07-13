@@ -22,6 +22,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t IReprogControlsV4::ID;
+
 IReprogControlsV4::IReprogControlsV4 (Device *dev):
 	FeatureInterface (dev, ID, "ReprogControlsV4")
 {

@@ -23,6 +23,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t ITouchpadRawXY::ID;
+
 ITouchpadRawXY::ITouchpadRawXY (Device *dev):
 	FeatureInterface (dev, ID, "TouchpadRawXY")
 {

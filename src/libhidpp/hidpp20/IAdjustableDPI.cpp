@@ -22,6 +22,8 @@
 
 using namespace HIDPP20;
 
+constexpr uint16_t IAdjustableDPI::ID;
+
 IAdjustableDPI::IAdjustableDPI (Device *dev):
 	FeatureInterface (dev, ID, "AdjustableDPI")
 {
