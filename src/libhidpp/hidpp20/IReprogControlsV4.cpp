@@ -19,6 +19,7 @@
 #include "IReprogControlsV4.h"
 
 #include <misc/Endian.h>
+#include <cassert>
 
 using namespace HIDPP20;
 
@@ -70,3 +71,23 @@ void IReprogControlsV4::setControlReporting (uint16_t control_id, uint8_t flags,
 	call (SetControlReporting, params);
 }
 
+std::vector<uint16_t> IReprogControlsV4::divertedButtonEvent (const HIDPP::Report &event)
+{
+	assert (event.function () == DivertedButtonEvent);
+	std::vector<uint16_t> buttons;
+	auto params = event.parameterBegin ();
+	for (unsigned int i = 0; i < 4; ++i) {
+		uint16_t control_id = readBE<uint16_t> (params + 2*i);
+		if (control_id == 0)
+			break;
+		buttons.push_back (control_id);
+	}
+	return buttons;
+}
+
+IReprogControlsV4::Move IReprogControlsV4::divertedRawXYEvent (const HIDPP::Report &event)
+{
+	assert (event.function () == DivertedRawXYEvent);
+	auto params = event.parameterBegin ();
+	return Move { readBE<int16_t> (params+0), readBE<int16_t> (params+2) };
+}
