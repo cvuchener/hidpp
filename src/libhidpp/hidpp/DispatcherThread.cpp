@@ -26,14 +26,16 @@
 
 using namespace HIDPP;
 
-template<typename Container, Container DispatcherThread::*container>
+template<typename Iterator,
+	 void (DispatcherThread::*cancel) (Iterator),
+	 std::mutex DispatcherThread::*mutex>
 class DispatcherThread::AsyncReport: public Dispatcher::AsyncReport
 {
 	DispatcherThread *dispatcher;
 	std::future<Report> report;
-	typename Container::iterator it;
+	Iterator it;
 public:
-	AsyncReport (DispatcherThread *dispatcher, std::future<Report> &&report, typename Container::iterator it):
+	AsyncReport (DispatcherThread *dispatcher, std::future<Report> &&report, Iterator it):
 		dispatcher (dispatcher), report (std::move (report)), it (it)
 	{
 	}
@@ -47,12 +49,12 @@ public:
 	{
 		report.wait_for (std::chrono::milliseconds (timeout));
 		{
-			std::unique_lock<std::mutex> lock (dispatcher->_mutex);
+			std::unique_lock<std::mutex> lock (dispatcher->*mutex);
 			// make sure there was no race before the lock.
 			auto status = report.wait_for (std::chrono::milliseconds (0));
 			if (status != std::future_status::ready) {
 				// cancel the command
-				(dispatcher->*container).erase (it);
+				(dispatcher->*cancel) (it);
 				throw Dispatcher::TimeoutError ();
 			}
 		}
@@ -62,19 +64,15 @@ public:
 
 DispatcherThread::DispatcherThread (const char *path):
 	_dev (path),
-	_running (true)
+	_stopped (false)
 {
 	const HIDRaw::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
 	if (!checkReportDescriptor (rdesc))
 		throw Dispatcher::NoHIDPPReportException ();
-	_thread = std::thread (&DispatcherThread::run, this);
 }
 
 DispatcherThread::~DispatcherThread ()
 {
-	_running = false;
-	_dev.interruptRead ();
-	_thread.join ();
 }
 
 const HIDRaw &DispatcherThread::hidraw () const
@@ -104,51 +102,54 @@ void DispatcherThread::sendCommandWithoutResponse (const Report &report)
 
 std::unique_ptr<Dispatcher::AsyncReport> DispatcherThread::sendCommand (Report &&report)
 {
-	std::unique_lock<std::mutex> lock (_mutex);
-	if (!_running)
+	std::unique_lock<std::mutex> lock (_command_mutex);
+	if (_stopped)
 		throw _exception;
 	_dev.writeReport (report.rawReport ());
 	auto it = _commands.insert (_commands.end (), Command { std::move (report) });
-	return std::make_unique<CommandResponse> (this, it->promised_report.get_future (), it);
+	return std::make_unique<AsyncCommandResponse> (this, it->response.get_future (), it);
 }
 
 std::unique_ptr<Dispatcher::AsyncReport> DispatcherThread::getNotification (DeviceIndex index, uint8_t sub_id)
 {
-	std::unique_lock<std::mutex> lock (_mutex);
-	if (!_running)
+	std::unique_lock<std::mutex> lock (_listener_mutex);
+	if (_stopped)
 		throw _exception;
-	auto promise = std::make_shared<std::promise<Report>> ();
-	std::future<Report> future = promise->get_future ();
-	auto it = _listeners.emplace (std::make_tuple (index, sub_id),
-		Listener ([promise] (const Report &report) { promise->set_value (report); },
-			  [promise] (std::exception_ptr e) { promise->set_exception (e); },
-			  true));
-	return std::make_unique<Notification> (this, std::move (future), it);
+	auto it = _notifications.emplace (_notifications.end ());
+	it->listener = Dispatcher::registerEventHandler (index, sub_id, [this, it] (const Report &report) {
+		it->notification.set_value (report);
+		_notifications.erase (it);
+		return false;
+	});
+	return std::make_unique<AsyncNotification> (this, it->notification.get_future (), it);
 }
 
-DispatcherThread::listener_iterator DispatcherThread::registerEventQueue (DeviceIndex index, uint8_t sub_id, EventQueue<Report> *queue)
+DispatcherThread::listener_iterator DispatcherThread::registerEventHandler (DeviceIndex index, uint8_t sub_id, const event_handler &handler)
 {
-	std::unique_lock<std::mutex> lock (_mutex);
-	return _listeners.emplace (std::make_tuple (index, sub_id),
-		Listener (std::bind (&EventQueue<Report>::push, queue, std::placeholders::_1),
-			  [queue] (std::exception_ptr) { queue->interrupt (); },
-			  false));
+	std::unique_lock<std::mutex> lock (_listener_mutex);
+	return Dispatcher::registerEventHandler (index, sub_id, handler);
 }
 
-void DispatcherThread::unregisterEventQueue (listener_iterator it)
+void DispatcherThread::unregisterEventHandler (listener_iterator it)
 {
-	std::unique_lock<std::mutex> lock (_mutex);
-	_listeners.erase (it);
+	std::unique_lock<std::mutex> lock (_listener_mutex);
+	Dispatcher::unregisterEventHandler (it);
 }
 
-bool DispatcherThread::running () const
+void DispatcherThread::cancelCommand (command_iterator it)
 {
-	return _running;
+	_commands.erase (it);
+}
+
+void DispatcherThread::cancelNotification (notification_iterator it)
+{
+	Dispatcher::unregisterEventHandler (it->listener);
+	_notifications.erase (it);
 }
 
 void DispatcherThread::run ()
 {
-	while (_running) {
+	while (!_stopped) {
 		try {
 			std::vector<uint8_t> raw_report (Report::MaxDataLength+1);
 			if (0 != _dev.readReport (raw_report))
@@ -168,27 +169,35 @@ void DispatcherThread::run ()
 	}
 	_exception = std::make_exception_ptr (NotRunning ());
 stop:
-	_running = false;
+	_stopped = true;
 	{
-		std::unique_lock<std::mutex> lock (_mutex);
+		std::unique_lock<std::mutex> lock (_command_mutex);
 		if (!_commands.empty ()) {
-			Log::warning () << "Unfinished commands while stopping dispatcher thread." << std::endl;
+			Log::warning () << "Unfinished commands while stopping dispatcher." << std::endl;
 			for (auto &cmd: _commands) {
-				cmd.promised_report.set_exception (_exception);
+				cmd.response.set_exception (_exception);
 			}
 		}
-		if (!_listeners.empty ()) {
-			Log::warning () << "Registered listeners while stopping dispatcher thread." << std::endl;
-			for (const auto &l: _listeners) {
-				l.second.except (_exception);
+	}
+	{
+		std::unique_lock<std::mutex> lock (_listener_mutex);
+		if (!_notifications.empty ()) {
+			Log::warning () << "Unreceived notifications while stopping dispatcher." << std::endl;
+			for (auto &n: _notifications) {
+				n.notification.set_exception (_exception);
 			}
 		}
 	}
 }
 
+void DispatcherThread::stop ()
+{
+	_stopped = true;
+	_dev.interruptRead ();
+}
+
 void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 {
-	std::unique_lock<std::mutex> lock (_mutex);
 
 	Report report (std::move (raw_report));
 	DeviceIndex index = report.deviceIndex ();
@@ -197,43 +206,46 @@ void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 	unsigned int function, sw_id;
 
 	if (report.checkErrorMessage10 (&sub_id, &address, &error_code)) {
+		std::unique_lock<std::mutex> lock (_command_mutex);
 		auto it = std::find_if (_commands.begin (), _commands.end (),
 			[index, sub_id, address] (const Command &cmd) {
-				return index == cmd.report.deviceIndex () &&
-					sub_id == cmd.report.subID () &&
-					address == cmd.report.address ();
+				return index == cmd.request.deviceIndex () &&
+					sub_id == cmd.request.subID () &&
+					address == cmd.request.address ();
 			});
 		if (it != _commands.end ()) {
-			it->promised_report.set_exception (std::make_exception_ptr (HIDPP10::Error (error_code)));
+			it->response.set_exception (std::make_exception_ptr (HIDPP10::Error (error_code)));
 			_commands.erase (it);
 		}
 		else
 			Log::warning () << "HID++1.0 error message was not matched with any command." << std::endl;
 	}
 	else if (report.checkErrorMessage20 (&feature, &function, &sw_id, &error_code)) {
+		std::unique_lock<std::mutex> lock (_command_mutex);
 		auto it = std::find_if (_commands.begin (), _commands.end (),
 			[index, feature, function, sw_id] (const Command &cmd) {
-				return index == cmd.report.deviceIndex () &&
-					feature == cmd.report.featureIndex () &&
-					function == cmd.report.function () &&
-					sw_id == cmd.report.softwareID ();
+				return index == cmd.request.deviceIndex () &&
+					feature == cmd.request.featureIndex () &&
+					function == cmd.request.function () &&
+					sw_id == cmd.request.softwareID ();
 			});
 		if (it != _commands.end ()) {
-			it->promised_report.set_exception (std::make_exception_ptr (HIDPP20::Error (error_code)));
+			it->response.set_exception (std::make_exception_ptr (HIDPP20::Error (error_code)));
 			_commands.erase (it);
 		}
 		else
 			Log::warning () << "HID++2.0 error message was not matched with any command." << std::endl;
 	}
 	else {
+		std::unique_lock<std::mutex> cmd_lock (_command_mutex);
 		auto it = std::find_if (_commands.begin (), _commands.end (),
 			[&report] (const Command &cmd) {
-				return report.deviceIndex () == cmd.report.deviceIndex () &&
-					report.subID () == cmd.report.subID () &&
-					report.address () == cmd.report.address ();
+				return report.deviceIndex () == cmd.request.deviceIndex () &&
+					report.subID () == cmd.request.subID () &&
+					report.address () == cmd.request.address ();
 			});
 		if (it != _commands.end ()) {
-			it->promised_report.set_value (std::move (report));
+			it->response.set_value (std::move (report));
 			_commands.erase (it);
 		}
 		else if (report.softwareID () == 0 || report.subID () < 0x80) { // is an event
@@ -243,26 +255,14 @@ void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 			// But the lowest known HID++1.0 notification is 0x40,
 			// if no HID++2.0 device has more than 64 features,
 			// there should be no confusion in practice.
-			auto range = _listeners.equal_range (std::make_tuple (report.deviceIndex (), report.subID ()));
-			for (auto it = range.first; it != range.second;) {
-				it->second.fn (report);
-				if (it->second.only_once)
-					it = _listeners.erase (it);
-				else
-					++it;
-			}
+			cmd_lock.unlock ();
+			std::unique_lock<std::mutex> lock (_listener_mutex);
+			processEvent (report);
 		}
 		else {
 			Log::warning () << "Answer was not matched with any command." << std::endl;
 		}
 	}
-}
-
-DispatcherThread::Listener::Listener (const std::function<void (const Report &)> &fn, const std::function<void (std::exception_ptr)> &except, bool only_once):
-	fn (fn),
-	except (except),
-	only_once (only_once)
-{
 }
 
 const char *DispatcherThread::NotRunning::what () const noexcept

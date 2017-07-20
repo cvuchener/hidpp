@@ -21,12 +21,9 @@
 
 #include <hidpp/Dispatcher.h>
 #include <misc/HIDRaw.h>
-#include <misc/EventQueue.h>
-#include <thread>
 #include <future>
 #include <list>
 #include <map>
-#include <functional>
 #include <chrono>
 
 namespace HIDPP
@@ -34,24 +31,6 @@ namespace HIDPP
 
 class DispatcherThread: public Dispatcher
 {
-	struct Command
-	{
-		Report report;
-		std::promise<Report> promised_report;
-	};
-	typedef std::list<Command> command_container;
-	typedef command_container::iterator command_iterator;
-	struct Listener
-	{
-		std::function<void (const Report &)> fn;
-		std::function<void (std::exception_ptr)> except;
-		bool only_once;
-		Listener (const std::function<void (const Report &)> &fn,
-			  const std::function<void (std::exception_ptr)> &except,
-			  bool only_once);
-	};
-	typedef std::multimap<std::tuple<DeviceIndex, uint8_t>, Listener> listener_container;
-
 public:
 	class NotRunning: public std::exception
 	{
@@ -71,49 +50,57 @@ public:
 	virtual std::unique_ptr<Dispatcher::AsyncReport> sendCommand (Report &&report);
 	virtual std::unique_ptr<Dispatcher::AsyncReport> getNotification (DeviceIndex index, uint8_t sub_id);
 
-	typedef listener_container::iterator listener_iterator;
-	/**
-	 * Add a listener function for events matching \p index and \p sub_id.
-	 *
-	 * The queue is interrupted is the thread is stopped while
-	 * it is still registered.
-	 *
-	 * \param index		Event device index
-	 * \param sub_id	Event sub_id (or feature index)
-	 * \param queue		Queue where events will be pushed.
-	 *
-	 * \returns The listener iterator used for unregistering.
-	 */
-	listener_iterator registerEventQueue (DeviceIndex index, uint8_t sub_id, EventQueue<Report> *queue);
-	/**
-	 * Unregister the event queue given by the iterator.
-	 */
-	void unregisterEventQueue (listener_iterator it);
 
-	bool running () const;
+	virtual listener_iterator registerEventHandler (DeviceIndex index, uint8_t sub_id, const event_handler &handler);
+	virtual void unregisterEventHandler (listener_iterator it);
+
+	void run ();
+	void stop ();
 
 private:
-	void run ();
+	struct Command
+	{
+		Report request;
+		std::promise<Report> response;
+	};
+	typedef std::list<Command> command_container;
+	typedef command_container::iterator command_iterator;
+
+	void cancelCommand (command_iterator);
+
+	struct Notification
+	{
+		listener_iterator listener;
+		std::promise<Report> notification;
+	};
+	typedef std::list<Notification> notification_container;
+	typedef notification_container::iterator notification_iterator;
+
+	void cancelNotification (notification_iterator);
+
 	void processReport (std::vector<uint8_t> &&raw_report);
 
 	HIDRaw _dev;
 	command_container _commands;
-	listener_container _listeners;
-	std::mutex _mutex;
-	std::thread _thread;
-	bool _running;
+	notification_container _notifications;
+	std::mutex _command_mutex, _listener_mutex;
+	bool _stopped;
 	std::exception_ptr _exception;
 
-	template<typename Container, Container DispatcherThread::*container>
+	template<typename Iterator,
+		 void (DispatcherThread::*cancel) (Iterator),
+		 std::mutex DispatcherThread::*mutex>
 	class AsyncReport;
-	using CommandResponse = DispatcherThread::AsyncReport<
-		DispatcherThread::command_container,
-		&DispatcherThread::_commands>;
-	friend CommandResponse;
-	using Notification = DispatcherThread::AsyncReport<
-		DispatcherThread::listener_container,
-		&DispatcherThread::_listeners>;
-	friend Notification;
+	using AsyncCommandResponse = DispatcherThread::AsyncReport<
+		DispatcherThread::command_iterator,
+		&DispatcherThread::cancelCommand,
+		&DispatcherThread::_command_mutex>;
+	friend AsyncCommandResponse;
+	using AsyncNotification = DispatcherThread::AsyncReport<
+		DispatcherThread::notification_iterator,
+		&DispatcherThread::cancelNotification,
+		&DispatcherThread::_listener_mutex>;
+	friend AsyncNotification;
 };
 
 }

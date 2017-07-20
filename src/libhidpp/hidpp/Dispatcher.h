@@ -21,6 +21,8 @@
 
 #include <hidpp/Report.h>
 #include <memory>
+#include <map>
+#include <functional>
 
 namespace HIDPP
 {
@@ -28,6 +30,10 @@ namespace HIDPP
 class Dispatcher
 {
 public:
+	typedef std::function<bool (const Report &)> event_handler;
+	typedef std::multimap<std::tuple<DeviceIndex, uint8_t>, event_handler> listener_container;
+	typedef listener_container::iterator listener_iterator;
+
 	/**
 	 * Exception when no HID++ report is found in the report descriptor.
 	 */
@@ -97,7 +103,27 @@ public:
 	 */
 	virtual std::unique_ptr<AsyncReport> getNotification (DeviceIndex index, uint8_t sub_id) = 0;
 
+	/**
+	 * Add a listener function for events matching \p index and \p sub_id.
+	 *
+	 * \param index		Event device index
+	 * \param sub_id	Event sub_id (or feature index)
+	 * \param handler	Callback for handling the event
+	 *
+	 * \returns The listener iterator used for unregistering.
+	 */
+	virtual listener_iterator registerEventHandler (DeviceIndex index, uint8_t sub_id, const event_handler &handler);
+
+	/**
+	 * Unregister the event handler given by the iterator.
+	 */
+	virtual void unregisterEventHandler (listener_iterator it);
+
+protected:
+	void processEvent (const Report &);
+
 private:
+	listener_container _listeners;
 };
 
 }

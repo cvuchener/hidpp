@@ -38,3 +38,23 @@ Dispatcher::~Dispatcher ()
 {
 }
 
+Dispatcher::listener_iterator Dispatcher::registerEventHandler (DeviceIndex index, uint8_t sub_id, const event_handler &handler)
+{
+	return _listeners.emplace (std::make_tuple (index, sub_id), handler);
+}
+
+void Dispatcher::unregisterEventHandler (listener_iterator it)
+{
+	_listeners.erase (it);
+}
+
+void Dispatcher::processEvent (const Report &report)
+{
+	auto range = _listeners.equal_range (std::make_tuple (report.deviceIndex (), report.subID ()));
+	for (auto it = range.first; it != range.second;) {
+		if (it->second (report))
+			++it;
+		else
+			it = _listeners.erase (it);
+	}
+}

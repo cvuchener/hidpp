@@ -74,16 +74,6 @@ std::unique_ptr<Dispatcher::AsyncReport> SimpleDispatcher::getNotification (Devi
 	return std::make_unique<Notification> (this, index, sub_id);
 }
 
-SimpleDispatcher::listener_iterator SimpleDispatcher::registerEventHandler (DeviceIndex index, uint8_t sub_id, std::function<void (const Report &)> fn)
-{
-	return _listeners.emplace (std::make_tuple (index, sub_id), fn);
-}
-
-void SimpleDispatcher::unregisterEventHandler (listener_iterator it)
-{
-	_listeners.erase (it);
-}
-
 void SimpleDispatcher::listen ()
 {
 	auto debug = Log::debug ("dispatcher");
@@ -117,9 +107,7 @@ Report SimpleDispatcher::getReport (int timeout)
 			if (report.checkErrorMessage20 (nullptr, nullptr, nullptr, nullptr)) {
 				return report;
 			}
-			auto range = _listeners.equal_range (std::make_tuple (report.deviceIndex (), report.subID ()));
-			for (auto it = range.first; it != range.second; ++it)
-				it->second (report);
+			processEvent (report);
 			return report;
 		}
 		catch (Report::InvalidReportID e) {

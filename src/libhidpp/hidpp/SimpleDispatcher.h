@@ -21,8 +21,6 @@
 
 #include <hidpp/Dispatcher.h>
 #include <misc/HIDRaw.h>
-#include <map>
-#include <functional>
 
 namespace HIDPP
 {
@@ -42,8 +40,6 @@ namespace HIDPP
  */
 class SimpleDispatcher: public Dispatcher
 {
-	typedef std::multimap<std::tuple<DeviceIndex, uint8_t>, std::function<void (const Report &)>> listener_container;
-
 public:
 	SimpleDispatcher (const char *path);
 	~SimpleDispatcher ();
@@ -57,22 +53,6 @@ public:
 	virtual std::unique_ptr<Dispatcher::AsyncReport> sendCommand (Report &&report);
 	virtual std::unique_ptr<Dispatcher::AsyncReport> getNotification (DeviceIndex index, uint8_t sub_id);
 
-	typedef listener_container::iterator listener_iterator;
-	/**
-	 * Add a listener function for events matching \p index and \p sub_id.
-	 *
-	 * \param index		Event device index
-	 * \param sub_id	Event sub_id (or feature index)
-	 * \param fn		Callback for handling the event
-	 *
-	 * \returns The listener iterator used for unregistering.
-	 */
-	listener_iterator registerEventHandler (DeviceIndex index, uint8_t sub_id, std::function<void (const Report &)> fn);
-	/**
-	 * Unregister the event handler given by the iterator.
-	 */
-	void unregisterEventHandler (listener_iterator it);
-
 	void listen ();
 	void stop ();
 
@@ -80,7 +60,6 @@ private:
 	Report getReport (int timeout = -1);
 
 	HIDRaw _dev;
-	listener_container _listeners;
 
 	class CommandResponse: public Dispatcher::AsyncReport
 	{

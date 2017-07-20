@@ -23,6 +23,7 @@
 
 #include "common/common.h"
 #include "common/CommonOptions.h"
+#include "common/EventQueue.h"
 
 extern "C" {
 #include <unistd.h>
@@ -40,6 +41,8 @@ extern "C" {
 #include <hidpp10/IReceiver.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/ITouchpadRawXY.h>
+
+EventQueue<std::function<void ()>> task_queue;
 
 class DeviceMonitor
 {
@@ -137,44 +140,44 @@ protected:
 
 class Driver
 {
-	HIDPP::DispatcherThread *_dispatcher;
+	HIDPP::Dispatcher *_dispatcher;
 	EventQueue<HIDPP::Report> _queue;
-	std::vector<HIDPP::DispatcherThread::listener_iterator> _iterators;
-	std::thread _thread;
+	std::vector<HIDPP::Dispatcher::listener_iterator> _iterators;
 public:
-	Driver (HIDPP::DispatcherThread *dispatcher):
-		_dispatcher (dispatcher),
-		_thread (std::bind (&Driver::run, this))
+	Driver (HIDPP::Dispatcher *dispatcher):
+		_dispatcher (dispatcher)
 	{
 	}
 
 	virtual ~Driver ()
 	{
 		for (auto it: _iterators)
-			_dispatcher->unregisterEventQueue (it);
-		_queue.interrupt ();
-		_thread.join ();
+			_dispatcher->unregisterEventHandler (it);
 	}
 
 protected:
-	HIDPP::DispatcherThread *dispatcher ()
+	HIDPP::Dispatcher *dispatcher ()
 	{
 		return _dispatcher;
 	}
 
-	void addEvent (HIDPP::DeviceIndex index, uint8_t sub_id)
+	void addEvent (HIDPP::DeviceIndex index, uint8_t sub_id, bool direct = false)
 	{
-		_iterators.push_back (_dispatcher->registerEventQueue (index, sub_id, &_queue));
+		auto it = _dispatcher->registerEventHandler (index, sub_id, (direct ?
+			(HIDPP::Dispatcher::event_handler) [this] (const HIDPP::Report &report) {
+				event (report);
+				return true;
+			}
+			:
+			(HIDPP::Dispatcher::event_handler) [this] (const HIDPP::Report &report) {
+				task_queue.push (std::bind (&Driver::event, this, report));
+				return true;
+			}
+		));
+		_iterators.push_back (it);
 	}
 
 	virtual void event (const HIDPP::Report &report) = 0;
-
-private:
-	void run ()
-	{
-		while (auto opt = _queue.pop ())
-			event (opt.value ());
-	}
 };
 
 static void setBit (int fd, int request, int code)
@@ -271,7 +274,7 @@ class TouchpadDriver: public Driver
 		}
 	} st_state;
 public:
-	TouchpadDriver (HIDPP::DispatcherThread *dispatcher, HIDPP::DeviceIndex index):
+	TouchpadDriver (HIDPP::Dispatcher *dispatcher, HIDPP::DeviceIndex index):
 		Driver (dispatcher),
 		_dev (dispatcher, index),
 		_itrxy (&_dev),
@@ -322,7 +325,7 @@ public:
 		}
 
 		printf ("Added touchpad device: %s\n", _dev.name ().c_str ());
-		addEvent (index, _itrxy.index ());
+		addEvent (index, _itrxy.index (), true);
 		_itrxy.setTouchpadRawMode (true);
 	}
 
@@ -361,7 +364,7 @@ class ReceiverDriver: public Driver
 	HIDPP10::Device _dev;
 	std::map<HIDPP::DeviceIndex, TouchpadDriver> _drivers;
 public:
-	ReceiverDriver (HIDPP::DispatcherThread *dispatcher):
+	ReceiverDriver (HIDPP::Dispatcher *dispatcher):
 		Driver (dispatcher),
 		_dev (dispatcher)
 	{
@@ -409,50 +412,66 @@ private:
 
 class MyMonitor: public DeviceMonitor
 {
-	std::map<std::string, HIDPP::DispatcherThread> _nodes;
-	std::map<std::string, std::unique_ptr<Driver>> _drivers;
-public:
-	void addDevice (const char *node)
+	struct node
 	{
-		std::map<std::string, HIDPP::DispatcherThread>::iterator it;
+		HIDPP::DispatcherThread dispatcher;
+		std::thread thread;
+		std::unique_ptr<Driver> driver;
+
+		node (const char *path):
+			dispatcher (path),
+			thread (std::bind (&HIDPP::DispatcherThread::run, &dispatcher))
+		{
+		}
+
+		~node ()
+		{
+			driver.reset ();
+			dispatcher.stop ();
+			thread.join ();
+		}
+	};
+	std::map<std::string, node> _nodes;
+public:
+	void addDevice (const char *path)
+	{
+		std::map<std::string, node>::iterator it;
 		try {
-			it = _nodes.emplace (node, node).first;
+			it = _nodes.emplace (path, path).first;
 		}
 		catch (std::exception &e) {
-			Log::debug () << "Ignored device " << node << ": " << e.what () << std::endl;
+			Log::debug () << "Ignored device " << path << ": " << e.what () << std::endl;
 			return;
 		}
+		auto &node = it->second;
 		try {
-			_drivers.emplace (node, new ReceiverDriver (&it->second));
+			node.driver = std::make_unique<ReceiverDriver> (&node.dispatcher);
 			return;
 		}
 		catch (std::exception &e) {
-			Log::debug () << "Device " << node << " is not a receiver: " << e.what () << std::endl;
+			Log::debug () << "Device " << path << " is not a receiver: " << e.what () << std::endl;
 		}
 		for (HIDPP::DeviceIndex index: { HIDPP::DefaultDevice, HIDPP::CordedDevice }) {
 			try {
-				_drivers.emplace (node, new TouchpadDriver (&it->second, index));
+				node.driver = std::make_unique<TouchpadDriver> (&node.dispatcher, index);
 				return;
 			}
 			catch (std::exception &e) {
-				Log::debug () << "Device " << node << "/" << index << " is not a touchpad device: " << e.what () << std::endl;
+				Log::debug () << "Device " << path << "/" << index << " is not a touchpad device: " << e.what () << std::endl;
 			}
 		}
 		_nodes.erase (it);
 	}
 
-	void removeDevice (const char *node)
+	void removeDevice (const char *path)
 	{
-		_drivers.erase (node);
-		_nodes.erase (node);
+		_nodes.erase (path);
 	}
 };
 
-MyMonitor *monitor;
-
 void sigint (int)
 {
-	monitor->stop ();
+	task_queue.interrupt ();
 }
 
 int main (int argc, char *argv[])
@@ -467,17 +486,21 @@ int main (int argc, char *argv[])
 	if (!Option::processOptions (argc, argv, options, first_arg))
 		return EXIT_FAILURE;
 
-	monitor = new MyMonitor;
+	MyMonitor monitor;
+	std::thread monitor_thread (std::bind (&DeviceMonitor::monitor, &monitor));
 
 	struct sigaction sa, oldsa;
 	memset (&sa, 0, sizeof (struct sigaction));
 	sa.sa_handler = sigint;
 	sigaction (SIGINT, &sa, &oldsa);
 
-	monitor->monitor ();
+	while (auto task = task_queue.pop ())
+		task.value () ();
 
 	sigaction (SIGINT, &oldsa, nullptr);
-	delete monitor;
+
+	monitor.stop ();
+	monitor_thread.join ();
 
 	return EXIT_SUCCESS;
 }
