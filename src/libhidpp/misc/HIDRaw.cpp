@@ -26,6 +26,7 @@ extern "C" {
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <linux/hidraw.h>
 }
 
