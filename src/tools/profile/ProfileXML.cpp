@@ -190,7 +190,7 @@ void readButton (const XMLElement *element, Profile::Button &button, Macro &macr
 		else if (type == "loop") {
 			unsigned int loop_delay;
 			switch (element->QueryUnsignedAttribute ("loop-delay", &loop_delay)) {
-			case XML_NO_ERROR:
+			case XML_SUCCESS:
 				break;
 			case XML_WRONG_ATTRIBUTE_TYPE:
 				Log::error () << "Invalid loop delay value." << std::endl;
