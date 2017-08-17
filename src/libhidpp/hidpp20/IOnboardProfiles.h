@@ -53,21 +53,10 @@ public:
 
 	IOnboardProfiles (Device *dev);
 
-	enum class MemoryModel: uint8_t {
-		G402,
-	};
-	enum class ProfileFormat: uint8_t {
-		G402,
-		G303,
-		G900,
-	};
-	enum class MacroFormat: uint8_t {
-		G402,
-	};
 	struct Description {
-		MemoryModel memory_model;
-		ProfileFormat profile_format;
-		MacroFormat macro_format;
+		uint8_t memory_model;
+		uint8_t profile_format;
+		uint8_t macro_format;
 		uint8_t profile_count;
 		uint8_t profile_count_oob;
 		uint8_t button_count;

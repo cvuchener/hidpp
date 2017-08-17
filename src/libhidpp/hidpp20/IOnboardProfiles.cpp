@@ -36,9 +36,9 @@ IOnboardProfiles::Description IOnboardProfiles::getDescription ()
 	std::vector<uint8_t> results;
 	results = call (GetDescription);
 	return Description {
-		static_cast<MemoryModel> (results[0]),
-		static_cast<ProfileFormat> (results[1]),
-		static_cast<MacroFormat> (results[2]),
+		results[0], // Memory model
+		results[1], // Profile format
+		results[2], // Macro format
 		results[3], results[4], // Profile counts
 		results[5], // Button count
 		results[6], readBE<uint16_t> (results, 7), // Sector (page) count and size

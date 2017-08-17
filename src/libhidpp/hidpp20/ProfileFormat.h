@@ -50,7 +50,7 @@ private:
 	static HIDPP::ComposedSetting readRGBEffect (std::vector<uint8_t>::const_iterator begin);
 	static void writeRGBEffect (std::vector<uint8_t>::iterator begin, const HIDPP::ComposedSetting &settings);
 
-	static const std::map<IOnboardProfiles::ProfileFormat, size_t> ProfileLength;
+	static const std::map<uint8_t, size_t> ProfileLength;
 	static constexpr unsigned int MaxButtonCount = 16;
 	static constexpr unsigned int MaxModeCount = 5;
 

@@ -110,9 +110,7 @@ ProfileFormat::ProfileFormat (const IOnboardProfiles::Description &desc):
 	_general_settings (CommonGeneralSettings),
 	_has_g_shift ((_desc.mechanical_layout & 0x03) == 2),
 	_has_dpi_shift ((_desc.mechanical_layout & 0x0c) >> 2 == 2),
-	_has_rgb_effects (
-		_desc.profile_format == IOnboardProfiles::ProfileFormat::G303 ||
-		_desc.profile_format == IOnboardProfiles::ProfileFormat::G900),
+	_has_rgb_effects (_desc.profile_format >= 2),
 	_has_power_modes ((_desc.various_info & 0x07) != 1) // Not corded only
 {
 	assert (_desc.button_count <= MaxButtonCount);
@@ -363,10 +361,10 @@ void ProfileFormat::write (const Profile &profile, std::vector<uint8_t>::iterato
 	}
 }
 
-const std::map<IOnboardProfiles::ProfileFormat, size_t> ProfileFormat::ProfileLength = {
-	{ IOnboardProfiles::ProfileFormat::G402, 208 }, // actually 224, but ignoring data at the end right now
-	{ IOnboardProfiles::ProfileFormat::G303, 230 },
-	{ IOnboardProfiles::ProfileFormat::G900, 230 },
+const std::map<uint8_t, size_t> ProfileFormat::ProfileLength = {
+	{ 1, 208 }, // actually 224, but ignoring data at the end right now
+	{ 2, 230 },
+	{ 3, 230 },
 };
 
 const std::map<std::string, SettingDesc> ProfileFormat::RGBEffectSettings = {
