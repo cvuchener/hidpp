@@ -84,15 +84,16 @@ public:
 		Host = 2,
 	};
 
-	Mode getMode ();
-	void setMode (Mode mode);
-	unsigned int getCurrentProfile ();
-	void setCurrentProfile (unsigned int index);
-
 	enum MemoryType: uint8_t {
 		Writeable = 0,
 		ROM = 1,
 	};
+
+	Mode getMode ();
+	void setMode (Mode mode);
+	std::tuple<MemoryType, unsigned int> getCurrentProfile ();
+	void setCurrentProfile (MemoryType mem_type, unsigned int index);
+
 	static constexpr unsigned int LineSize = 16;
 	std::vector<uint8_t> memoryRead (MemoryType mem_type, unsigned int page, unsigned int offset);
 	void memoryAddrWrite (unsigned int page, unsigned int offset, unsigned int length);
@@ -102,7 +103,7 @@ public:
 	unsigned int getCurrentDPIIndex ();
 	void setCurrentDPIIndex (unsigned int index);
 
-	static unsigned int currentProfileChanged (const HIDPP::Report &event);
+	static std::tuple<MemoryType, unsigned int> currentProfileChanged (const HIDPP::Report &event);
 	static unsigned int currentDPIIndexChanged (const HIDPP::Report &event);
 };
 

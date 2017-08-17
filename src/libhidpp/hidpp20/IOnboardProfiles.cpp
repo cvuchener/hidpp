@@ -60,17 +60,17 @@ void IOnboardProfiles::setMode (Mode mode)
 	call (SetMode, params);
 }
 
-unsigned int IOnboardProfiles::getCurrentProfile ()
+std::tuple<IOnboardProfiles::MemoryType, unsigned int> IOnboardProfiles::getCurrentProfile ()
 {
 	std::vector<uint8_t> results;
 	results = call (GetCurrentProfile);
-	return results[1];
+	return std::make_tuple (static_cast<MemoryType> (results[0]), results[1]);
 }
 
-void IOnboardProfiles::setCurrentProfile (unsigned int index)
+void IOnboardProfiles::setCurrentProfile (MemoryType mem_type, unsigned int index)
 {
 	std::vector<uint8_t> params (2);
-	params[0] = 0; // unknown role
+	params[0] = mem_type;
 	params[1] = index;
 	call (SetCurrentProfile, params);
 }
@@ -119,10 +119,11 @@ void IOnboardProfiles::setCurrentDPIIndex (unsigned int index)
 	call (SetCurrentDPIIndex, params);
 }
 
-unsigned int IOnboardProfiles::currentProfileChanged (const HIDPP::Report &event)
+std::tuple<IOnboardProfiles::MemoryType, unsigned int> IOnboardProfiles::currentProfileChanged (const HIDPP::Report &event)
 {
 	assert (event.function () == CurrentProfileChanged);
-	return event.parameterBegin ()[1];
+	auto params = event.parameterBegin ();
+	return std::make_tuple (static_cast<MemoryType> (params[0]), params[1]);
 }
 
 unsigned int IOnboardProfiles::currentDPIIndexChanged (const HIDPP::Report &event)

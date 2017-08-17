@@ -114,7 +114,7 @@ public:
 		switch (event.function ()) {
 		case IOnboardProfiles::CurrentProfileChanged:
 			printf ("Current profile changed: %u\n",
-				IOnboardProfiles::currentProfileChanged (event));
+				std::get<1> (IOnboardProfiles::currentProfileChanged (event)));
 			break;
 		case IOnboardProfiles::CurrentDPIIndexChanged:
 			printf ("Current dpi index changed: %u\n",
