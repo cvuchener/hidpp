@@ -48,13 +48,15 @@ HIDPP10::MouseInfo G9xInfo = {
 HIDPP10::MouseInfo G500Info = {
 	&HIDPP10::RangeSensor::S9500,
 	HIDPP10::IResolutionType3,
-	HIDPP10::G500ProfileType
+	HIDPP10::G500ProfileType,
+	2
 };
 
 HIDPP10::MouseInfo G500sInfo = {
 	&HIDPP10::RangeSensor::S9808,
 	HIDPP10::IResolutionType3,
-	HIDPP10::G500ProfileType
+	HIDPP10::G500ProfileType,
+	5
 };
 
 HIDPP10::MouseInfo G700Info = {

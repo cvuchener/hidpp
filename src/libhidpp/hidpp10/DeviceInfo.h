@@ -32,14 +32,17 @@ namespace HIDPP10
 		const Sensor *sensor;
 		IResolutionType iresolution_type;
 		ProfileType profile_type;
+		unsigned int default_profile_page;
 
 		MouseInfo (const Sensor *sensor,
 			   IResolutionType iresolution_type,
-			   ProfileType profile_type):
+			   ProfileType profile_type,
+			   unsigned int default_profile_page = 2):
 			HIDPP::DeviceInfo (HIDPP::DeviceInfo::Device),
 			sensor (sensor),
 			iresolution_type (iresolution_type),
-			profile_type (profile_type)
+			profile_type (profile_type),
+			default_profile_page (default_profile_page)
 		{
 		}
 	};

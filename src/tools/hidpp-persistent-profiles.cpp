@@ -35,6 +35,7 @@ extern "C" {
 #include <hidpp20/MemoryMapping.h>
 #include <hidpp10/MacroFormat.h>
 #include <hidpp20/MacroFormat.h>
+#include <hidpp10/DeviceInfo.h>
 #include <misc/Log.h>
 
 #include "common/common.h"
@@ -88,19 +89,21 @@ int main (int argc, char *argv[])
 	std::unique_ptr<HIDPP::AbstractProfileFormat> profile_format;
 	std::unique_ptr<HIDPP::AbstractMemoryMapping> memory;
 	std::unique_ptr<HIDPP::AbstractMacroFormat> macro_format;
-	HIDPP::Address dir_address;
+	HIDPP::Address dir_address, prof_address;
 
 	/*
 	 * HID++ 1.0
 	 */
 	if (major == 1 && minor == 0) {
 		auto dev = new HIDPP10::Device (std::move (generic_device));
+		const HIDPP10::MouseInfo *info = HIDPP10::getMouseInfo (dev->productID ());
 		device.reset (dev);
 		profdir_format = HIDPP10::getProfileDirectoryFormat (dev);
 		profile_format = HIDPP10::getProfileFormat (dev);
 		macro_format = HIDPP10::getMacroFormat (dev);
 		memory.reset (new HIDPP10::MemoryMapping (dev));
 		dir_address = HIDPP::Address { 0, 1, 0 };
+		prof_address = HIDPP::Address { 0, info->default_profile_page, 0 };
 	}
 	/*
 	 * HID++ 2.0 and later
@@ -113,6 +116,7 @@ int main (int argc, char *argv[])
 		macro_format = HIDPP20::getMacroFormat (dev);
 		memory.reset (new HIDPP20::MemoryMapping (dev));
 		dir_address = HIDPP::Address { HIDPP20::IOnboardProfiles::Writeable, 0, 0 };
+		prof_address = HIDPP::Address { HIDPP20::IOnboardProfiles::Writeable, 1, 0 };
 	}
 	else {
 		fprintf (stderr, "Unsupported HID++ protocol version.\n");
@@ -150,10 +154,6 @@ int main (int argc, char *argv[])
 		HIDPP::ProfileDirectory profdir;
 		std::vector<HIDPP::Profile> profiles;
 		std::vector<std::vector<HIDPP::Macro>> macros;
-
-		// The first profile will be written on the page after the directory
-		HIDPP::Address prof_address = dir_address;
-		++prof_address.page;
 
 		const XMLElement *root = doc.RootElement ();
 		const XMLElement *element = root->FirstChildElement ("profile");
