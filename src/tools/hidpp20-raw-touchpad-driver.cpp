@@ -35,6 +35,7 @@ extern "C" {
 }
 
 #include <misc/Log.h>
+#include <hid/DeviceMonitor.h>
 #include <hidpp/DispatcherThread.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/defs.h>
@@ -43,100 +44,6 @@ extern "C" {
 #include <hidpp20/ITouchpadRawXY.h>
 
 EventQueue<std::function<void ()>> task_queue;
-
-class DeviceMonitor
-{
-	int _pipe[2];
-
-public:
-	DeviceMonitor ()
-	{
-		if (-1 == pipe (_pipe))
-			throw std::system_error (errno, std::system_category (), "pipe");
-	}
-
-	virtual ~DeviceMonitor ()
-	{
-		for (int i = 0; i < 2; ++i)
-			close (_pipe[i]);
-	}
-
-	void monitor ()
-	{
-		int ret;
-
-		struct udev *ctx = udev_new ();
-		if (!ctx)
-			throw std::runtime_error ("udev_new failed");
-
-		struct udev_monitor *monitor = udev_monitor_new_from_netlink (ctx, "udev");
-		if (!monitor)
-			throw std::runtime_error ("ude_monitor_new_from_netlink failed");
-		if (0 != (ret = udev_monitor_filter_add_match_subsystem_devtype (monitor, "hidraw", nullptr)))
-			throw std::system_error (-ret, std::system_category (), "udev_monitor_filter_add_match_subsystem_devtype");
-		if (0 != (ret = udev_monitor_enable_receiving (monitor)))
-			throw std::system_error (-ret, std::system_category (), "udev_monitor_enable_receiving");
-
-		struct udev_enumerate *enumerator = udev_enumerate_new (ctx);
-		if (!enumerator)
-			throw std::runtime_error ("udev_enumerate_new failed");
-		if (0 != (ret = udev_enumerate_add_match_subsystem (enumerator, "hidraw")))
-			throw std::system_error (-ret, std::system_category (), "udev_enumerate_add_match_subsystem");
-		if (0 != (ret = udev_enumerate_scan_devices (enumerator)))
-			throw std::system_error (-ret, std::system_category (), "udev_enumerate_scan_devices");
-
-		struct udev_list_entry *current;
-		udev_list_entry_foreach (current, udev_enumerate_get_list_entry (enumerator)) {
-			struct udev_device *device = udev_device_new_from_syspath (ctx, udev_list_entry_get_name (current));
-			addDevice (udev_device_get_devnode (device));
-			udev_device_unref (device);
-		}
-		udev_enumerate_unref (enumerator);
-
-		int fd = udev_monitor_get_fd (monitor);
-		while (true) {
-			fd_set fds;
-			FD_ZERO (&fds);
-			FD_SET (_pipe[0], &fds);
-			FD_SET (fd, &fds);
-			if (-1 == select (std::max (_pipe[0], fd)+1, &fds, nullptr, nullptr, nullptr)) {
-				if (errno == EINTR)
-					continue;
-				throw std::system_error (errno, std::system_category (), "select");
-			}
-			if (FD_ISSET (fd, &fds)) {
-				struct udev_device *device = udev_monitor_receive_device (monitor);
-				std::string action = udev_device_get_action (device);
-				if (action == "add")
-					addDevice (udev_device_get_devnode (device));
-				else if (action == "remove")
-					removeDevice (udev_device_get_devnode (device));
-				udev_device_unref (device);
-			}
-			if (FD_ISSET (_pipe[0], &fds)) {
-				char c;
-				if (-1 == read (_pipe[0], &c, sizeof (char)))
-					throw std::system_error (errno, std::system_category (), "read pipe");
-				break;
-			}
-		}
-		udev_monitor_unref (monitor);
-
-		udev_unref (ctx);
-	}
-
-	void stop ()
-	{
-		char c = 0;
-		if (-1 == write (_pipe[1], &c, sizeof (char)))
-			throw std::system_error (errno, std::system_category (), "write pipe");
-	}
-
-protected:
-	virtual void addDevice (const char *node) = 0;
-	virtual void removeDevice (const char *node) = 0;
-
-};
 
 class Driver
 {
@@ -410,7 +317,7 @@ private:
 	}
 };
 
-class MyMonitor: public DeviceMonitor
+class MyMonitor: public HID::DeviceMonitor
 {
 	struct node
 	{
@@ -487,7 +394,7 @@ int main (int argc, char *argv[])
 		return EXIT_FAILURE;
 
 	MyMonitor monitor;
-	std::thread monitor_thread (std::bind (&DeviceMonitor::monitor, &monitor));
+	std::thread monitor_thread (std::bind (&HID::DeviceMonitor::run, &monitor));
 
 	struct sigaction sa, oldsa;
 	memset (&sa, 0, sizeof (struct sigaction));

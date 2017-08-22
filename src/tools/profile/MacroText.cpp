@@ -25,9 +25,10 @@
 #include <cassert>
 
 #include <misc/Log.h>
-#include <misc/UsageStrings.h>
+#include <hid/UsageStrings.h>
 
 using HIDPP::Macro;
+using namespace HID;
 
 static const std::string WhiteSpaces = " \t\r\n";
 

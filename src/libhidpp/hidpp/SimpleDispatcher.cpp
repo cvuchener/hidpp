@@ -29,7 +29,7 @@ using namespace HIDPP;
 SimpleDispatcher::SimpleDispatcher (const char *path):
 	_dev (path)
 {
-	const HIDRaw::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
+	const HID::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
 	if (!checkReportDescriptor (rdesc))
 		throw Dispatcher::NoHIDPPReportException ();
 }
@@ -38,7 +38,7 @@ SimpleDispatcher::~SimpleDispatcher ()
 {
 }
 
-const HIDRaw &SimpleDispatcher::hidraw () const
+const HID::RawDevice &SimpleDispatcher::hidraw () const
 {
 	return _dev;
 }

@@ -66,7 +66,7 @@ DispatcherThread::DispatcherThread (const char *path):
 	_dev (path),
 	_stopped (false)
 {
-	const HIDRaw::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
+	const HID::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
 	if (!checkReportDescriptor (rdesc))
 		throw Dispatcher::NoHIDPPReportException ();
 }
@@ -75,7 +75,7 @@ DispatcherThread::~DispatcherThread ()
 {
 }
 
-const HIDRaw &DispatcherThread::hidraw () const
+const HID::RawDevice &DispatcherThread::hidraw () const
 {
 	return _dev;
 }

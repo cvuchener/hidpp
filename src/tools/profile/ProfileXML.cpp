@@ -20,11 +20,12 @@
 
 #include "MacroText.h"
 
-#include <misc/UsageStrings.h>
+#include <hid/UsageStrings.h>
 #include <misc/Log.h>
 #include <sstream>
 
 using namespace HIDPP;
+using namespace HID;
 using namespace tinyxml2;
 
 ProfileXML::ProfileXML (const AbstractProfileFormat *profile_format,
