@@ -20,7 +20,7 @@
 #define LIBHIDPP_HIDPP_SIMPLE_DISPATCHER_H
 
 #include <hidpp/Dispatcher.h>
-#include <misc/HIDRaw.h>
+#include <hid/RawDevice.h>
 
 namespace HIDPP
 {
@@ -44,7 +44,7 @@ public:
 	SimpleDispatcher (const char *path);
 	~SimpleDispatcher ();
 
-	const HIDRaw &hidraw () const;
+	const HID::RawDevice &hidraw () const;
 
 	virtual uint16_t vendorID () const;
 	virtual uint16_t productID () const;
@@ -59,7 +59,7 @@ public:
 private:
 	Report getReport (int timeout = -1);
 
-	HIDRaw _dev;
+	HID::RawDevice _dev;
 
 	class CommandResponse: public Dispatcher::AsyncReport
 	{

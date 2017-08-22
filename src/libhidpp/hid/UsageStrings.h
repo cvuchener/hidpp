@@ -16,10 +16,13 @@
  *
  */
 
-#ifndef LIBHIDPP_USAGE_STRINGS_H
-#define LIBHIDPP_USAGE_STRINGS_H
+#ifndef LIBHIDPP_HID_USAGE_STRINGS_H
+#define LIBHIDPP_HID_USAGE_STRINGS_H
 
 #include <string>
+
+namespace HID
+{
 
 std::string keyString (unsigned int usage_code);
 unsigned int keyUsageCode (const std::string &string);
@@ -32,5 +35,7 @@ unsigned int consumerControlCode (const std::string &string);
 
 std::string buttonString (unsigned int button_mask);
 unsigned int buttonMask (const std::string &string);
+
+}
 
 #endif

@@ -95,7 +95,7 @@ static inline bool contains (const Container1 &cont, const Container2 &seq)
 	return cont.end () != std::search (cont.begin (), cont.end (), seq.begin (), seq.end ());
 }
 
-bool HIDPP::checkReportDescriptor (const std::basic_string<unsigned char> &rdesc)
+bool HIDPP::checkReportDescriptor (const std::vector<uint8_t> &rdesc)
 {
 	return (contains (rdesc, ShortReportDesc) || contains (rdesc, ShortReportDesc2)) &&
 		(contains (rdesc, LongReportDesc) || contains (rdesc, LongReportDesc2));

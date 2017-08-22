@@ -16,7 +16,7 @@
  *
  */
 
-#include <misc/UsageStrings.h>
+#include "UsageStrings.h"
 
 #include <sstream>
 #include <map>
@@ -159,7 +159,7 @@ static const std::vector<std::string> key_strings = []() {
 	return vec;
 } ();
 
-std::string keyString (unsigned int usage_code)
+std::string HID::keyString (unsigned int usage_code)
 {
 	if (usage_code > KeyMax || key_strings[usage_code].empty ()) {
 		std::stringstream ss;
@@ -169,7 +169,7 @@ std::string keyString (unsigned int usage_code)
 	return key_strings[usage_code];
 }
 
-unsigned int keyUsageCode (const std::string &string)
+unsigned int HID::keyUsageCode (const std::string &string)
 {
 	auto it = key_string_map.find (string);
 	if (it != key_string_map.end ())
@@ -182,7 +182,7 @@ unsigned int keyUsageCode (const std::string &string)
 	return code;
 }
 
-std::string modifierString (uint8_t modifier_mask)
+std::string HID::modifierString (uint8_t modifier_mask)
 {
 	std::stringstream ss;
 	bool first = true;
@@ -198,7 +198,7 @@ std::string modifierString (uint8_t modifier_mask)
 	return ss.str ();
 }
 
-uint8_t modifierMask (const std::string &string)
+uint8_t HID::modifierMask (const std::string &string)
 {
 	if (string.empty ())
 		return 0;
@@ -476,7 +476,7 @@ static const std::vector<std::string> cc_strings = []() {
 	return vec;
 } ();
 
-std::string consumerControlString (unsigned int usage_code)
+std::string HID::consumerControlString (unsigned int usage_code)
 {
 	if (usage_code > CCMax || cc_strings[usage_code].empty ()) {
 		std::stringstream ss;
@@ -486,7 +486,7 @@ std::string consumerControlString (unsigned int usage_code)
 	return cc_strings[usage_code];
 }
 
-unsigned int consumerControlCode (const std::string &string)
+unsigned int HID::consumerControlCode (const std::string &string)
 {
 	auto it = cc_string_map.find (string);
 	if (it != cc_string_map.end ())
@@ -499,7 +499,7 @@ unsigned int consumerControlCode (const std::string &string)
 	return code;
 }
 
-std::string buttonString (unsigned int button_mask)
+std::string HID::buttonString (unsigned int button_mask)
 {
 	std::stringstream ss;
 	bool first = true;
@@ -515,7 +515,7 @@ std::string buttonString (unsigned int button_mask)
 	return ss.str ();
 }
 
-unsigned int buttonMask (const std::string &string)
+unsigned int HID::buttonMask (const std::string &string)
 {
 	unsigned int mouse_buttons = 0;
 	std::size_t current = 0, next;

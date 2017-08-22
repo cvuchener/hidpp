@@ -16,26 +16,42 @@
  *
  */
 
-#ifndef LIBHIDPP_HID_RAW_H
-#define LIBHIDPP_HID_RAW_H
+#ifndef LIBHIDPP_HID_RAW_DEVICE_H
+#define LIBHIDPP_HID_RAW_DEVICE_H
 
 #include <string>
 #include <vector>
+#include <memory>
 
-class HIDRaw
+namespace HID
+{
+
+typedef std::vector<uint8_t> ReportDescriptor;
+
+class RawDevice
 {
 public:
-	typedef std::basic_string<uint8_t> ReportDescriptor;
+	RawDevice (const std::string &path);
+	RawDevice (const RawDevice &other);
+	RawDevice (RawDevice &&other);
+	~RawDevice ();
 
-	HIDRaw (const std::string &path);
-	HIDRaw (const HIDRaw &other);
-	HIDRaw (HIDRaw &&other);
-	~HIDRaw ();
-
-	uint16_t vendorID () const;
-	uint16_t productID () const;
-	std::string name () const;
-	const ReportDescriptor &getReportDescriptor () const;
+	inline uint16_t vendorID () const
+	{
+		return _vendor_id;
+	}
+	inline uint16_t productID () const
+	{
+		return _product_id;
+	}
+	const std::string &name () const
+	{
+		return _name;
+	}
+	const ReportDescriptor &getReportDescriptor () const
+	{
+		return _report_desc;
+	}
 
 	int writeReport (const std::vector<uint8_t> &report);
 
@@ -53,14 +69,17 @@ public:
 	void interruptRead ();
 
 private:
-	HIDRaw ();
+	RawDevice ();
 
-	int _fd;
-	int _pipe[2];
+	struct PrivateImpl;
+	std::unique_ptr<PrivateImpl> _p;
+
 	uint16_t _vendor_id, _product_id;
 	std::string _name;
 	ReportDescriptor _report_desc;
 };
+
+}
 
 #endif
 

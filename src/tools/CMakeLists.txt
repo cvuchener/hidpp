@@ -14,28 +14,8 @@ add_executable(hidpp-check-device
 target_link_libraries(hidpp-check-device hidpp ${CMAKE_THREAD_LIBS_INIT})
 install(TARGETS hidpp-check-device RUNTIME DESTINATION bin)
 
-if(LIBUDEV_FOUND)
-	foreach(TOOL_NAME
-		hidpp-list-devices
-		hidpp20-raw-touchpad-driver
-	)
-		add_executable(${TOOL_NAME}
-			${TOOL_NAME}.cpp
-			$<TARGET_OBJECTS:common>)
-		target_include_directories(${TOOL_NAME}
-			PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
-		target_link_libraries(${TOOL_NAME}
-			hidpp
-			${LIBUDEV_LIBRARIES}
-			${CMAKE_THREAD_LIBS_INIT}
-		)
-		install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
-	endforeach()
-else()
-	message("hidpp-list-devices require libudev.")
-endif()
-
 foreach(TOOL_NAME
+	hidpp-list-devices
 	hidpp-list-features
 	hidpp-mouse-resolution
 	hidpp10-dump-page
@@ -49,6 +29,7 @@ foreach(TOOL_NAME
 	hidpp20-write-page
 	hidpp20-write-data
 	hidpp20-mouse-event-test
+	hidpp20-raw-touchpad-driver
 )
 	add_executable(${TOOL_NAME}
 		${TOOL_NAME}.cpp

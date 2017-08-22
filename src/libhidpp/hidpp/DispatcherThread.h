@@ -20,7 +20,7 @@
 #define LIBHIDPP_HIDPP_DISPATCHER_THREAD_H
 
 #include <hidpp/Dispatcher.h>
-#include <misc/HIDRaw.h>
+#include <hid/RawDevice.h>
 #include <future>
 #include <list>
 #include <map>
@@ -41,7 +41,7 @@ public:
 	DispatcherThread (const char *path);
 	~DispatcherThread ();
 
-	const HIDRaw &hidraw () const;
+	const HID::RawDevice &hidraw () const;
 
 	virtual uint16_t vendorID () const;
 	virtual uint16_t productID () const;
@@ -80,7 +80,7 @@ private:
 
 	void processReport (std::vector<uint8_t> &&raw_report);
 
-	HIDRaw _dev;
+	HID::RawDevice _dev;
 	command_container _commands;
 	notification_container _notifications;
 	std::mutex _command_mutex, _listener_mutex;
