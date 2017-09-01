@@ -102,5 +102,5 @@ std::string IReceiver::getDeviceName (unsigned int device)
 		throw std::runtime_error ("Invalid DevicePairingInfo type");
 
 	std::size_t length = results[1];
-	return std::string (reinterpret_cast<char *> (&results[2]), std::min (length, 14ul));
+	return std::string (reinterpret_cast<char *> (&results[2]), std::min (length, std::size_t {14}));
 }

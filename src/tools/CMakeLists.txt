@@ -14,7 +14,7 @@ add_executable(hidpp-check-device
 target_link_libraries(hidpp-check-device hidpp ${CMAKE_THREAD_LIBS_INIT})
 install(TARGETS hidpp-check-device RUNTIME DESTINATION bin)
 
-foreach(TOOL_NAME
+set(TOOLS
 	hidpp-list-devices
 	hidpp-list-features
 	hidpp-mouse-resolution
@@ -28,9 +28,15 @@ foreach(TOOL_NAME
 	hidpp20-dump-page
 	hidpp20-write-page
 	hidpp20-write-data
-	hidpp20-mouse-event-test
-	hidpp20-raw-touchpad-driver
 )
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(TOOLS ${TOOLS}
+		hidpp20-mouse-event-test
+		hidpp20-raw-touchpad-driver
+	)
+endif()
+
+foreach(TOOL_NAME ${TOOLS})
 	add_executable(${TOOL_NAME}
 		${TOOL_NAME}.cpp
 		$<TARGET_OBJECTS:common>)
