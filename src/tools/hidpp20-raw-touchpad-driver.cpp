@@ -30,7 +30,6 @@ extern "C" {
 #include <signal.h>
 #include <fcntl.h>
 #include <string.h>
-#include <libudev.h>
 #include <linux/uinput.h>
 }
 

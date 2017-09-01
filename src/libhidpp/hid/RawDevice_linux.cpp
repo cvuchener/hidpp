@@ -20,7 +20,6 @@
 
 #include <misc/Log.h>
 
-#include <sstream>
 #include <stdexcept>
 
 extern "C" {

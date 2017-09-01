@@ -19,10 +19,6 @@
 #include <cstdio>
 #include <cstring>
 
-extern "C" {
-#include <libudev.h>
-}
-
 #include <misc/Log.h>
 #include <hid/DeviceMonitor.h>
 #include <hidpp/SimpleDispatcher.h>

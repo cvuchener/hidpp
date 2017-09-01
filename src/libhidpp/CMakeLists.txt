@@ -57,11 +57,20 @@ set(LIBHIDPP_SOURCES
 	hidpp20/MacroFormat.cpp
 )
 
+if("${HID_BACKEND}" STREQUAL "windows")
+	set(LIBHIDPP_SOURCES ${LIBHIDPP_SOURCES}
+		hid/windows/error_category.cpp
+		hid/windows/DeviceData.cpp
+	)
+endif()
+
 include_directories(.)
 add_library(hidpp SHARED ${LIBHIDPP_SOURCES})
 if("${HID_BACKEND}" STREQUAL "linux")
 	target_include_directories(hidpp PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
 	target_link_libraries(hidpp ${LIBUDEV_LIBRARIES})
+elseif("${HID_BACKEND}" STREQUAL "windows")
+	target_link_libraries(hidpp setupapi hid cfgmgr32)
 endif()
 
 install(DIRECTORY "./" DESTINATION "include/hidpp"
