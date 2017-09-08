@@ -110,6 +110,7 @@ int main (int argc, char *argv[])
 		else
 			offset = 0;
 		iprofile.loadProfileFromAddress ({
+			0,
 			static_cast<uint8_t> (page),
 			static_cast<uint8_t> (offset)
 		});
