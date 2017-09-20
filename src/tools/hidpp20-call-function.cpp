@@ -28,7 +28,7 @@
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX feature_index function [parameters...]";
+	static const char *args = "device_path feature_index function [parameters...]";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 
 	std::vector<Option> options = {

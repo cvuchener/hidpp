@@ -34,7 +34,7 @@ extern "C" {
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX current|load|load-default|load-address|reload";
+	static const char *args = "device_path current|load|load-default|load-address|reload";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 
 	std::vector<Option> options = {

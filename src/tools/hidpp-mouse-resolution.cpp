@@ -183,7 +183,7 @@ public:
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX get|set dpi [y_dpi]";
+	static const char *args = "device_path get|set dpi [y_dpi]";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 	int sensor = 0;
 

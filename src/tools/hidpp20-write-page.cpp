@@ -36,7 +36,7 @@ extern "C" {
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX page";
+	static const char *args = "device_path page";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 	bool add_crc = false;
 
