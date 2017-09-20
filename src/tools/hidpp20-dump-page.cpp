@@ -34,7 +34,7 @@ extern "C" {
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX page";
+	static const char *args = "device_path page";
 	auto mem_type = HIDPP20::IOnboardProfiles::MemoryType::Writeable;
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 

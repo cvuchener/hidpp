@@ -49,7 +49,7 @@ using namespace tinyxml2;
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX read|write [file]";
+	static const char *args = "device_path read|write [file]";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 
 	std::vector<Option> options = {

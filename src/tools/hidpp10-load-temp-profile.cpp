@@ -49,7 +49,7 @@ using HIDPP::Macro;
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX [file]";
+	static const char *args = "device_path [file]";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 
 	std::vector<Option> options = {

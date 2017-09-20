@@ -67,7 +67,7 @@ bool setFlag (Flag *flag, const char *optarg)
 
 int main (int argc, char *argv[])
 {
-	static const char *args = "/dev/hidrawX info|get|set [control_id] [remap_id]";
+	static const char *args = "device_path info|get|set [control_id] [remap_id]";
 	HIDPP::DeviceIndex device_index = HIDPP::DefaultDevice;
 
 	Flag divert = NoChange, persist = NoChange, raw_xy = NoChange;
