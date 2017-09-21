@@ -388,7 +388,7 @@ const std::map<std::string, SettingDesc> ProfileFormat::ModeSettings = {
 };
 
 const EnumDesc ProfileFormat::SpecialActions = {
-	{ "DeactivatedSpecial", 0 },
+	{ "Deactivated", 0 },
 	{ "WheelLeft", 1 },
 	{ "WheelRight", 2 },
 	{ "ResolutionNext", 3 },
