@@ -106,7 +106,8 @@ void insertButton (const Profile::Button &button, const Macro &macro, XMLNode *p
 			el->SetAttribute ("modifiers", modifierString (modifier_mask).c_str ());
 		}
 		uint8_t key = button.key ();
-		el->SetText (keyString (key).c_str ());
+		if (key != 0)
+			el->SetText (keyString (key).c_str ());
 		break;
 	}
 
@@ -120,7 +121,8 @@ void insertButton (const Profile::Button &button, const Macro &macro, XMLNode *p
 	case Profile::Button::Type::ConsumerControl: {
 		el = doc->NewElement ("consumer-control");
 		uint8_t cc = button.consumerControl ();
-		el->SetText (consumerControlString (cc).c_str ());
+		if (cc != 0)
+			el->SetText (consumerControlString (cc).c_str ());
 		break;
 	}
 
@@ -177,6 +179,7 @@ void ProfileXML::write (const Profile &profile, const ProfileDirectory::Entry &e
 static
 void readButton (const XMLElement *element, Profile::Button &button, Macro &macro, const EnumDesc &special_actions)
 {
+	const char *text;
 
 	std::string name = element->Name ();
 	if (name == "macro") {
@@ -185,8 +188,10 @@ void readButton (const XMLElement *element, Profile::Button &button, Macro &macr
 		if (element->Attribute ("type"))
 			type = element->Attribute ("type");
 		if (type.empty () || type == "simple") {
-			Macro simple = textToMacro (element->GetText ());
-			macro = Macro::buildSimple (simple.begin (), simple.end ());
+			if ((text = element->GetText ())) {
+				Macro simple = textToMacro (text);
+				macro = Macro::buildSimple (simple.begin (), simple.end ());
+			}
 		}
 		else if (type == "loop") {
 			unsigned int loop_delay;
@@ -205,16 +210,16 @@ void readButton (const XMLElement *element, Profile::Button &button, Macro &macr
 
 			Macro pre, loop, post;
 			const XMLElement *pre_el = element->FirstChildElement ("pre");
-			if (pre_el) {
-				pre = textToMacro (pre_el->GetText ());
+			if (pre_el && (text = pre_el->GetText ())) {
+				pre = textToMacro (text);
 			}
 			const XMLElement *loop_el = element->FirstChildElement ("loop");
-			if (loop_el) {
-				loop = textToMacro (loop_el->GetText ());
+			if (loop_el && (text = loop_el->GetText ())) {
+				loop = textToMacro (text);
 			}
 			const XMLElement *post_el = element->FirstChildElement ("post");
-			if (post_el) {
-				post = textToMacro (post_el->GetText ());
+			if (post_el && (text = post_el->GetText ())) {
+				post = textToMacro (text);
 			}
 			macro = Macro::buildLoop (pre.begin (), pre.end (),
 						  loop.begin (), loop.end (),
@@ -222,8 +227,8 @@ void readButton (const XMLElement *element, Profile::Button &button, Macro &macr
 						  loop_delay);
 
 		}
-		else if (type == "advanced") {
-			macro = textToMacro (element->GetText ());
+		else if (type == "advanced" && (text = element->GetText ())) {
+			macro = textToMacro (text);
 		}
 	}
 	else if (name == "mouse-button") {
@@ -235,15 +240,17 @@ void readButton (const XMLElement *element, Profile::Button &button, Macro &macr
 		if (const char *attr = element->Attribute ("modifiers")) {
 			modifiers = modifierMask (attr);
 		}
-		unsigned int key_code = keyUsageCode (element->GetText ());
+		unsigned int key_code = ((text = element->GetText ()) ? keyUsageCode (text) : 0);
 		button.setKey (modifiers, key_code);
 	}
 	else if (name == "special") {
-		unsigned int special = special_actions.fromString (element->GetText ());
+		if (!(text = element->GetText ()))
+			throw std::runtime_error ("empty special string");
+		unsigned int special = special_actions.fromString (text);
 		button.setSpecial (special);
 	}
 	else if (name == "consumer-control") {
-		unsigned int cc = consumerControlCode (element->GetText ());
+		unsigned int cc = ((text = element->GetText ()) ? consumerControlCode (text) : 0);
 		button.setConsumerControl (cc);
 	}
 	else if (name == "disabled") {
@@ -277,7 +284,8 @@ Setting readSetting (const XMLElement *element, const SettingDesc &desc)
 		return settings;
 	}
 	else {
-		return desc.convertFromString (element->GetText ());
+		const char * text = element->GetText ();
+		return desc.convertFromString (text ? text : std::string ());
 	}
 }
 

@@ -163,7 +163,7 @@ std::string HID::keyString (unsigned int usage_code)
 {
 	if (usage_code > KeyMax || key_strings[usage_code].empty ()) {
 		std::stringstream ss;
-		ss << usage_code;
+		ss << "0x" << std::hex << std::setw (2) << std::setfill ('0') << usage_code;
 		return ss.str ();
 	}
 	return key_strings[usage_code];
@@ -480,7 +480,7 @@ std::string HID::consumerControlString (unsigned int usage_code)
 {
 	if (usage_code > CCMax || cc_strings[usage_code].empty ()) {
 		std::stringstream ss;
-		ss << usage_code;
+		ss << "0x" << std::hex << std::setw (4) << std::setfill ('0') << usage_code;
 		return ss.str ();
 	}
 	return cc_strings[usage_code];
