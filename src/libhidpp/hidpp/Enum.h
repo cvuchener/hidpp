@@ -25,6 +25,18 @@
 namespace HIDPP
 {
 
+class InvalidEnumValueError: public std::exception
+{
+public:
+	InvalidEnumValueError (int value);
+	InvalidEnumValueError (const std::string &str);
+
+	const char *what () const noexcept override;
+
+private:
+	std::string _msg;
+};
+
 class EnumDesc
 {
 public:

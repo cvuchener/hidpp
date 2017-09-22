@@ -114,7 +114,12 @@ void insertButton (const Profile::Button &button, const Macro &macro, XMLNode *p
 	case Profile::Button::Type::Special: {
 		el = doc->NewElement ("special");
 		unsigned int special = button.special ();
-		el->SetText (special_actions.toString (special).c_str ());
+		try {
+			el->SetText (special_actions.toString (special).c_str ());
+		}
+		catch (std::exception &e) {
+			Log::error () << "Failed to set special action text: " << e.what () << std::endl;
+		}
 		break;
 	}
 
@@ -143,7 +148,13 @@ void insertSetting (const std::string &name, const Setting &value, XMLNode *pare
 			insertSetting (p.first, p.second, element);
 	}
 	else {
-		element->SetText (value.toString ().c_str ());
+		try {
+			element->SetText (value.toString ().c_str ());
+		}
+		catch (std::exception &e) {
+			Log::error () << "Failed to set setting \"" << name
+				      << "\" text: " << e.what () << std::endl;
+		}
 	}
 	parent->InsertEndChild (element);
 }

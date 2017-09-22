@@ -18,7 +18,28 @@
 
 #include "Enum.h"
 
+#include <sstream>
+
 using namespace HIDPP;
+
+InvalidEnumValueError::InvalidEnumValueError (int value)
+{
+	std::stringstream ss;
+	ss << "Value " << value << " is not in enum";
+	_msg = ss.str ();
+}
+
+InvalidEnumValueError::InvalidEnumValueError (const std::string &str)
+{
+	std::stringstream ss;
+	ss << "String " << str << " is not in enum";
+	_msg = ss.str ();
+}
+
+const char *InvalidEnumValueError::what () const noexcept
+{
+	return _msg.c_str ();
+}
 
 EnumDesc::EnumDesc (std::initializer_list<container::value_type> values):
 	_values (values)
@@ -39,7 +60,7 @@ int EnumDesc::fromString (const std::string &str) const
 {
 	auto it = _values.find (str);
 	if (it == _values.end ())
-		throw std::runtime_error ("string is not a valid enum value");
+		throw InvalidEnumValueError (str);
 	return it->second;
 }
 
@@ -48,7 +69,7 @@ std::string EnumDesc::toString (int value) const
 	for (const auto &p: _values)
 		if (p.second == value)
 			return p.first;
-	throw std::runtime_error ("value is not in enum");
+	throw InvalidEnumValueError (value);
 }
 
 bool EnumDesc::check (int value) const
