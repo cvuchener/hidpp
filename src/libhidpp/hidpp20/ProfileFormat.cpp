@@ -304,11 +304,20 @@ Profile ProfileFormat::read (std::vector<uint8_t>::const_iterator begin) const
 			profile.buttons.emplace_back (readButton (button_data));
 		}
 	}
-	std::u16string name;
-	for (int i = 0; i < 24; ++i)
-		name.push_back (Name.read (begin, i));
-	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv16;
-	profile.settings.emplace ("name", conv16.to_bytes (name));
+	{
+		std::u16string u16name;
+		for (int i = 0; i < 24; ++i)
+			u16name.push_back (Name.read (begin, i));
+		std::string name;
+		try {
+			std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv16;
+			name = conv16.to_bytes (u16name);
+		}
+		catch (std::exception &e) {
+			Log::warning() << "Failed to convert profile name." << std::endl;
+		}
+		profile.settings.emplace ("name", name);
+	}
 	if (_has_rgb_effects) {
 		profile.settings.emplace ("logo_effect",
 					  readRGBEffect (LogoEffect.begin (begin)));
@@ -351,6 +360,7 @@ void ProfileFormat::write (const Profile &profile, std::vector<uint8_t>::iterato
 	}
 	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> conv16;
 	std::u16string name = conv16.from_bytes (general.get<std::string> ("name"));
+	name.resize (24, 0);
 	for (int i = 0; i < 24; ++i)
 		Name.write (begin, i, name[i]);
 	if (_has_rgb_effects) {
