@@ -135,9 +135,10 @@ skipWhiteSpaces (std::string::const_iterator begin, std::string::const_iterator 
 {
 	static const std::regex WhiteSpaceRegex ("\\s*");
 	std::smatch results;
-	assert (std::regex_search (begin, end,
-				   results, WhiteSpaceRegex,
-				   std::regex_constants::match_continuous));
+	std::regex_search (begin, end,
+			   results, WhiteSpaceRegex,
+			   std::regex_constants::match_continuous);
+	assert (!results.empty());
 	return results[0].second;
 }
 
@@ -170,7 +171,8 @@ Macro textToMacro (const std::string &text)
 
 		std::vector<std::string> params;
 		while (current != text.end ()) {
-			assert (std::regex_search (current, text.end (), results, ParamRegex, std::regex_constants::match_continuous));
+			std::regex_search (current, text.end (), results, ParamRegex, std::regex_constants::match_continuous);
+			assert (!results.empty());
 			current = skipWhiteSpaces (results[0].second, text.end ());
 			if (results[1].matched) // semi-colon
 				break;
