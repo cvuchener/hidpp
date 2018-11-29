@@ -147,7 +147,7 @@ int main (int argc, char *argv[])
 		tinyxml2::XMLDocument doc;
 		doc.Parse (xml.c_str ());
 		if (doc.Error ()) {
-			fprintf (stderr, "Error parsing XML:\n%s\n", doc.GetErrorStr2 ());
+			fprintf (stderr, "Error parsing XML:\n%s\n", doc.ErrorStr ());
 			return EXIT_FAILURE;
 		}
 
