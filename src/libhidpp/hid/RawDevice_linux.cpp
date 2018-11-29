@@ -68,7 +68,7 @@ RawDevice::RawDevice (const std::string &path):
 		::close (_p->fd);
 		throw std::system_error (err, std::system_category (), "HIDIOCGRAWNAME");
 	}
-	_name.assign (string, ret);
+	_name.assign (string, ret-1); // HIDIOCGRAWNAME result includes null terminator
 
 	struct hidraw_report_descriptor rdesc;
 	if (-1 == ::ioctl (_p->fd, HIDIOCGRDESCSIZE, &rdesc.size)) {
