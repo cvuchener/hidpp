@@ -114,7 +114,7 @@ Profile settings:
    - `color` (color): used by *Constant* and *Pulse* effects,
    - `period` (integer): in milliseconds for *Pulse* and *Cycle* effects,
    - `brightness` (integer): from 0 to 100, for *Pulse* and *Cycle* effects.
- - `switched_dpi` (bool, if G-shift is supported): resolution mode index to switch to when pressing *ModeSwitch* button.
+ - `switched_dpi` (bool, if DPI-shift is supported): resolution mode index to switch to when pressing *ResolutionSwitch* button.
  - `power_mode`: unknown accepted values.
 
 Mode settings:
@@ -128,7 +128,10 @@ Supported special actions:
  - *ResolutionCycle* for cycling through the resolution modes,
  - *ResolutionDefault* for switching to the default resolution mode,
  - *ResolutionSwitch* for switching to the `switched_dpi` mode while pressed,
+ - *ProfileNext* for switching to the next profiles,
+ - *ProfilePrev* for switching to the previous profile,
  - *ProfileCycle* for cycling through the profiles,
+ - *GShift* for using alternate buttons while pressed,
  - *BatteryLevel* for displaying battery level on the device LEDs,
 
 
@@ -145,6 +148,8 @@ Buttons use different element names depending on the type of mapping:
    - *loop* defines complex loops. It can contains three elements `<pre>`, `<loop>`, and `<post>` each containing simple macro instructions respectively corresponding to the pre-loop instructions, looping instruction and post-loop instruction. Any of these child elements can be omitted. *loop* type `<macro>` elements can have a `loop-delay` attribute (default value is 0) for delaying the start of the loop: the loop is not executed if the button is released before that time, a 0 *loop-delay* will always execute the loop instructions at least once.
    - *advanced* can be used for defining more complex macros, it accept advanced macro instructions. The macro must end with an *End* instruction.
  - `<disabled>` for disabling the button.
+
+G-Shift devices will have twice the number of buttons. The first buttons are used in normal mode, the last buttons are used in shifted mode (when the *GShift* special action is pressed). The alternate action for the G-shift button is not used.
 
 
 Macro language
