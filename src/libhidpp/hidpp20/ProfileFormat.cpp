@@ -409,7 +409,7 @@ const EnumDesc ProfileFormat::SpecialActions = {
 	{ "ProfileNext", 8 },
 	{ "ProfilePrev", 9 },
 	{ "ProfileCycle", 10 },
-	{ "ModeSwitch", 11 },
+	{ "GShift", 11 },
 	{ "BatteryLevel", 12 },
 };
 
