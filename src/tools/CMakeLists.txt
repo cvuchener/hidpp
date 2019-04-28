@@ -25,6 +25,7 @@ set(TOOLS
 	hidpp20-call-function
 	hidpp20-onboard-profiles-get-description
 	hidpp20-reprog-controls
+	hidpp20-led-control
 	hidpp20-dump-page
 	hidpp20-write-page
 	hidpp20-write-data
