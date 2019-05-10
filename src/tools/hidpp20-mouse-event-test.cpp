@@ -301,13 +301,13 @@ int main (int argc, char *argv[])
 	try {
 		listener->addEventHandler (std::make_unique<ButtonHandler> (dev.get ()));
 	}
-	catch (HIDPP20::UnsupportedFeature e) {
+	catch (HIDPP20::UnsupportedFeature &e) {
 		printf ("%s\n", e.what ());
 	}
 	try {
 		listener->addEventHandler (std::make_unique<ProfileHandler> (dev.get ()));
 	}
-	catch (HIDPP20::UnsupportedFeature e) {
+	catch (HIDPP20::UnsupportedFeature &e) {
 		printf ("%s\n", e.what ());
 	}
 	listener->start();

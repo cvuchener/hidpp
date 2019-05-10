@@ -59,7 +59,7 @@ Device::Device (Dispatcher *dispatcher, DeviceIndex device_index):
 							nullptr);
 			_name = ireceiver.getDeviceName (device_index - 1);
 		}
-		catch (HIDPP10::Error e) {
+		catch (HIDPP10::Error &e) {
 			if (e.errorCode () == HIDPP10::Error::InvalidValue) {
 				// the invalid value is the device index
 				throw HIDPP10::Error (HIDPP10::Error::UnknownDevice);
@@ -83,7 +83,7 @@ Device::Device (Dispatcher *dispatcher, DeviceIndex device_index):
 		auto params = report.parameterBegin ();
 		_version = std::make_tuple (params[0], params[1]);
 	}
-	catch (HIDPP10::Error e) {
+	catch (HIDPP10::Error &e) {
 		// Valid HID++1.0 devices should send a "Invalid SubID" error.
 		if (e.errorCode () != HIDPP10::Error::InvalidSubID)
 			throw;

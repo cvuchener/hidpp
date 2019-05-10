@@ -86,7 +86,7 @@ int main (int argc, char *argv[])
 					    static_cast<unsigned int> (function),
 					    params);
 	}
-	catch (HIDPP20::Error e) {
+	catch (HIDPP20::Error &e) {
 		fprintf (stderr, "Error code %d: %s\n", e.errorCode (), e.what ());
 		return e.errorCode ();
 	}

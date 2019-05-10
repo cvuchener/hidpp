@@ -63,28 +63,28 @@ protected:
 					if (index == HIDPP::DefaultDevice && version == std::make_tuple (1, 0))
 						has_receiver_index = true;
 				}
-				catch (HIDPP10::Error e) {
+				catch (HIDPP10::Error &e) {
 					if (e.errorCode () != HIDPP10::Error::UnknownDevice && e.errorCode () != HIDPP10::Error::InvalidSubID) {
 						Log::error ().printf ("Error while querying %s wireless device %d: %s\n",
 								      path, index, e.what ());
 					}
 				}
-				catch (HIDPP20::Error e) {
+				catch (HIDPP20::Error &e) {
 					if (e.errorCode () != HIDPP20::Error::UnknownDevice) {
 						Log::error ().printf ("Error while querying %s device %d: %s\n",
 								      path, index, e.what ());
 					}
 				}
-				catch (HIDPP::Dispatcher::TimeoutError e) {
+				catch (HIDPP::Dispatcher::TimeoutError &e) {
 					Log::warning ().printf ("Device %s (index %d) timed out\n",
 								path, index);
 				}
 			}
 
 		}
-		catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
+		catch (HIDPP::Dispatcher::NoHIDPPReportException &e) {
 		}
-		catch (std::system_error e) {
+		catch (std::system_error &e) {
 			Log::warning ().printf ("Failed to open %s: %s\n", path, e.what ());
 		}
 	}

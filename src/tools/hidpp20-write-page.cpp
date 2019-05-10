@@ -120,7 +120,7 @@ int main (int argc, char *argv[])
 	try {
 		iop.memoryWriteEnd ();
 	}
-	catch (HIDPP20::Error e) {
+	catch (HIDPP20::Error &e) {
 		if (e.errorCode () == HIDPP20::Error::HWError) {
 			fprintf (stderr, "memoryWriteEnd returned Hardware Error, maybe the CRC in wrong but the page is actually written.\n");
 		}

@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
 		iop.memoryWriteEnd ();
 	}
-	catch (HIDPP20::Error e) {
+	catch (HIDPP20::Error &e) {
 		fprintf (stderr, "Error while writing data: %s (%d).\n", e.what (), e.errorCode ());
 		return e.errorCode ();
 	}

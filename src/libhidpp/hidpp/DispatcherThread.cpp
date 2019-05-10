@@ -155,10 +155,10 @@ void DispatcherThread::run ()
 			if (0 != _dev.readReport (raw_report))
 				processReport (std::move (raw_report));
 		}
-		catch (Report::InvalidReportID e) {
+		catch (Report::InvalidReportID &e) {
 			// There may be other reports on this device, just ignore them.
 		}
-		catch (Report::InvalidReportLength e) {
+		catch (Report::InvalidReportLength &e) {
 			Log::error () << "Ignored report with invalid length" << std::endl;
 		}
 		catch (std::exception &e) {

@@ -108,7 +108,7 @@ int main (int argc, char *argv[])
 					 params, &results);
 		}
 	}
-	catch (HIDPP10::Error e) {
+	catch (HIDPP10::Error &e) {
 		fprintf (stderr, "%s\n", e.what ());
 		return e.errorCode ();
 	}

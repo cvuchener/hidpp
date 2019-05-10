@@ -105,7 +105,7 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 			printf (" %02hhx", value);
 		printf ("\n");
 	}
-	catch (HIDPP10::Error e) {
+	catch (HIDPP10::Error &e) {
 		if (e.errorCode () != HIDPP10::Error::InvalidSubID &&
 		    e.errorCode () != HIDPP10::Error::InvalidAddress) {
 			printf ("Register 0x%02hhx read  %2lu: %s (0x%02hhx)\n",
@@ -127,14 +127,14 @@ void testRegister (HIDPP10::Device *dev, std::size_t register_size, uint8_t addr
 				printf (" %02hhx", value);
 			printf ("\n");
 		}
-		catch (HIDPP10::Error e) {
+		catch (HIDPP10::Error &e) {
 			if (e.errorCode () != HIDPP10::Error::InvalidSubID &&
 			    e.errorCode () != HIDPP10::Error::InvalidAddress) {
 				printf ("Register 0x%02hhx write %2lu: %s (0x%02hhx)\n",
 					address, register_size, e.what (), e.errorCode ());
 			}
 		}
-		catch (std::system_error e) {
+		catch (std::system_error &e) {
 			/* G5 does not support long writes and throw EPIPE */
 			if (e.code ().value () != EPIPE) {
 				throw e;
@@ -178,11 +178,11 @@ int main (int argc, char *argv[])
 	try {
 		dispatcher = std::make_unique<HIDPP::SimpleDispatcher> (path);
 	}
-	catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
+	catch (HIDPP::Dispatcher::NoHIDPPReportException &e) {
 		printf ("%s is not a HID++ device\n", path);
 		return EXIT_FAILURE;
 	}
-	catch (std::system_error e) {
+	catch (std::system_error &e) {
 		fprintf (stderr, "Failed to open %s: %s\n", path, e.what ());
 		return EXIT_FAILURE;
 	}
@@ -242,7 +242,7 @@ int main (int argc, char *argv[])
 					printf (" - LED Control\n");
 				}
 			}
-			catch (HIDPP10::Error e) {
+			catch (HIDPP10::Error &e) {
 				printf ("Individual features: %s\n", e.what ());
 			}
 		}

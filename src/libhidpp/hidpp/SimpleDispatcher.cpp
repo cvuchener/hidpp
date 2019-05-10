@@ -83,7 +83,7 @@ void SimpleDispatcher::listen ()
 			debug << "Ignored report while listening for events." << std::endl;
 		}
 	}
-	catch (Dispatcher::TimeoutError e) {
+	catch (Dispatcher::TimeoutError &e) {
 		// return when getReport is interrupted.
 	}
 }
@@ -110,10 +110,10 @@ Report SimpleDispatcher::getReport (int timeout)
 			processEvent (report);
 			return report;
 		}
-		catch (Report::InvalidReportID e) {
+		catch (Report::InvalidReportID &e) {
 			// There may be other reports on this device, just ignore them.
 		}
-		catch (Report::InvalidReportLength e) {
+		catch (Report::InvalidReportLength &e) {
 			Log::error () << "Ignored report with invalid length" << std::endl;
 		}
 	}

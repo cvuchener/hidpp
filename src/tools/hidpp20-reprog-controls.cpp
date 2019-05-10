@@ -228,7 +228,7 @@ int main (int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 	}
-	catch (Error e) {
+	catch (Error &e) {
 		fprintf (stderr, "Error code %d: %s\n", e.errorCode (), e.what ());
 		return e.errorCode ();
 	}

@@ -103,7 +103,7 @@ int main (int argc, char *argv[])
 		}
 		printf (")\n");
 	}
-	catch (HIDPP20::Error e) {
+	catch (HIDPP20::Error &e) {
 		fprintf (stderr, "Error code %d: %s\n", e.errorCode (), e.what ());
 		return e.errorCode ();
 	}

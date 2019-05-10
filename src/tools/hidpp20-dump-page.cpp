@@ -88,7 +88,7 @@ int main (int argc, char *argv[])
 			i += data.size ();
 		}
 	}
-	catch (HIDPP20::Error e) {
+	catch (HIDPP20::Error &e) {
 		fprintf (stderr, "HID++2 error %d: %s\n", e.errorCode (), e.what ());
 		return e.errorCode ();
 	}

@@ -66,11 +66,11 @@ int main (int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 	}
-	catch (HIDPP::Dispatcher::NoHIDPPReportException e) {
+	catch (HIDPP::Dispatcher::NoHIDPPReportException &e) {
 		Log::info () << "Device is not a HID++ device" << std::endl;
 		return EXIT_FAILURE;
 	}
-	catch (std::system_error e) {
+	catch (std::system_error &e) {
 		fprintf (stderr, "Failed to open %s: %s\n", path, e.what ());
 		return EXIT_FAILURE;
 	}
