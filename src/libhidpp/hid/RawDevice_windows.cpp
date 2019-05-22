@@ -94,6 +94,7 @@ struct RawDevice::PrivateImpl
 	{
 		RAII_HANDLE file;
 		RAII_HANDLE event;
+		HIDP_CAPS caps;
 	};
 	std::vector<Device> devices;
 	std::map<uint8_t, HANDLE> reports;
@@ -251,7 +252,7 @@ RawDevice::RawDevice (const std::string &path):
 						 "HidD_GetPreparsedData");
 		}
 
-		HIDP_CAPS caps;
+		HIDP_CAPS &caps = _p->devices.back ().caps;
 		if (HIDP_STATUS_SUCCESS != HidP_GetCaps (preparsed_data, &caps)) {
 			HidD_FreePreparsedData (preparsed_data);
 			throw std::runtime_error ("HidP_GetCaps failed");
@@ -434,6 +435,8 @@ int RawDevice::readReport (std::vector<uint8_t> &report, int timeout)
 	reads.reserve (_p->devices.size ()); // Reserve memory so overlapped are not moved.
 
 	for (auto &dev: _p->devices) {
+		if (report.size () < dev.caps.InputReportByteLength)
+			continue; // skip device with reports that would not fit in the buffer
 		reads.emplace_back (dev.file, dev.event);
 		if (!reads.back ().read (report.data (), report.size (), &read))
 			goto report_read;
@@ -450,7 +453,7 @@ int RawDevice::readReport (std::vector<uint8_t> &report, int timeout)
 		throw std::system_error (err, windows_category (), "WaitForMultipleObject");
 	default:
 		i = ret-WAIT_OBJECT_0-1;
-		if (i < 0 || i >= _p->devices.size ())
+		if (i < 0 || i >= reads.size ())
 			throw std::runtime_error ("Unexpected return value from WaitForMultipleObject");
 		else
 			reads[i].finish (&read);
