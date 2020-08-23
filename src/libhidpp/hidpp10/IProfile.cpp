@@ -21,6 +21,8 @@
 #include <hidpp10/Device.h>
 #include <hidpp10/defs.h>
 
+#include <stdexcept>
+
 using namespace HIDPP;
 using namespace HIDPP10;
 

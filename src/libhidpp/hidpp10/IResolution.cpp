@@ -24,6 +24,8 @@
 
 #include <misc/Endian.h>
 
+#include <stdexcept>
+
 using namespace HIDPP10;
 
 IResolution0::IResolution0 (Device *dev, const Sensor *sensor):
