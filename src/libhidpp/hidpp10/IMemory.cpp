@@ -24,6 +24,7 @@
 #include <misc/Endian.h>
 
 #include <algorithm>
+#include <stdexcept>
 
 using namespace HIDPP;
 using namespace HIDPP10;

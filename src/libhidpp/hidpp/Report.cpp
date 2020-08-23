@@ -21,6 +21,7 @@
 #include <hidpp10/defs.h>
 #include <hidpp20/defs.h>
 #include <algorithm>
+#include <stdexcept>
 
 using namespace HIDPP;
 
