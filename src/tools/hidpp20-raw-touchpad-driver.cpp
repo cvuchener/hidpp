@@ -20,6 +20,7 @@
 #include <vector>
 #include <map>
 #include <cassert>
+#include <thread>
 
 #include "common/common.h"
 #include "common/CommonOptions.h"
