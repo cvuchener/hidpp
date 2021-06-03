@@ -202,6 +202,7 @@ void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 
 	uint8_t sub_id, address, feature, error_code;
 	unsigned int function, sw_id;
+	std::vector<uint8_t> error_data;
 
 	if (report.checkErrorMessage10 (&sub_id, &address, &error_code)) {
 		std::unique_lock<std::mutex> lock (_command_mutex);
@@ -218,7 +219,7 @@ void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 		else
 			Log::warning () << "HID++1.0 error message was not matched with any command." << std::endl;
 	}
-	else if (report.checkErrorMessage20 (&feature, &function, &sw_id, &error_code)) {
+	else if (report.checkErrorMessage20 (&feature, &function, &sw_id, &error_code, &error_data)) {
 		std::unique_lock<std::mutex> lock (_command_mutex);
 		auto it = std::find_if (_commands.begin (), _commands.end (),
 			[index, feature, function, sw_id] (const Command &cmd) {
@@ -228,7 +229,7 @@ void DispatcherThread::processReport (std::vector<uint8_t> &&raw_report)
 					sw_id == cmd.request.softwareID ();
 			});
 		if (it != _commands.end ()) {
-			it->response.set_exception (std::make_exception_ptr (HIDPP20::Error (error_code)));
+			it->response.set_exception (std::make_exception_ptr (HIDPP20::Error (error_code, std::move(error_data))));
 			_commands.erase (it);
 		}
 		else

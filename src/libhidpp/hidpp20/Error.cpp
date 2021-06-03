@@ -25,6 +25,13 @@ Error::Error (uint8_t error_code):
 {
 }
 
+Error::Error (uint8_t error_code, std::vector<uint8_t> error_data):
+	_error_code (error_code),
+	_error_data (std::move(error_data))
+{
+}
+
+
 const char *Error::what () const noexcept
 {
 	switch (_error_code) {

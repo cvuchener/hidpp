@@ -138,6 +138,7 @@ Report SimpleDispatcher::CommandResponse::get (int timeout)
 		}
 		unsigned int function, swid;
 		uint8_t sub_id, address, feature, error_code;
+		std::vector<uint8_t> error_data;
 		if (response.checkErrorMessage10 (&sub_id, &address, &error_code)) {
 			if (sub_id == report.subID () && address == report.address ())
 				throw HIDPP10::Error (error_code);
@@ -146,9 +147,9 @@ Report SimpleDispatcher::CommandResponse::get (int timeout)
 				continue;
 			}
 		}
-		if (response.checkErrorMessage20 (&feature, &function, &swid, &error_code)) {
+		if (response.checkErrorMessage20 (&feature, &function, &swid, &error_code, &error_data)) {
 			if (feature == report.featureIndex () && function == report.function () && swid == report.softwareID ())
-				throw HIDPP20::Error (error_code);
+				throw HIDPP20::Error (error_code, std::move(error_data));
 			else {
 				debug << "Ignored HID++2.0 error response." << std::endl;
 				continue;
