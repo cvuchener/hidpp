@@ -20,6 +20,7 @@
 #define LIBHIDPP_HIDPP20_ERROR_H
 
 #include <stdexcept>
+#include <vector>
 
 #include <hidpp20/defs.h>
 
@@ -44,12 +45,15 @@ public:
 	};
 
 	Error (uint8_t error_code);
+	Error (uint8_t error_code, std::vector<uint8_t> error_data);
 
 	virtual const char *what () const noexcept;
 	uint8_t errorCode () const;
+	const std::vector<uint8_t>& errorData () const { return _error_data; }
 
 private:
 	uint8_t _error_code;
+	std::vector<uint8_t> _error_data;
 };
 
 }
