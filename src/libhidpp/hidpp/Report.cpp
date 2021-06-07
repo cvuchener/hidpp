@@ -258,8 +258,7 @@ bool Report::checkErrorMessage20 (uint8_t *feature_index,
 				  uint8_t *error_code,
 				  std::vector<uint8_t> *error_data) const
 {
-	if (static_cast<Type> (_data[Offset::Type]) != Long ||
-	    _data[Offset::SubID] != HIDPP20::ErrorMessage)
+	if (_data[Offset::SubID] != HIDPP20::ErrorMessage)
 		return false;
 
 	if (feature_index)
