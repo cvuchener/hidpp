@@ -25,81 +25,66 @@
 
 using namespace HIDPP;
 
-static const std::array<uint8_t, 27> ShortReportDesc = {
-	0x06, 0x00, 0xFF,	// Usage Page (FF00 - Vendor)
-	0x09, 0x01,		// Usage (0001 - Vendor)
-	0xA1, 0x01,		// Collection (Application)
-	0x85, 0x10,		//   Report ID (16)
-	0x75, 0x08,		//   Report Size (8)
-	0x95, 0x06,		//   Report Count (6)
-	0x15, 0x00,		//   Logical Minimum (0)
-	0x26, 0xFF, 0x00,	//   Logical Maximum (255)
-	0x09, 0x01,		//   Usage (0001 - Vendor)
-	0x81, 0x00,		//   Input (Data, Array, Absolute)
-	0x09, 0x01,		//   Usage (0001 - Vendor)
-	0x91, 0x00,		//   Output (Data, Array, Absolute)
-	0xC0			// End Collection
-};
-
-static const std::array<uint8_t, 27> LongReportDesc = {
-	0x06, 0x00, 0xFF,	// Usage Page (FF00 - Vendor)
-	0x09, 0x02,		// Usage (0002 - Vendor)
-	0xA1, 0x01,		// Collection (Application)
-	0x85, 0x11,		//   Report ID (17)
-	0x75, 0x08,		//   Report Size (8)
-	0x95, 0x13,		//   Report Count (19)
-	0x15, 0x00,		//   Logical Minimum (0)
-	0x26, 0xFF, 0x00,	//   Logical Maximum (255)
-	0x09, 0x02,		//   Usage (0002 - Vendor)
-	0x81, 0x00,		//   Input (Data, Array, Absolute)
-	0x09, 0x02,		//   Usage (0002 - Vendor)
-	0x91, 0x00,		//   Output (Data, Array, Absolute)
-	0xC0			// End Collection
-};
-
-/* Alternative versions from the G602 */
-static const std::array<uint8_t, 27> ShortReportDesc2 = {
-	0x06, 0x00, 0xFF,	// Usage Page (FF00 - Vendor)
-	0x09, 0x01,		// Usage (0001 - Vendor)
-	0xA1, 0x01,		// Collection (Application)
-	0x85, 0x10,		//   Report ID (16)
-	0x95, 0x06,		//   Report Count (6)
-	0x75, 0x08,		//   Report Size (8)
-	0x15, 0x00,		//   Logical Minimum (0)
-	0x26, 0xFF, 0x00,	//   Logical Maximum (255)
-	0x09, 0x01,		//   Usage (0001 - Vendor)
-	0x81, 0x00,		//   Input (Data, Array, Absolute)
-	0x09, 0x01,		//   Usage (0001 - Vendor)
-	0x91, 0x00,		//   Output (Data, Array, Absolute)
-	0xC0			// End Collection
-};
-
-static const std::array<uint8_t, 27> LongReportDesc2 = {
-	0x06, 0x00, 0xFF,	// Usage Page (FF00 - Vendor)
-	0x09, 0x02,		// Usage (0002 - Vendor)
-	0xA1, 0x01,		// Collection (Application)
-	0x85, 0x11,		//   Report ID (17)
-	0x95, 0x13,		//   Report Count (19)
-	0x75, 0x08,		//   Report Size (8)
-	0x15, 0x00,		//   Logical Minimum (0)
-	0x26, 0xFF, 0x00,	//   Logical Maximum (255)
-	0x09, 0x02,		//   Usage (0002 - Vendor)
-	0x81, 0x00,		//   Input (Data, Array, Absolute)
-	0x09, 0x02,		//   Usage (0002 - Vendor)
-	0x91, 0x00,		//   Output (Data, Array, Absolute)
-	0xC0			// End Collection
-};
-
-template<typename Container1, typename Container2>
-static inline bool contains (const Container1 &cont, const Container2 &seq)
+static bool hasReport(const HID::ReportCollection &collection, HID::ReportID::Type type, uint8_t id, uint32_t usage, unsigned int count)
 {
-	return cont.end () != std::search (cont.begin (), cont.end (), seq.begin (), seq.end ());
+	using namespace HID;
+	auto it = collection.reports.find (ReportID {type, id});
+	if (it == collection.reports.end ())
+		return false;
+	const auto &fields = it->second;
+	if (fields.size () != 1)
+		return false;
+	const auto &field = fields.front ();
+	if (auto usages = std::get_if<std::vector<uint32_t>> (&field.usages)) {
+		return field.flags.Data () && field.flags.Array () &&
+			field.count == count && field.size == 8 &&
+			usages->size () == 1 && usages->front () == usage;
+	}
+	else
+		return false;
 }
 
-bool HIDPP::checkReportDescriptor (const std::vector<uint8_t> &rdesc)
+bool HIDPP::checkReportDescriptor (const HID::ReportDescriptor &rdesc)
 {
-	return (contains (rdesc, ShortReportDesc) || contains (rdesc, ShortReportDesc2)) &&
-		(contains (rdesc, LongReportDesc) || contains (rdesc, LongReportDesc2));
+	static constexpr uint32_t ShortReportUsage = 0xFF000001;
+	static constexpr uint32_t LongReportUsage = 0xFF000002;
+	static constexpr unsigned int ShortReportCount = 6;
+	static constexpr unsigned int LongReportCount = 19;
+	bool has_short_input = false;
+	bool has_long_input = false;
+	bool has_short_output = false;
+	bool has_long_output = false;
+	for (const auto &collection: rdesc.collections) {
+		if (collection.usage == ShortReportUsage) {
+			has_short_input = hasReport (
+					collection,
+					HID::ReportID::Type::Input,
+					Report::Short,
+					ShortReportUsage,
+					ShortReportCount);
+			has_short_output = hasReport (
+					collection,
+					HID::ReportID::Type::Output,
+					Report::Short,
+					ShortReportUsage,
+					ShortReportCount);
+		}
+		else if (collection.usage == LongReportUsage) {
+			has_long_input = hasReport (
+					collection,
+					HID::ReportID::Type::Input,
+					Report::Long,
+					LongReportUsage,
+					LongReportCount);
+			has_long_output = hasReport (
+					collection,
+					HID::ReportID::Type::Output,
+					Report::Long,
+					LongReportUsage,
+					LongReportCount);
+		}
+	}
+	return has_short_input && has_long_input && has_short_output && has_long_output;
 }
 
 Report::InvalidReportID::InvalidReportID ()

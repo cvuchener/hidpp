@@ -69,6 +69,8 @@ RawDevice::RawDevice (const std::string &path):
 		throw std::system_error (err, std::system_category (), "HIDIOCGRAWNAME");
 	}
 	_name.assign (string, ret-1); // HIDIOCGRAWNAME result includes null terminator
+	Log::debug ("hid").printf ("Opened device \"%s\" (%04x:%04x)\n",
+			_name.c_str (), _vendor_id, _product_id);
 
 	struct hidraw_report_descriptor rdesc;
 	if (-1 == ::ioctl (_p->fd, HIDIOCGRDESCSIZE, &rdesc.size)) {
@@ -81,7 +83,13 @@ RawDevice::RawDevice (const std::string &path):
 		::close (_p->fd);
 		throw std::system_error (err, std::system_category (), "HIDIOCGRDESC");
 	}
-	_report_desc = ReportDescriptor (rdesc.value, rdesc.value+rdesc.size);
+	try {
+		_report_desc = ReportDescriptor::fromRawData (rdesc.value, rdesc.size);
+		logReportDescriptor ();
+	}
+	catch (std::exception &e) {
+		Log::error () << "Invalid report descriptor: " << e.what () << std::endl;
+	}
 
 	if (-1 == ::pipe (_p->pipe)) {
 		int err = errno;

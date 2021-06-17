@@ -23,10 +23,10 @@
 #include <vector>
 #include <memory>
 
+#include <hid/ReportDescriptor.h>
+
 namespace HID
 {
-
-typedef std::vector<uint8_t> ReportDescriptor;
 
 class RawDevice
 {
@@ -77,6 +77,8 @@ private:
 	uint16_t _vendor_id, _product_id;
 	std::string _name;
 	ReportDescriptor _report_desc;
+
+	void logReportDescriptor () const;
 };
 
 }
