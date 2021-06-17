@@ -86,6 +86,56 @@ public:
 	}
 };
 
+static const int8_t preparse_data_header_magic[8] = {'H', 'i', 'd', 'P', ' ', 'K', 'D', 'R'};
+struct preparsed_data_header
+{
+	int8_t magic[8];
+	uint16_t usage, usage_page;
+	uint16_t unk1[3];
+	uint16_t input_item_count;
+	uint16_t unk2;
+	uint16_t input_report_byte_length;
+	uint16_t unk3;
+	uint16_t output_item_count;
+	uint16_t unk4;
+	uint16_t output_report_byte_length;
+	uint16_t unk5;
+	uint16_t feature_item_count;
+	uint16_t item_count;
+	uint16_t feature_report_byte_length;
+	uint16_t size_bytes;
+	uint16_t unk6;
+};
+static_assert(sizeof(preparsed_data_header) == 44);
+struct preparsed_data_item
+{
+	uint16_t usage_page;
+	uint8_t report_id;
+	uint8_t bit_index;
+	uint16_t bit_size;
+	uint16_t report_count;
+	uint16_t byte_index;
+	uint16_t bit_count;
+	uint32_t bit_field;
+	uint32_t unk1;
+	uint16_t link_usage_page, link_usage;
+	uint32_t unk2[9];
+	uint16_t usage_minimum, usage_maximum;
+	uint16_t string_minimum, string_maximum;
+	uint16_t designator_minimum, designator_maximum;
+	uint16_t data_index_minimum, data_index_maximum;
+	uint32_t unk3;
+	int32_t logical_minimum, logical_maximum;
+	int32_t physical_minimum, physical_maximum;
+	uint32_t unit, unit_exponent;
+};
+static_assert(sizeof(preparsed_data_item) == 104);
+
+static inline uint32_t make_usage(uint16_t usage_page, uint16_t usage)
+{
+	return (uint32_t (usage_page) << 16) | usage;
+}
+
 using namespace HID;
 
 struct RawDevice::PrivateImpl
@@ -104,73 +154,6 @@ struct RawDevice::PrivateImpl
 RawDevice::RawDevice ():
 	_p (std::make_unique<PrivateImpl> ())
 {
-}
-
-static const std::array<uint8_t, 27> ShortReportDesc = {
-	0x06, 0x00, 0xFF,	// Usage Page (FF00 - Vendor)
-	0x09, 0x01,		// Usage (0001 - Vendor)
-	0xA1, 0x01,		// Collection (Application)
-	0x85, 0x10,		//   Report ID (16)
-	0x75, 0x08,		//   Report Size (8)
-	0x95, 0x06,		//   Report Count (6)
-	0x15, 0x00,		//   Logical Minimum (0)
-	0x26, 0xFF, 0x00,	//   Logical Maximum (255)
-	0x09, 0x01,		//   Usage (0001 - Vendor)
-	0x81, 0x00,		//   Input (Data, Array, Absolute)
-	0x09, 0x01,		//   Usage (0001 - Vendor)
-	0x91, 0x00,		//   Output (Data, Array, Absolute)
-	0xC0			// End Collection
-};
-
-static const std::array<uint8_t, 27> LongReportDesc = {
-	0x06, 0x00, 0xFF,	// Usage Page (FF00 - Vendor)
-	0x09, 0x02,		// Usage (0002 - Vendor)
-	0xA1, 0x01,		// Collection (Application)
-	0x85, 0x11,		//   Report ID (17)
-	0x75, 0x08,		//   Report Size (8)
-	0x95, 0x13,		//   Report Count (19)
-	0x15, 0x00,		//   Logical Minimum (0)
-	0x26, 0xFF, 0x00,	//   Logical Maximum (255)
-	0x09, 0x02,		//   Usage (0002 - Vendor)
-	0x81, 0x00,		//   Input (Data, Array, Absolute)
-	0x09, 0x02,		//   Usage (0002 - Vendor)
-	0x91, 0x00,		//   Output (Data, Array, Absolute)
-	0xC0			// End Collection
-};
-
-template<typename Caps, NTSTATUS (*GetCaps) (HIDP_REPORT_TYPE, Caps *, PUSHORT, PHIDP_PREPARSED_DATA)>
-static std::set<uint8_t> readCaps (USHORT count, HIDP_REPORT_TYPE report_type, PHIDP_PREPARSED_DATA preparsed_data, ReportDescriptor &rdesc)
-{
-	if (count == 0)
-		return {};
-	auto windebug = Log::debug ("windows");
-	std::vector<Caps> caps (count);
-	USHORT len = count;
-	if (HIDP_STATUS_SUCCESS != GetCaps (report_type, caps.data (), &len, preparsed_data)) {
-		throw std::runtime_error ("HidP_GetButtonCaps failed for input reports");
-	}
-
-	std::set<uint8_t> report_ids;
-	for (const auto &cap: caps) {
-		report_ids.insert (cap.ReportID);
-
-		// Hack around the lack of raw report descriptor
-		if (cap.ReportID == 0x10
-		    && cap.UsagePage == 0xff00
-		    && !cap.IsRange && cap.NotRange.Usage == 0x0001) {
-			rdesc.insert (rdesc.end (),
-				      ShortReportDesc.begin (),
-				      ShortReportDesc.end ());
-		}
-		if (cap.ReportID == 0x11
-		    && cap.UsagePage == 0xff00
-		    && !cap.IsRange && cap.NotRange.Usage == 0x0002) {
-			rdesc.insert (rdesc.end (),
-				      LongReportDesc.begin (),
-				      LongReportDesc.end ());
-		}
-	}
-	return report_ids;
 }
 
 RawDevice::RawDevice (const std::string &path):
@@ -242,6 +225,8 @@ RawDevice::RawDevice (const std::string &path):
 							 "HidD_GetProductString");
 			}
 			_name += " " + u16conv.to_bytes (buffer);
+			Log::debug ("hid").printf ("Opened device \"%s\" (%04x:%04x)\n",
+					_name.c_str (), _vendor_id, _product_id);
 			first = false;
 		}
 
@@ -252,44 +237,72 @@ RawDevice::RawDevice (const std::string &path):
 						 "HidD_GetPreparsedData");
 		}
 
-		HIDP_CAPS &caps = _p->devices.back ().caps;
-		if (HIDP_STATUS_SUCCESS != HidP_GetCaps (preparsed_data, &caps)) {
-			HidD_FreePreparsedData (preparsed_data);
-			throw std::runtime_error ("HidP_GetCaps failed");
-		}
+		std::unique_ptr<_HIDP_PREPARSED_DATA, decltype(&HidD_FreePreparsedData)> unique_preparsed_data (preparsed_data, &HidD_FreePreparsedData);
 
-		try {
-			auto ib = readCaps<HIDP_BUTTON_CAPS, HidP_GetButtonCaps> (
-					caps.NumberInputButtonCaps,
-					HidP_Input, preparsed_data,
-					_report_desc);
-			auto iv = readCaps<HIDP_VALUE_CAPS, HidP_GetValueCaps> (
-					caps.NumberInputValueCaps,
-					HidP_Input, preparsed_data,
-					_report_desc);
-			auto ob = readCaps<HIDP_BUTTON_CAPS, HidP_GetButtonCaps> (
-					caps.NumberOutputButtonCaps,
-					HidP_Output, preparsed_data,
-					_report_desc);
-			auto ov = readCaps<HIDP_VALUE_CAPS, HidP_GetValueCaps> (
-					caps.NumberOutputValueCaps,
-					HidP_Output, preparsed_data,
-					_report_desc);
-			for (const auto &ids: { ib, iv, ob, ov }) {
-				for (uint8_t id: ids) {
-					auto ret = _p->reports.emplace (id, hdev);
-					if (!ret.second && ret.first->second != hdev)
-						throw std::runtime_error ("Same Report ID on different handle.");
+		auto header = reinterpret_cast<const preparsed_data_header *> (preparsed_data);
+		auto item = reinterpret_cast<const preparsed_data_item *> (header+1);
+
+		auto &collection = _report_desc.collections.emplace_back ();
+		collection.usage = make_usage (header->usage_page, header->usage);
+
+		for (auto [report_type, item_count]: {
+				std::make_tuple (ReportID::Type::Input, header->input_item_count),
+				std::make_tuple (ReportID::Type::Output, header->output_item_count),
+				std::make_tuple (ReportID::Type::Feature, header->feature_item_count)}) {
+			std::map<ReportID, int> last_bit_pos; // byte_index * 8 + bit_index
+			for (int i = 0; i < item_count; ++i, ++item) {
+				ReportID id = {report_type, item->report_id};
+				auto [pos_it, pos_inserted] = last_bit_pos.emplace (id, -1);
+				auto [it, report_inserted] = collection.reports.emplace (id, 0);
+				int pos = item->byte_index * 8 + item->bit_index;
+				if (pos_it->second != -1 && pos_it->second >= pos) {
+					// Split items are in reverse order, try merging them if the position goes backward
+					auto &f = it->second.back ();
+					auto usages = std::get_if<std::vector<uint32_t>> (&f.usages);
+					if (!usages || item->usage_minimum != item->usage_maximum) {
+						Log::error ("reportdesc") << "Split item is a range item" << std::endl;
+						continue;
+					}
+					if (item->bit_size != f.size || item->bit_field != f.flags.bits)
+						Log::error ("reportdesc") << "Split item mismatch" << std::endl;
+					if (pos_it->second == pos) {
+						if (item->report_count != f.count)
+							Log::error ("reportdesc") << "Split item report count mismatch" << std::endl;
+						usages->insert (usages->begin (), make_usage(item->usage_page, item->usage_minimum));
+					}
+					else {
+						if (pos_it->second - pos != item->bit_size)
+							Log::error ("reportdesc") << "Split item unexpected position" << std::endl;
+						f.count += item->report_count;
+						if (usages->size () > 1 || usages->front () != item->usage_minimum)
+							usages->insert (usages->begin (), make_usage (item->usage_page, item->usage_minimum));
+					}
 				}
+				else {
+					// Create new item
+					auto &f = it->second.emplace_back ();
+					f.flags.bits = item->bit_field;
+					f.count = item->report_count;
+					f.size = item->bit_size;
+					if (item->usage_minimum == item->usage_maximum)
+						f.usages = std::vector {make_usage(item->usage_page, item->usage_minimum)};
+					else
+						f.usages = std::make_pair (
+								make_usage (item->usage_page, item->usage_minimum),
+								make_usage (item->usage_page, item->usage_maximum));
+				}
+				pos_it->second = pos;
 			}
 		}
-		catch (std::exception &) {
-			HidD_FreePreparsedData (preparsed_data);
-			throw;
-		}
 
-		HidD_FreePreparsedData (preparsed_data);
+		for (const auto &[id, fields]: collection.reports) {
+			auto [it, inserted] = _p->reports.emplace (id.id, hdev);
+			if (!inserted && it->second != hdev)
+				throw std::runtime_error ("Same Report ID on different handle.");
+		}
 	}
+	logReportDescriptor ();
+
 
 	_p->interrupted_event = CreateEvent (NULL, FALSE, FALSE, NULL);
 	if (_p->interrupted_event == INVALID_HANDLE_VALUE) {

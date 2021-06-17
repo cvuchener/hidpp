@@ -20,6 +20,7 @@
 #define LIBHIDPP_HIDPP_REPORT_H
 
 #include <hidpp/defs.h>
+#include <hid/ReportDescriptor.h>
 
 #include <array>
 #include <vector>
@@ -27,7 +28,7 @@
 namespace HIDPP
 {
 
-bool checkReportDescriptor (const std::vector<uint8_t> &report_desc);
+bool checkReportDescriptor (const HID::ReportDescriptor &report_desc);
 
 /**
  * Contains a HID++ report.
