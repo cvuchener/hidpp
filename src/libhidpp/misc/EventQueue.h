@@ -22,8 +22,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
-#include <experimental/optional>
-namespace std { template<typename T> using optional = experimental::optional<T>; }
+#include <optional>
 
 /**
  * Queue for transfering events across different thread.
