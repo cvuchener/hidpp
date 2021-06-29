@@ -47,6 +47,40 @@ struct ReportID
 	}
 };
 
+struct Usage
+{
+	uint16_t usage_page, usage;
+
+	constexpr Usage () noexcept:
+		usage_page (0), usage (0)
+	{
+	}
+
+	constexpr Usage (uint16_t usage_page, uint16_t usage) noexcept:
+		usage_page (usage_page),
+		usage (usage)
+	{
+	}
+
+	explicit constexpr Usage (uint32_t usage) noexcept:
+		usage_page (usage >> 16),
+		usage (usage)
+	{
+	}
+
+	explicit constexpr operator uint32_t () const noexcept {
+		return uint32_t (usage_page) << 16 | usage;
+	}
+
+	inline bool operator== (Usage other) const noexcept {
+		return usage_page == other.usage_page && usage == other.usage;
+	}
+
+	inline bool operator!= (Usage other) const noexcept {
+		return usage_page != other.usage_page || usage != other.usage;
+	}
+};
+
 struct ReportField
 {
 	struct Flags {
@@ -78,8 +112,8 @@ struct ReportField
 	} flags;
 	unsigned int count, size;
 	std::variant<
-		std::vector<uint32_t>, // usage list
-		std::pair<uint32_t, uint32_t> // usage range
+		std::vector<Usage>, // usage list
+		std::pair<Usage, Usage> // usage range
 		> usages;
 };
 
@@ -94,7 +128,7 @@ struct ReportCollection
 		UsageSwitch = 5,
 		UsageModifier = 6,
 	} type;
-	uint32_t usage;
+	Usage usage;
 	std::map<ReportID, std::vector<ReportField>> reports;
 };
 

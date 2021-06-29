@@ -67,15 +67,17 @@ struct item_t
 	uint8_t tag;
 	unsigned int size;
 	const uint8_t *data;
-	uint32_t get_usage (uint16_t default_page) const {
-		if (size > 4)
+	HID::Usage get_usage (uint16_t default_page) const {
+		switch (size) {
+		case 1:
+			return HID::Usage (default_page, data[0]);
+		case 2:
+			return HID::Usage (default_page, get<uint16_t> ());
+		case 4:
+			return HID::Usage (get<uint32_t> ());
+		default:
 			throw std::runtime_error ("invalid item size");
-		uint32_t usage = 0;
-		if (size <= 2)
-			usage = uint32_t (default_page) << 16;
-		for (unsigned int i = 0; i < size; ++i)
-			usage |= (data[i] & 0xff) << (8*i);
-		return usage;
+		}
 	}
 	template <typename T>
 	std::enable_if_t<std::is_unsigned_v<T>, T> get () const {
@@ -140,8 +142,8 @@ ReportDescriptor ReportDescriptor::fromRawData (const uint8_t *data, std::size_t
 	std::stack<global_context_t> global;
 	global.push({});
 	struct local_context_t {
-		std::vector<uint32_t> usages;
-		uint32_t usage_min, usage_max;
+		std::vector<HID::Usage> usages;
+		HID::Usage usage_min, usage_max;
 	} local;
 	enum {
 		Closed,
@@ -167,7 +169,7 @@ ReportDescriptor ReportDescriptor::fromRawData (const uint8_t *data, std::size_t
 				auto [it, inserted] = descriptor.collections.back ().reports.emplace (id, 0);
 				ReportField::Flags flags = {item.get<unsigned int> ()};
 				if (!local.usages.empty () ||
-						local.usage_min != 0 || local.usage_max != 0 ||
+						local.usage_min != Usage () || local.usage_max != Usage () ||
 						!flags.Constant ()) { // exclude padding fields
 					auto &f = it->second.emplace_back ();
 					f.flags = flags;

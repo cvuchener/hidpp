@@ -131,11 +131,6 @@ struct preparsed_data_item
 };
 static_assert(sizeof(preparsed_data_item) == 104);
 
-static inline uint32_t make_usage(uint16_t usage_page, uint16_t usage)
-{
-	return (uint32_t (usage_page) << 16) | usage;
-}
-
 using namespace HID;
 
 struct RawDevice::PrivateImpl
@@ -243,7 +238,7 @@ RawDevice::RawDevice (const std::string &path):
 		auto item = reinterpret_cast<const preparsed_data_item *> (header+1);
 
 		auto &collection = _report_desc.collections.emplace_back ();
-		collection.usage = make_usage (header->usage_page, header->usage);
+		collection.usage = {header->usage_page, header->usage};
 
 		for (auto [report_type, item_count]: {
 				std::make_tuple (ReportID::Type::Input, header->input_item_count),
@@ -258,24 +253,25 @@ RawDevice::RawDevice (const std::string &path):
 				if (pos_it->second != -1 && pos_it->second >= pos) {
 					// Split items are in reverse order, try merging them if the position goes backward
 					auto &f = it->second.back ();
-					auto usages = std::get_if<std::vector<uint32_t>> (&f.usages);
+					auto usages = std::get_if<std::vector<Usage>> (&f.usages);
 					if (!usages || item->usage_minimum != item->usage_maximum) {
 						Log::error ("reportdesc") << "Split item is a range item" << std::endl;
 						continue;
 					}
+					auto item_usage = Usage {item->usage_page, item->usage_minimum};
 					if (item->bit_size != f.size || item->bit_field != f.flags.bits)
 						Log::error ("reportdesc") << "Split item mismatch" << std::endl;
 					if (pos_it->second == pos) {
 						if (item->report_count != f.count)
 							Log::error ("reportdesc") << "Split item report count mismatch" << std::endl;
-						usages->insert (usages->begin (), make_usage(item->usage_page, item->usage_minimum));
+						usages->insert (usages->begin (), item_usage);
 					}
 					else {
 						if (pos_it->second - pos != item->bit_size)
 							Log::error ("reportdesc") << "Split item unexpected position" << std::endl;
 						f.count += item->report_count;
-						if (usages->size () > 1 || usages->front () != item->usage_minimum)
-							usages->insert (usages->begin (), make_usage (item->usage_page, item->usage_minimum));
+						if (usages->size () > 1 || usages->front () != item_usage)
+							usages->insert (usages->begin (), item_usage);
 					}
 				}
 				else {
@@ -285,11 +281,11 @@ RawDevice::RawDevice (const std::string &path):
 					f.count = item->report_count;
 					f.size = item->bit_size;
 					if (item->usage_minimum == item->usage_maximum)
-						f.usages = std::vector {make_usage(item->usage_page, item->usage_minimum)};
+						f.usages = std::vector {Usage {item->usage_page, item->usage_minimum}};
 					else
 						f.usages = std::make_pair (
-								make_usage (item->usage_page, item->usage_minimum),
-								make_usage (item->usage_page, item->usage_maximum));
+								Usage {item->usage_page, item->usage_minimum},
+								Usage {item->usage_page, item->usage_maximum});
 				}
 				pos_it->second = pos;
 			}
