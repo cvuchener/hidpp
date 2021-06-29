@@ -25,7 +25,7 @@
 
 using namespace HIDPP;
 
-static bool hasReport(const HID::ReportCollection &collection, HID::ReportID::Type type, uint8_t id, uint32_t usage, unsigned int count)
+static bool hasReport(const HID::ReportCollection &collection, HID::ReportID::Type type, uint8_t id, HID::Usage usage, unsigned int count)
 {
 	using namespace HID;
 	auto it = collection.reports.find (ReportID {type, id});
@@ -35,7 +35,7 @@ static bool hasReport(const HID::ReportCollection &collection, HID::ReportID::Ty
 	if (fields.size () != 1)
 		return false;
 	const auto &field = fields.front ();
-	if (auto usages = std::get_if<std::vector<uint32_t>> (&field.usages)) {
+	if (auto usages = std::get_if<std::vector<Usage>> (&field.usages)) {
 		return field.flags.Data () && field.flags.Array () &&
 			field.count == count && field.size == 8 &&
 			usages->size () == 1 && usages->front () == usage;
@@ -46,8 +46,8 @@ static bool hasReport(const HID::ReportCollection &collection, HID::ReportID::Ty
 
 bool HIDPP::checkReportDescriptor (const HID::ReportDescriptor &rdesc)
 {
-	static constexpr uint32_t ShortReportUsage = 0xFF000001;
-	static constexpr uint32_t LongReportUsage = 0xFF000002;
+	static constexpr auto ShortReportUsage = HID::Usage (0xFF000001);
+	static constexpr auto LongReportUsage = HID::Usage (0xFF000002);
 	static constexpr unsigned int ShortReportCount = 6;
 	static constexpr unsigned int LongReportCount = 19;
 	bool has_short_input = false;

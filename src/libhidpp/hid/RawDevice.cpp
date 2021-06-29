@@ -28,7 +28,7 @@ void RawDevice::logReportDescriptor () const
 	if (!debug)
 		return;
 	for (const auto &collection: _report_desc.collections) {
-		debug << "Collection: " << std::hex << collection.usage << std::dec << std::endl;
+		debug << "Collection: " << std::hex << uint32_t (collection.usage) << std::dec << std::endl;
 		for (const auto &[id, fields]: collection.reports) {
 			const char *type;
 			switch (id.type) {
@@ -45,12 +45,12 @@ void RawDevice::logReportDescriptor () const
 						f.count, f.size);
 				struct {
 					Log &log;
-					void operator() (const std::vector<uint32_t> &usages) const {
-						for (uint32_t usage: usages)
-							log << " " << usage;
+					void operator() (const std::vector<Usage> &usages) const {
+						for (auto usage: usages)
+							log << " " << uint32_t (usage);
 					}
-					void operator() (const std::pair<uint32_t, uint32_t> &usages) const {
-						log << " [" << usages.first << ", " << usages.second << "]";
+					void operator() (const std::pair<Usage, Usage> &usages) const {
+						log << " [" << uint32_t (usages.first) << ", " << uint32_t (usages.second) << "]";
 					}
 				} print_usage{debug};
 				debug << "    Usages:" << std::hex;
