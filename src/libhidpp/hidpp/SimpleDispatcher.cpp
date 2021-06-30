@@ -29,9 +29,7 @@ using namespace HIDPP;
 SimpleDispatcher::SimpleDispatcher (const char *path):
 	_dev (path)
 {
-	const HID::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
-	if (!checkReportDescriptor (rdesc))
-		throw Dispatcher::NoHIDPPReportException ();
+	checkReportDescriptor (_dev.getReportDescriptor ());
 }
 
 SimpleDispatcher::~SimpleDispatcher ()
@@ -96,7 +94,7 @@ void SimpleDispatcher::stop ()
 Report SimpleDispatcher::getReport (int timeout)
 {
 	while (true) {
-		std::vector<uint8_t> raw_report (Report::MaxDataLength+1);
+		std::vector<uint8_t> raw_report (MaxReportLength);
 		if (0 == _dev.readReport (raw_report, timeout))
 			throw Dispatcher::TimeoutError ();
 		try {

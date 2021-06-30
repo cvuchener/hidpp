@@ -30,15 +30,6 @@ namespace HIDPP
 	 */
 
 	/**
-	 * Short HID++ report parameter length.
-	 */
-	constexpr std::size_t ShortParamLength = 3;
-	/**
-	 * Long HID++ report parameter length.
-	 */
-	constexpr std::size_t LongParamLength = 16;
-
-	/**
 	 * HID++ device index.
 	 *
 	 * Receiver and wireless devices share the same
