@@ -28,8 +28,6 @@
 namespace HIDPP
 {
 
-bool checkReportDescriptor (const HID::ReportDescriptor &report_desc);
-
 /**
  * Contains a HID++ report.
  *
@@ -53,19 +51,26 @@ bool checkReportDescriptor (const HID::ReportDescriptor &report_desc);
  */
 class Report
 {
+	static constexpr std::size_t HeaderLength = 4;
 public:
-	/**
-	 * The type of the report (or report ID).
-	 *
-	 * The only difference between report types is the length of its
-	 * parameters.
-	 *
-	 * \sa ShortParamLength LongParamLength
-	 */
 	enum Type: uint8_t {
-		Short = 0x10,	///< Short reports use 3 byte parameters.
-		Long = 0x11,	///< Long report use 16 byte parameters.
+		Short = 0x10,
+		Long = 0x11,
+		VeryLong = 0x12,
 	};
+
+	static inline constexpr std::size_t reportLength (Type type) noexcept {
+		switch (type) {
+		case Type::Short: return 7;
+		case Type::Long: return 20;
+		case Type::VeryLong: return 64;
+		default: return 0;
+		}
+	}
+
+	inline static constexpr std::size_t parameterLength (Type type) noexcept {
+		return reportLength (type) - HeaderLength;
+	}
 
 	/**
 	 * Exception for reports with invalid report ID.
@@ -86,11 +91,6 @@ public:
 		InvalidReportLength ();
 		virtual const char *what () const noexcept;
 	};
-
-	/**
-	 * Maximum length of a HID++ report.
-	 */
-	static constexpr std::size_t MaxDataLength = 19;
 
 	/**
 	 * Build the report by copying the raw data.
@@ -265,10 +265,6 @@ public:
 	 * Get the parameter length of the report.
 	 */
 	std::size_t parameterLength () const;
-	/**
-	 * Get the parameter length for \p type.
-	 */
-	static std::size_t parameterLength (Type type);
 
 	/** Begin iterator for parameters. */
 	std::vector<uint8_t>::iterator parameterBegin ();
@@ -285,9 +281,13 @@ public:
 	const std::vector<uint8_t> &rawReport () const;
 
 private:
-	static constexpr std::size_t HeaderLength = 4;
 	std::vector<uint8_t> _data;
 };
+
+inline constexpr auto MaxReportLength = Report::reportLength (Report::VeryLong);
+inline constexpr auto ShortParamLength = Report::parameterLength (Report::Short);
+inline constexpr auto LongParamLength = Report::parameterLength (Report::Long);
+inline constexpr auto VeryLongParamLength = Report::parameterLength (Report::VeryLong);
 
 }
 

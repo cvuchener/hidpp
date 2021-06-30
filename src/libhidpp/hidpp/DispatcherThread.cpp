@@ -66,9 +66,7 @@ DispatcherThread::DispatcherThread (const char *path):
 	_dev (path),
 	_stopped (false)
 {
-	const HID::ReportDescriptor &rdesc = _dev.getReportDescriptor ();
-	if (!checkReportDescriptor (rdesc))
-		throw Dispatcher::NoHIDPPReportException ();
+	checkReportDescriptor (_dev.getReportDescriptor ());
 }
 
 DispatcherThread::~DispatcherThread ()
@@ -151,7 +149,7 @@ void DispatcherThread::run ()
 {
 	while (!_stopped) {
 		try {
-			std::vector<uint8_t> raw_report (Report::MaxDataLength+1);
+			std::vector<uint8_t> raw_report (MaxReportLength);
 			if (0 != _dev.readReport (raw_report))
 				processReport (std::move (raw_report));
 		}

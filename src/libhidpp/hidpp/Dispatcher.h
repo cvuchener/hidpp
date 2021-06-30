@@ -23,6 +23,7 @@
 #include <memory>
 #include <map>
 #include <functional>
+#include <optional>
 
 namespace HIDPP
 {
@@ -119,11 +120,39 @@ public:
 	 */
 	virtual void unregisterEventHandler (listener_iterator it);
 
+	struct ReportInfo {
+		enum Flags { // flags are also the usage for collections and reports
+			HasShortReport = 1<<0,
+			HasLongReport = 1<<1,
+			HasVeryLongReport = 1<<2,
+		};
+		int flags;
+
+		bool hasReport (Report::Type type) const noexcept {
+			switch (type) {
+			case Report::Short: return flags & HasShortReport;
+			case Report::Long: return flags & HasLongReport;
+			case Report::VeryLong: return flags & HasVeryLongReport;
+			default: return false;
+			}
+		}
+
+		std::optional<Report::Type> findReport (std::size_t minimum_parameter_length = 0) const noexcept {
+			for (auto type: { Report::Short, Report::Long, Report::VeryLong })
+				if (hasReport (type) && minimum_parameter_length <= Report::parameterLength (type))
+					return type;
+			return std::nullopt;
+		}
+	};
+	ReportInfo reportInfo () const noexcept { return _report_info; }
+
 protected:
 	void processEvent (const Report &);
+	void checkReportDescriptor (const HID::ReportDescriptor &report_desc);
 
 private:
 	listener_container _listeners;
+	ReportInfo _report_info;
 };
 
 }
