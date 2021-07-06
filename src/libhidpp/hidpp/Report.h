@@ -69,7 +69,7 @@ public:
 	/**
 	 * Exception for reports with invalid report ID.
 	 */
-	class InvalidReportID: std::exception
+	class InvalidReportID: public std::exception
 	{
 	public:
 		InvalidReportID ();
@@ -79,7 +79,7 @@ public:
 	 * Exception for reports where the length is not the expected one
 	 * from the report type.
 	 */
-	class InvalidReportLength: std::exception
+	class InvalidReportLength: public std::exception
 	{
 	public:
 		InvalidReportLength ();
