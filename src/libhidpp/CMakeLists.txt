@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.8)
 project(libhidpp)
 
 set(LIBHIDPP_SOURCES
@@ -68,10 +68,12 @@ if("${HID_BACKEND}" STREQUAL "windows")
 	)
 endif()
 
-include_directories(.)
 add_library(hidpp SHARED ${LIBHIDPP_SOURCES})
+target_include_directories(hidpp PUBLIC
+	$<INSTALL_INTERFACE:include/hidpp>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 if("${HID_BACKEND}" STREQUAL "linux")
-	target_include_directories(hidpp PUBLIC ${LIBUDEV_INCLUDE_DIRECTORIES})
+	target_include_directories(hidpp PRIVATE ${LIBUDEV_INCLUDE_DIRECTORIES})
 	target_link_libraries(hidpp ${LIBUDEV_LIBRARIES})
 elseif("${HID_BACKEND}" STREQUAL "windows")
 	target_link_libraries(hidpp setupapi hid cfgmgr32)

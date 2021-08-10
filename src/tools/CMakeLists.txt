@@ -1,17 +1,16 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.8)
 project(hidpp_tools)
-
-include_directories(../libhidpp)
 
 add_library(common OBJECT
 	common/common.cpp
 	common/Option.cpp
 	common/CommonOptions.cpp)
+target_link_libraries(common PUBLIC hidpp)
 
 add_executable(hidpp-check-device
 	hidpp-check-device.cpp
 	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp-check-device hidpp ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(hidpp-check-device hidpp Threads::Threads)
 install(TARGETS hidpp-check-device RUNTIME DESTINATION bin)
 
 set(TOOLS
@@ -43,15 +42,16 @@ foreach(TOOL_NAME ${TOOLS})
 		$<TARGET_OBJECTS:common>)
 	target_link_libraries(${TOOL_NAME}
 		hidpp
-		${CMAKE_THREAD_LIBS_INIT}
+		Threads::Threads
 	)
 	install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
 endforeach()
 
-if(TINYXML2_FOUND)
+if(tinyxml2_FOUND)
 	add_library(profile OBJECT
 		profile/MacroText.cpp
 		profile/ProfileXML.cpp)
+	target_link_libraries(profile PUBLIC hidpp)
 	
 	foreach(TOOL_NAME
 		hidpp-persistent-profiles
@@ -61,12 +61,10 @@ if(TINYXML2_FOUND)
 			${TOOL_NAME}.cpp
 			$<TARGET_OBJECTS:profile>
 			$<TARGET_OBJECTS:common>)
-		target_include_directories(${TOOL_NAME}
-			PUBLIC ${TINYXML2_INCLUDE_DIRECTORIES})
 		target_link_libraries(${TOOL_NAME}
 			hidpp
-			${TINYXML2_LIBRARIES}
-			${CMAKE_THREAD_LIBS_INIT}
+			tinyxml2::tinyxml2
+			Threads::Threads
 		)
 		install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
 	endforeach()
