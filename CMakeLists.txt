@@ -32,13 +32,9 @@ add_subdirectory(src/libhidpp)
 add_subdirectory(src/tools)
 add_subdirectory(doc/libhidpp)
 
-set(PREFIX ${CMAKE_INSTALL_PREFIX})
-
-configure_file(pkgconfig/hidpp.pc.in pkgconfig/hidpp.pc @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/pkgconfig/hidpp.pc DESTINATION share/pkgconfig)
-
 option(INSTALL_UDEV_RULES "Install udev rules for user access to HID++ devices" OFF)
 if(INSTALL_UDEV_RULES)
+	set(PREFIX ${CMAKE_INSTALL_PREFIX})
 	configure_file(udev/rules.d/69-hidpp.rules.in udev/rules.d/69-hidpp.rules @ONLY)
 	install(FILES ${CMAKE_BINARY_DIR}/udev/rules.d/69-hidpp.rules DESTINATION /etc/udev/rules.d)
 endif()

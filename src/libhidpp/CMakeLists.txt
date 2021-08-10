@@ -81,7 +81,10 @@ endif()
 
 install(DIRECTORY "./" DESTINATION "include/hidpp"
 	FILES_MATCHING PATTERN "*.h")
-install(TARGETS hidpp
+install(TARGETS hidpp EXPORT hidpp-config
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib)
-
+install(EXPORT hidpp-config
+	NAMESPACE hidpp::
+	DESTINATION "lib/cmake/hidpp"
+)
