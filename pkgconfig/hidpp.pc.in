@@ -1,9 +1,0 @@
-prefix=@PREFIX@
-includedir=${prefix}/include
-libdir=${prefix}/lib
-
-Name: HIDPP
-Description: HID++ protocol library
-Version: 0.0
-Cflags: -I${includedir}/hidpp
-Libs: -L${libdir} -lhidpp
