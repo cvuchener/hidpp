@@ -76,6 +76,10 @@ if("${HID_BACKEND}" STREQUAL "linux")
 	target_include_directories(hidpp PRIVATE ${LIBUDEV_INCLUDE_DIRECTORIES})
 	target_link_libraries(hidpp ${LIBUDEV_LIBRARIES})
 elseif("${HID_BACKEND}" STREQUAL "windows")
+	target_compile_definitions(hidpp PRIVATE
+		-DUNICODE -D_UNICODE
+		-D_WIN32_WINNT=0x0600 # Use vista or later
+	)
 	target_link_libraries(hidpp setupapi hid cfgmgr32)
 endif()
 
