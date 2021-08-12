@@ -19,10 +19,6 @@
 #include <cstdio>
 #include <memory>
 
-extern "C" {
-#include <unistd.h>
-}
-
 #include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/IMemory.h>
@@ -75,7 +71,7 @@ int main (int argc, char *argv[])
 
 	HIDPP10::IMemory (&dev).readMem ({0, static_cast<uint8_t> (page), 0}, data);
 
-	write (1, data.data (), PageSize);
+	fwrite (data.data (), sizeof (uint8_t), PageSize, stdout);
 
 	return EXIT_SUCCESS;
 }
