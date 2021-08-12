@@ -22,8 +22,6 @@ if("${HID_BACKEND}" STREQUAL "linux")
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(LIBUDEV libudev REQUIRED)
 elseif("${HID_BACKEND}" STREQUAL "windows")
-	add_definitions(-DUNICODE -D_UNICODE)
-	add_definitions(-D_WIN32_WINNT=0x0600) # Use vista or later
 else()
 	message(FATAL_ERROR "HID_BACKEND is invalid.")
 endif()
