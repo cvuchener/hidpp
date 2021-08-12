@@ -19,10 +19,6 @@
 #include <cstdio>
 #include <memory>
 
-extern "C" {
-#include <unistd.h>
-}
-
 #include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
@@ -80,13 +76,13 @@ int main (int argc, char *argv[])
 
 	std::vector<uint8_t> data;
 	uint8_t buffer[256];
-	int ret;
-	while ((ret = read (0, buffer, sizeof (buffer))) > 0) {
+	while (!feof (stdin)) {
+		int ret = fread (buffer, sizeof(uint8_t), 256, stdin);
+		if (ferror (stdin)) {
+			fprintf (stderr, "Failed to read data.\n");
+			return EXIT_FAILURE;
+		}
 		data.insert (data.end (), buffer, buffer+ret);
-	}
-	if (ret == -1) {
-		perror ("read");
-		return EXIT_FAILURE;
 	}
 
 	try {

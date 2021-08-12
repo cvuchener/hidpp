@@ -19,10 +19,6 @@
 #include <cstdio>
 #include <memory>
 
-extern "C" {
-#include <unistd.h>
-}
-
 #include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
@@ -94,18 +90,11 @@ int main (int argc, char *argv[])
 
 	iop.memoryAddrWrite (page, 0, desc.sector_size);
 
-	std::size_t r = 0;
 	std::vector<uint8_t> data (desc.sector_size, 0xff);
-	while (r < desc.sector_size) {
-		int ret = read (0, &data[r], data.size () - r);
-		if (ret == -1) {
-			perror ("read");
-			return EXIT_FAILURE;
-		}
-		if (ret == 0) {
-			break;
-		}
-		r += ret;
+	fread (data.data (), sizeof (uint8_t), desc.sector_size, stdin);
+	if (ferror (stdin)) {
+		fprintf (stderr, "Failed to read data.\n");
+		return EXIT_FAILURE;
 	}
 	if (add_crc) {
 		size_t page_content_size = desc.sector_size - 2;

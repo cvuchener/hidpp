@@ -19,10 +19,6 @@
 #include <cstdio>
 #include <memory>
 
-extern "C" {
-#include <unistd.h>
-}
-
 #include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/IMemory.h>
@@ -66,18 +62,10 @@ int main (int argc, char *argv[])
 	HIDPP10::Device dev (dispatcher.get (), device_index);
 	static constexpr std::size_t PageSize = 512;
 	std::vector<uint8_t> data (PageSize);
-
-	std::size_t r = 0;
-	while (r < PageSize) {
-		int ret = read (0, &data[r], PageSize - r);
-		if (ret == -1) {
-			perror ("read");
-			return EXIT_FAILURE;
-		}
-		if (ret == 0) {
-			break;
-		}
-		r += ret;
+	fread (data.data (), sizeof(uint8_t), PageSize, stdin);
+	if (ferror (stdin)) {
+		fprintf (stderr, "Failed to read data.\n");
+		return EXIT_FAILURE;
 	}
 
 	HIDPP10::IMemory (&dev).writePage (page, data);

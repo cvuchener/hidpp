@@ -20,10 +20,6 @@
 #include <iostream>
 #include <fstream>
 
-extern "C" {
-#include <unistd.h>
-}
-
 #include <hidpp/SimpleDispatcher.h>
 #include <hidpp10/Device.h>
 #include <hidpp10/DeviceInfo.h>

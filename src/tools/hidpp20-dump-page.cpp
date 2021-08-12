@@ -19,10 +19,6 @@
 #include <cstdio>
 #include <memory>
 
-extern "C" {
-#include <unistd.h>
-}
-
 #include <hidpp/SimpleDispatcher.h>
 #include <hidpp20/Device.h>
 #include <hidpp20/Error.h>
@@ -84,7 +80,7 @@ int main (int argc, char *argv[])
 		unsigned int i = 0;
 		while (i < desc.sector_size) {
 			auto data = iop.memoryRead (mem_type, page, i);
-			write (1, data.data (), data.size ());
+			fwrite (data.data (), sizeof (uint8_t), data.size (), stdout);
 			i += data.size ();
 		}
 	}
