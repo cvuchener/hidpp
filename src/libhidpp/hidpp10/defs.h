@@ -19,6 +19,7 @@
 #ifndef LIBHIDPP_HIDPP10_DEFS_H
 #define LIBHIDPP_HIDPP10_DEFS_H
 
+#include <cstddef>
 #include <cstdint>
 
 namespace HIDPP10
