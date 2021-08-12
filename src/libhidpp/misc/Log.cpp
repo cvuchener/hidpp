@@ -64,6 +64,7 @@ Log::Category Log::Debug ("debug");
 std::mutex Log::_mutex;
 
 Log::Log ():
+	std::ostream (nullptr),
 	_buf ("null")
 {
 }
