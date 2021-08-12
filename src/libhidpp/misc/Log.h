@@ -102,7 +102,10 @@ public:
 	static inline Log debug (const char *sub = nullptr) { return log (&Debug, sub); }
 
 	void printf (const char *format, ...)
-		__attribute__ ((format (printf, 2, 3)));
+#ifdef __GNUC__
+		__attribute__ ((format (printf, 2, 3)))
+#endif
+		;
 
 	template <class InputIterator>
 	void printBytes (const std::string &prefix,
