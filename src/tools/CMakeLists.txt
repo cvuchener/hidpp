@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 project(hidpp_tools)
 
 add_library(common OBJECT
@@ -7,10 +7,8 @@ add_library(common OBJECT
 	common/CommonOptions.cpp)
 target_link_libraries(common PUBLIC hidpp)
 
-add_executable(hidpp-check-device
-	hidpp-check-device.cpp
-	$<TARGET_OBJECTS:common>)
-target_link_libraries(hidpp-check-device hidpp Threads::Threads)
+add_executable(hidpp-check-device hidpp-check-device.cpp)
+target_link_libraries(hidpp-check-device hidpp common Threads::Threads)
 install(TARGETS hidpp-check-device RUNTIME DESTINATION bin)
 
 set(TOOLS
@@ -37,11 +35,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 foreach(TOOL_NAME ${TOOLS})
-	add_executable(${TOOL_NAME}
-		${TOOL_NAME}.cpp
-		$<TARGET_OBJECTS:common>)
+	add_executable(${TOOL_NAME} ${TOOL_NAME}.cpp)
 	target_link_libraries(${TOOL_NAME}
 		hidpp
+		common
 		Threads::Threads
 	)
 	install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
@@ -51,18 +48,17 @@ if(tinyxml2_FOUND)
 	add_library(profile OBJECT
 		profile/MacroText.cpp
 		profile/ProfileXML.cpp)
-	target_link_libraries(profile PUBLIC hidpp)
+	target_link_libraries(profile PUBLIC hidpp tinyxml2::tinyxml2)
 	
 	foreach(TOOL_NAME
 		hidpp-persistent-profiles
 		hidpp10-load-temp-profile
 	)
-		add_executable(${TOOL_NAME}
-			${TOOL_NAME}.cpp
-			$<TARGET_OBJECTS:profile>
-			$<TARGET_OBJECTS:common>)
+		add_executable(${TOOL_NAME} ${TOOL_NAME}.cpp)
 		target_link_libraries(${TOOL_NAME}
 			hidpp
+			profile
+			common
 			tinyxml2::tinyxml2
 			Threads::Threads
 		)
