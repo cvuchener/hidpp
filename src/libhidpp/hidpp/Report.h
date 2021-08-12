@@ -92,6 +92,11 @@ public:
 		virtual const char *what () const noexcept;
 	};
 
+#ifdef _MSC_VER
+	// MSVC's promise/future require default constructible types
+	Report () = default;
+#endif
+
 	/**
 	 * Build the report by copying the raw data.
 	 *
