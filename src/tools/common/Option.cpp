@@ -1,11 +1,12 @@
 #include "Option.h"
 
+#include <sstream>
+#include <map>
+
 extern "C" {
 #include <getopt.h>
 }
 
-#include <sstream>
-#include <map>
 
 Option::Option (char short_opt,
 		const char *long_opt,
@@ -67,7 +68,7 @@ bool Option::processOptions (int argc, char *argv[],
 		longopt.val = 256 + i;
 		longopts.push_back (longopt);
 	}
-	longopts.emplace_back ((struct option) {});
+	longopts.emplace_back (option{});
 
 	int opt;
 	while (-1 != (opt = getopt_long (argc, argv,

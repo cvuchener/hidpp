@@ -1,11 +1,20 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.18)
 project(hidpp_tools)
+
+if (WIN32 AND NOT MINGW)
+	find_path(GETOPT_INCLUDE_DIR getopt.h REQUIRED)
+	find_library(GETOPT_LIBRARY getopt REQUIRED)
+	add_library(getopt SHARED IMPORTED)
+	set_target_properties(getopt PROPERTIES
+		IMPORTED_IMPLIB ${GETOPT_LIBRARY}
+		INTERFACE_INCLUDE_DIRECTORIES ${GETOPT_INCLUDE_DIR})
+endif()
 
 add_library(common OBJECT
 	common/common.cpp
 	common/Option.cpp
 	common/CommonOptions.cpp)
-target_link_libraries(common PUBLIC hidpp)
+target_link_libraries(common PUBLIC hidpp $<$<TARGET_EXISTS:getopt>:getopt>)
 
 add_executable(hidpp-check-device hidpp-check-device.cpp)
 target_link_libraries(hidpp-check-device hidpp common Threads::Threads)
