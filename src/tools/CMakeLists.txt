@@ -18,7 +18,7 @@ target_link_libraries(common PUBLIC hidpp $<$<TARGET_EXISTS:getopt>:getopt>)
 
 add_executable(hidpp-check-device hidpp-check-device.cpp)
 target_link_libraries(hidpp-check-device hidpp common Threads::Threads)
-install(TARGETS hidpp-check-device RUNTIME DESTINATION bin)
+install(TARGETS hidpp-check-device RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 set(TOOLS
 	hidpp-list-devices
@@ -50,7 +50,7 @@ foreach(TOOL_NAME ${TOOLS})
 		common
 		Threads::Threads
 	)
-	install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
+	install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endforeach()
 
 find_package(tinyxml2)
@@ -72,7 +72,7 @@ if(tinyxml2_FOUND)
 			tinyxml2::tinyxml2
 			Threads::Threads
 		)
-		install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
+		install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endforeach()
 	
 else()
