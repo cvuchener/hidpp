@@ -11,7 +11,7 @@ Documentation for HID++ 1.0 mice, can be found on [my G500 repository](https://g
 Building
 --------
 
-Building requires a C++14 compiler and cmake.
+Building requires a C++17 compiler and cmake.
 
 The library can be built with different HID backend (using the `HID_BACKEND` cmake variable, default is set according the current operating system).
  - `linux` uses Linux hidraw and **libudev**.
@@ -30,9 +30,12 @@ make
 
 Library and tools can be installed with `make install`.
 
+When building with Microsoft Visual C++ (MSVC), you must also provide a library for **getopt** (vcpkg has [one](https://vcpkg.info/port/getopt)). Shared library builds are not currently supported with MSVC, use `-DBUILD_SHARED_LIBS=OFF` when configuring cmake.
+
 ### CMake options
 
- - `INSTALL_UDEV_RULES`: install an udev rule for adding user access to HID++ devices. This will add a file in `/etc/udev/rules.d` (not in `CMAKE_INSTALL_PREFIX`). Run `udevadm control --reload` and `udevadm trigger` after the installation for updating udev rules and already present devices.
+ - `BUILD_TOOLS` (default: `ON`): build the command line tools alongside the library.
+ - `INSTALL_UDEV_RULES` (default: `OFF`): install an udev rule for adding user access to HID++ devices. This will add a file in `/etc/udev/rules.d` (not in `CMAKE_INSTALL_PREFIX`). Run `udevadm control --reload` and `udevadm trigger` after the installation for updating udev rules and already present devices.
 
 
 Commands
