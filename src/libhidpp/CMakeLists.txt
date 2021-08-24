@@ -83,12 +83,12 @@ elseif("${HID_BACKEND}" STREQUAL "windows")
 	target_link_libraries(hidpp setupapi hid cfgmgr32)
 endif()
 
-install(DIRECTORY "./" DESTINATION "include/hidpp"
+install(DIRECTORY "./" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hidpp"
 	FILES_MATCHING PATTERN "*.h")
 install(TARGETS hidpp EXPORT hidpp-config
-	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib)
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(EXPORT hidpp-config
 	NAMESPACE hidpp::
-	DESTINATION "lib/cmake/hidpp"
+	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hidpp"
 )
