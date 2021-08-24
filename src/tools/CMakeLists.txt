@@ -53,6 +53,7 @@ foreach(TOOL_NAME ${TOOLS})
 	install(TARGETS ${TOOL_NAME} RUNTIME DESTINATION bin)
 endforeach()
 
+find_package(tinyxml2)
 if(tinyxml2_FOUND)
 	add_library(profile OBJECT
 		profile/MacroText.cpp
