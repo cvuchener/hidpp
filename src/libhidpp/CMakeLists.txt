@@ -69,6 +69,7 @@ if("${HID_BACKEND}" STREQUAL "windows")
 endif()
 
 add_library(hidpp ${LIBHIDPP_SOURCES})
+set_target_properties(hidpp PROPERTIES VERSION 0.2)
 target_include_directories(hidpp PUBLIC
 	$<INSTALL_INTERFACE:include/hidpp>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
