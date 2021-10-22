@@ -30,7 +30,40 @@ make
 
 Library and tools can be installed with `make install`.
 
-When building with Microsoft Visual C++ (MSVC), you must also provide a library for **getopt** (vcpkg has [one](https://vcpkg.info/port/getopt)). Shared library builds are not currently supported with MSVC, use `-DBUILD_SHARED_LIBS=OFF` when configuring cmake.
+### Building with Visual Studio
+
+For building hidpp with Visual Studio (tested with Visual Studio 2019 16.11.5) a `CMakeSettings.json` file is included which contains Debug and Release configurations each for the x64 and x86 platforms.
+By default `BUILD_SHARED_LIBS` and `BUILD_TOOLS` are disabled, the former because shared library builds are not currently supported for MSVC (see #19), the latter because it requires extra dependencies.
+
+Building the tools requires installing the **getopt** dependency first.
+The easiest way of doing so is by installing [this one](https://vcpkg.info/port/getopt) available through [vcpkg](https://vcpkg.io/):
+
+```
+vcpkg install getopt:x86-windows
+vcpkg install getopt:x64-windows
+```
+
+With getopt installed, enable the `BUILD_TOOLS` variable in the CMake Settings for the desired configurations, regenerate the CMake cache, and then build.
+
+Manually building from a Visual Studio Developer console is also supported:
+
+```
+mkdir build
+cd build
+cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_TOOLS=OFF ..
+# or, with tools support:
+cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>\scripts\buildsystems\vcpkg.cmake ..
+start hidpp.sln
+```
+
+An alternative is to use CMake's Ninja generator:
+
+```
+cmake -G ninja -DBUILD_SHARED_LIBS=OFF -DBUILD_TOOLS=OFF ..
+# or, with tools support:
+cmake -G ninja -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>\scripts\buildsystems\vcpkg.cmake ..
+ninja
+```
 
 ### CMake options
 
