@@ -123,6 +123,11 @@ DeviceEnumerator::DeviceEnumerator (const GUID *interface_class):
 	}
 }
 
+DeviceEnumerator::~DeviceEnumerator() {
+	if (_hdevinfo != NULL && _hdevinfo != INVALID_HANDLE_VALUE)
+		SetupDiDestroyDeviceInfoList(_hdevinfo);
+}
+
 std::unique_ptr<DeviceInterfaceData> DeviceEnumerator::get (DWORD index)
 {
 	DWORD err;
