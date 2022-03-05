@@ -61,6 +61,7 @@ class DeviceEnumerator
 {
 public:
 	DeviceEnumerator (const GUID *interface_class);
+	~DeviceEnumerator ();
 
 	std::unique_ptr<DeviceInterfaceData> get (DWORD index);
 
