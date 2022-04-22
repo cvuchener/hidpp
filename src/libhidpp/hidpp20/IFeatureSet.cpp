@@ -39,7 +39,8 @@ unsigned int IFeatureSet::getCount ()
 uint16_t IFeatureSet::getFeatureID (uint8_t feature_index,
 				    bool *obsolete,
 				    bool *hidden,
-				    bool *internal)
+				    bool *internal,
+				    uint8_t *version)
 {
 	std::vector<uint8_t> params (1), results;
 	params[0] = feature_index;
@@ -50,6 +51,8 @@ uint16_t IFeatureSet::getFeatureID (uint8_t feature_index,
 		*hidden = results[2] & (1<<6);
 	if (internal)
 		*internal = results[2] & (1<<5);
+	if (version)
+		*version = results[3];
 	return readBE<uint16_t> (results, 0);
 }
 
