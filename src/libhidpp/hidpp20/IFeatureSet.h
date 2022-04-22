@@ -40,7 +40,8 @@ public:
 	uint16_t getFeatureID (uint8_t feature_index,
 			       bool *obsolete = nullptr,
 			       bool *hidden = nullptr,
-			       bool *internal = nullptr);
+			       bool *internal = nullptr,
+			       uint8_t *version = nullptr);
 };
 
 }
