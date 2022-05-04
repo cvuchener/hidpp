@@ -55,6 +55,7 @@ set(LIBHIDPP_SOURCES
 	hidpp20/ITouchpadRawXY.cpp
 	hidpp20/ILEDControl.cpp
 	hidpp20/IBatteryLevelStatus.cpp
+	hidpp20/IDeviceTypeName.cpp
 	hidpp20/ProfileDirectoryFormat.cpp
 	hidpp20/ProfileFormat.cpp
 	hidpp20/MemoryMapping.cpp
