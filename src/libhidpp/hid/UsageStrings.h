@@ -20,6 +20,7 @@
 #define LIBHIDPP_HID_USAGE_STRINGS_H
 
 #include <string>
+#include <cstdint>
 
 namespace HID
 {
