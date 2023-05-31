@@ -22,6 +22,7 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
+#include <cstdint>
 
 #include <hidpp/Enum.h>
 

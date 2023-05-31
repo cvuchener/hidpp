@@ -19,6 +19,8 @@
 #ifndef LIBHIDPP_HIDPP20_DEFS_H
 #define LIBHIDPP_HIDPP20_DEFS_H
 
+#include <cstdint>
+
 namespace HIDPP20
 {
 	constexpr uint8_t ErrorMessage = 0xFF;

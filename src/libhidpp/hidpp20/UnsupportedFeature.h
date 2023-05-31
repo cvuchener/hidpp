@@ -20,6 +20,7 @@
 #define LIBHIDPP_HIDPP20_UNSUPPORTED_FEATURE_H
 
 #include <stdexcept>
+#include <cstdint>
 
 namespace HIDPP20
 {
